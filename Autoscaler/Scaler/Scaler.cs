@@ -79,14 +79,16 @@ class Scaler {
                 replicas++;
             if(forecast.Value <= settings.ScaleDown && replicas > 1)
                 replicas--;
-                
+            if(replicas < 1)
+                replicas = 1;
+
             Dictionary<string, Dictionary<string, int>> patchData = new() {{
                 "spec", new() {{
                     "replicas",replicas
                 }}
             }};
             Console.WriteLine($"Forecasted value: {forecast.Value}");
-            Console.WriteLine($"replicas: {replicas}");
+            Console.WriteLine($"new replicas: {replicas}");
 
             await kubernetes.Patch($"/apis/apps/v1/namespaces/default/deployments/{Deployment}/scale", patchData);
 
