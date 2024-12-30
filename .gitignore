@@ -13,3 +13,9 @@ out
 obj
 .vscode
 bin
+# ml
+model
+
+.vs
+.idea
+__pycache__

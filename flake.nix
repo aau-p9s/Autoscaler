@@ -2,7 +2,7 @@
   description = "Autoscaler nix flake";
 
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-unstable";
+    nixpkgs.url = "nixpkgs/nixos-24.05";
   };
 
   outputs = { self, nixpkgs }: let
@@ -11,12 +11,11 @@
   in {
     devShells.${system}.default = pkgs.mkShellNoCC {
       packages = with pkgs; [
-        dotnet-sdk_7
-        dotnet-aspnetcore_7
-        dotnet-runtime_7
-        csharp-ls
-        omnisharp-roslyn
-        mono
+        dotnetCorePackages.dotnet_8.sdk
+        dotnetCorePackages.dotnet_8.aspnetcore
+        dotnetCorePackages.dotnet_8.runtime
+        roslyn-ls
+        python312
       ];
     };
   };

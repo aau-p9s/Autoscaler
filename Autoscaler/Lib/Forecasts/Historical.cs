@@ -1,15 +1,15 @@
 namespace Autoscaler.Lib.Forecasts;
 
-public class Forecast
+public class Historical
 {
     public readonly DateTime Timestamp;
     public readonly double Value;
 
-    public Forecast()
+    public Historical()
     {
         
     }
-    public Forecast(DateTime timestamp, double value)
+    public Historical(DateTime timestamp, double value)
     {
         Timestamp = timestamp;
         Value = value;

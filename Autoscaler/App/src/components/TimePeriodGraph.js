@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
@@ -7,7 +8,6 @@ import dragDataPlugin from 'chartjs-plugin-dragdata';
 Chart.register(dragDataPlugin);
 
 const TimePeriodGraph = () => {
-    const [timePeriod, setTimePeriod] = useState('hour');
     const [chartData, setChartData] = useState(null); // Start with null since data is fetched
     const [isLoading, setIsLoading] = useState(true); // Track loading state
     const [dragEnabled, setDragEnabled] = useState(false); // Toggle dragging
@@ -25,16 +25,13 @@ const TimePeriodGraph = () => {
             data = [30, 35, 28, 40, 45, 50, 55, 60, 62, 65, 70, 72, 75, 78, 80, 82, 85, 87, 90, 92, 95, 98, 100, 105];
         } else if (interval === 'week') {
             labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            var response = await fetch("http://" + window.location.hostname + ":8080/forecast");
-            var json = await response.json();
-            data = Object.keys(json.item2).map((key) => json.item2[key]);
         }
 
         return {
             labels,
             datasets: [
                 {
-                    label: `Forecast for the next ${timePeriod}`,
+                    label: `No data from server, using generated data`,
                     data,
                     fill: false,
                     backgroundColor: 'rgba(75, 192, 192, 0.6)',
@@ -44,16 +41,72 @@ const TimePeriodGraph = () => {
         };
     };
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            const data = await generateData(timePeriod);
-            setChartData(data);
-            setIsLoading(false);
-        };
+    const fetchData = async () => {
+        setIsLoading(true);
 
-        fetchData();
-    }, [timePeriod]);
+        try {
+            const response = await fetch(`http://${window.location.hostname}:8080/forecast`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const json = await response.json();
+
+            if (json && Object.keys(json).length > 0) {
+                const labels = Object.keys(json);
+                const data = Object.values(json);
+                labels.sort((a, b) => new Date(a) - new Date(b));
+                setChartData({
+                    labels,
+                    datasets: [
+                        {
+                            label: `Current forecast data`,
+                            data,
+                            fill: false,
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                        },
+                    ],
+                });
+            } else {
+                const fallbackData = await generateData("hour"); // Generate fallback data
+                setChartData({
+                    labels: fallbackData.labels || [],
+                    datasets: [
+                        {
+                            label: `No data from server, using generated data`,
+                            data: fallbackData.data || [],
+                            fill: false,
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                        },
+                    ],
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            
+            const fallbackData = await generateData("hour");
+            setChartData({
+                labels: fallbackData.labels || [],
+                datasets: [
+                    {
+                        label: `Error fetching data, using generated data`,
+                        data: fallbackData.data || [],
+                        fill: false,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                    },
+                ],
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(async () => {
+        await fetchData();
+    }, []);
 
     if (isLoading) {
         return <div>Loading chart data...</div>;
@@ -92,9 +145,6 @@ const TimePeriodGraph = () => {
                             ],
                         }));
                     },
-                    magnet: {
-                        to: Math.round,
-                    },
                     onDragEnd: () => {
                         console.log('Drag ended, data saved.');
                     },
@@ -106,15 +156,33 @@ const TimePeriodGraph = () => {
         },
     };
 
-    const handleTimePeriodChange = async (period) => {
-        setTimePeriod(period);
-        const data = await generateData(period);
-        setChartData(data);
-    };
+    const handleSave = async () => {
+        console.log('Saving data:', chartData);
+        try {
+            const payload = chartData.labels.reduce((acc, label, index) => {
+                acc[label] = chartData.datasets[0].data[index];
+                return acc;
+            }, {});
+            console.log('Payload:', payload);
+            const response = await fetch(`http://${window.location.hostname}:8080/forecast`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
 
-    const handleSave = () => {
-        console.log('Current chart data:', chartData);
-        alert('Data has been saved!');
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Success:', data);
+
+            await fetchData();
+        } catch (error) {
+            console.error('Error:', error);
+        }
     };
 
     const toggleDragMode = () => {
