@@ -1,13 +1,13 @@
 ﻿using System.Reflection;
 using DbUp;
 
-namespace P7_DbUp
+namespace Autoscaler.DbUp
 {
     class Program
     {
         static int Main(string[] args)
         {
-            var connectionString = "Server=127.0.0.1;Port=3308;Database=p7-internet;Uid=root;Pwd=password;";
+            var connectionString = "Server=127.0.0.1;Port=3308;Database=INSERT-DB-HERE;Uid=root;Pwd=password;";
 
             var sqlUpgrader =
                 DeployChanges.To

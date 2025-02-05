@@ -1,6 +1,6 @@
 using System.Data;
 
-namespace P7Internet.Persistence.Connection;
+namespace Autoscaler.Persistence.Connection;
 
 public interface IDbConnectionFactory
 {

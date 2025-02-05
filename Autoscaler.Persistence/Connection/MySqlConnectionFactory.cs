@@ -1,6 +1,5 @@
 using System.Data;
 using MySql.Data.MySqlClient;
-using P7Internet.Persistence.Connection;
 
 namespace Autoscaler.Persistence.Connection;
 

@@ -2,7 +2,6 @@
 using Autoscaler.Persistence.Dapper;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
-using P7Internet.Persistence.Connection;
 
 namespace Autoscaler.Persistence.Extensions;
 
