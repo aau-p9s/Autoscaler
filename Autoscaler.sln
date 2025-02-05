@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoscaler", "Autoscaler/Autoscaler.csproj", "{3C20A336-B7FE-4BCF-A5B1-566C0AA36454}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autoscaler.DbUp", "Autoscaler.DbUp\Autoscaler.DbUp.csproj", "{4996B481-D7F9-4A25-A1A4-9218BEAF6CC3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autoscaler.Persistence", "Autoscaler.Persistence\Autoscaler.Persistence.csproj", "{046F8421-CE79-452A-AF1C-1E1A74DA12B2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +16,9 @@ Global
 		{3C20A336-B7FE-4BCF-A5B1-566C0AA36454}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C20A336-B7FE-4BCF-A5B1-566C0AA36454}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C20A336-B7FE-4BCF-A5B1-566C0AA36454}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4996B481-D7F9-4A25-A1A4-9218BEAF6CC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4996B481-D7F9-4A25-A1A4-9218BEAF6CC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{046F8421-CE79-452A-AF1C-1E1A74DA12B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{046F8421-CE79-452A-AF1C-1E1A74DA12B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 EndGlobal

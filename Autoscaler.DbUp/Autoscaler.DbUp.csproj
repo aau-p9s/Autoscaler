@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net7.0</TargetFramework>
+        <RootNamespace>P7_DbUp</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="dbup-core" Version="5.0.10" />
+        <PackageReference Include="dbup-mysql" Version="5.0.10" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Scripts\0001-UserTable.sql" />
+      <EmbeddedResource Include="Scripts\0001-UserTable.sql" />
+      <None Remove="Scripts\0002-ForecastTable.sql" />
+      <EmbeddedResource Include="Scripts\0002-ForecastTable.sql" />
+      <None Remove="Scripts\0003-HistoricTable.sql" />
+      <EmbeddedResource Include="Scripts\0003-HistoricTable.sql" />
+      <None Remove="Scripts\0004-ScaleSettingsTable.sql" />
+      <EmbeddedResource Include="Scripts\0004-ScaleSettingsTable.sql" />
+      <None Remove="Scripts\0005-ServicesTable.sql" />
+      <EmbeddedResource Include="Scripts\0005-ServicesTable.sql" />
+    </ItemGroup>
+
+    
+
+</Project>
