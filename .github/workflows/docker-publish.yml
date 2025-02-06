@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: autoscaler-frontend
+  IMAGE_NAME: aau-p9s/autoscaler
 
 jobs:
   publish:
@@ -32,10 +32,22 @@ jobs:
               docker run --rm --privileged multiarch/qemu-user-static --reset -p yes &&
               docker buildx inspect --bootstrap
 
-      - name: Build and push Docker image
+      - name: add env vars
+        run: |
+          echo "sha=$(git rev-parse --short $GITHUB_SHA)" >> "$GITHUB_ENV"
+
+      - name: Build and push Docker latest image
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: ghcr.io/aau-p9s/autoscaler-frontend:latest
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          platforms: 
+            linux/amd64
+
+      - name: Build and push Docker latest image
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.sha }}
           platforms: 
             linux/amd64
