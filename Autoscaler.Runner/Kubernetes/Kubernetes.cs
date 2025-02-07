@@ -5,6 +5,9 @@ using System.Text.Json.Nodes;
 
 namespace Autoscaler.Runner.Kubernetes;
 
+// TODO:  make an actual more complete mapping of kubernetes responses
+using KubernetesResponse = JsonObject;
+
 public class Kubernetes : IAPI {
     readonly HttpClientHandler Handler;
     readonly HttpClient Client;
@@ -52,7 +55,7 @@ public class Kubernetes : IAPI {
         return false;
     }
 
-    public async Task<JsonObject?> Get(string endpoint) {
+    public async Task<KubernetesResponse> Get(string endpoint) {
         if(!IsUp()) {
             return new();
         }
