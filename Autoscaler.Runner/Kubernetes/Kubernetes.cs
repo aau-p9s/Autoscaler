@@ -1,98 +1,86 @@
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Autoscaler.Runner.Kubernetes;
 
-class Kubernetes
-{
-    readonly HttpClientHandler handler;
-    readonly HttpClient client;
-    readonly Tuple<string, string>? authHeader;
+public class Kubernetes : IAPI {
+    readonly HttpClientHandler Handler;
+    readonly HttpClient Client;
+    readonly Tuple<string, string>? AuthHeader;
     readonly string Addr;
 
-    public Kubernetes(string addr)
-    {
+    public Kubernetes(string addr) {
         Addr = addr;
-        handler = new()
-        {
+        Handler = new() {
             ClientCertificateOptions = ClientCertificateOption.Manual,
-            // TODO: Handle actual certificate
-            ServerCertificateCustomValidationCallback = (_, _, _, _) => { return true; }
+            ServerCertificateCustomValidationCallback = (_,_,_,_) => true
         };
-        client = new(handler);
-        if (File.Exists("/var/run/secrets/kubernetes.io/serviceaccount/token"))
-        {
+        Client = new(Handler);
+        if (File.Exists("/var/run/secrets/kubernetes.io/serviceaccount/token")) {
             StreamReader stream = new("/var/run/secrets/kubernetes.io/serviceaccount/token");
-            authHeader = new("Authorization", $"Bearer {stream.ReadToEnd()}");
+            AuthHeader = new("Authorization", $"Bearer {stream.ReadToEnd()}");
+        } else {
+            AuthHeader = null;
         }
-        else
-            authHeader = null;
+        if(!IsUp()) {
+            Console.WriteLine("Kubernetes shouldn't be down");
+            Environment.Exit(1);
+        }
     }
-    //public JsonObject Recv(Uri uri) {
-    //}
 
-    public async Task<bool> Patch(string endpoint, object body)
-    {
-        try
-        {
-            var request = new HttpRequestMessage
-            {
+    public async Task<bool> Update(string endpoint, object body) {
+        if(!IsUp()) {
+            return false;
+        }
+        try {
+            var request = new HttpRequestMessage {
                 Method = HttpMethod.Patch,
                 RequestUri = new Uri(Addr + endpoint),
-                Content = new StringContent(JsonSerializer.Serialize(body),
-                    new MediaTypeHeaderValue("application/merge-patch+json"))
+                Content = new StringContent(JsonSerializer.Serialize(body), new MediaTypeHeaderValue("application/merge-patch+json"))
             };
-            if (authHeader != null)
-                request.Headers.Add(authHeader.Item1, authHeader.Item2);
-            var response = await client.SendAsync(request);
-            if (response.IsSuccessStatusCode)
-                return true;
-            else
-                return false;
+            
+            if (AuthHeader != null)
+                request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
+            var response = await Client.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        } catch (HttpRequestException e) {
+            Console.WriteLine("Kubernetes seems to be down");
+            HandleException(e);
         }
-        catch (HttpRequestException e)
-        {
-            Console.WriteLine("no api seems to be available, running offline...");
-            Console.WriteLine(e.Message);
-            if (e.InnerException != null)
-                Console.WriteLine(e.InnerException.Message);
-        }
-
-        //should not be possible to reach this point
         return false;
     }
 
-    public async Task<int> Replicas(string deployment)
-    {
-        var request = new HttpRequestMessage
-        {
+    public async Task<JsonObject?> Get(string endpoint) {
+        if(!IsUp()) {
+            return new();
+        }
+        var request = new HttpRequestMessage {
             Method = HttpMethod.Get,
-            RequestUri = new Uri(Addr + $"/apis/apps/v1/namespaces/default/deployments/{deployment}/scale"),
+            RequestUri = new Uri(Addr + endpoint)
         };
-        if (authHeader != null)
-            request.Headers.Add(authHeader.Item1, authHeader.Item2);
+        if (AuthHeader != null) {
+            request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
+        }
         HttpResponseMessage response;
-        try
-        {
-            response = await client.SendAsync(request);
+        try {
+            response = await Client.SendAsync(request);
+        } catch(HttpRequestException e) {
+            Console.WriteLine("Kubernetes seems to be down");
+            HandleException(e);
+            return null;
         }
-        catch (HttpRequestException e)
-        {
-            Console.WriteLine("kubernetes seems to be down...");
-            return 0;
-        }
+        return await response.Content.ReadFromJsonAsync<JsonObject>();
+    }
+    static void HandleException(Exception e) { // TODO: Move to an interface
+        Console.WriteLine(e.Message);
+        if (e.InnerException != null)
+            HandleException(e.InnerException);
 
-        var json = await response.Content.ReadFromJsonAsync<JsonObject>();
-        if (json == null)
-            return 0;
-        var spec = json["spec"];
-        if (spec == null)
-            return 0;
-        var replicasObj = spec["replicas"];
-        if (replicasObj == null)
-            return 0;
-        var replicas = (int)replicasObj;
-        return replicas;
+    }
+    
+    public bool IsUp() { // TODO: implement actual checking function
+        return false;
     }
 }

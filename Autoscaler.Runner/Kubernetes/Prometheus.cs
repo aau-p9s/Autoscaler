@@ -1,81 +1,78 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Web;
-using Autoscaler.Lib.Forecasts;
+using Autoscaler.Persistence.HistoricRepository;
 
 namespace Autoscaler.Runner.Kubernetes;
 
-class Prometheus
-{
-    private readonly HttpClient client;
+class Prometheus : IAPI {
     readonly string Addr;
+    private readonly HttpClient Client;
 
-    public Prometheus(string addr)
-    {
+    public Prometheus(string addr) {
         Addr = addr;
-        client = new HttpClient();
+        Client = new();
+        if(!IsUp()) {
+            Console.WriteLine("Prometheus shouldn't be down");
+            Environment.Exit(1);
+        }
     }
 
-    public async Task<IEnumerable<Historical>> QueryRange(string queryString, DateTime start, DateTime end, int period)
-    {
+    public async Task<IEnumerable<HistoricEntity>> QueryRange(string queryString, DateTime start, DateTime end, int period) {
+        if(!IsUp()) {
+            return new List<HistoricEntity>();
+        }
         var query = $"query={EncodeQuery(queryString)}&start={ToRFC3339(start)}&end={ToRFC3339(end)}&step={period/1000}s";
-        List<Historical> result_list = new();
+        var results = new List<HistoricEntity>();
         HttpResponseMessage response;
-        try
-        {
-            response = await client.GetAsync($"{Addr}/api/v1/query_range?{query}");
+        try {
+            response = await Client.GetAsync($"{Addr}/api/v1/query_range?{query}");
+        } catch (Exception e) {
+            Console.WriteLine("Prometheus seems to be down");
+            HandleException(e);
+            return new List<HistoricEntity>();
         }
-        catch
-        {
-            Console.WriteLine("prometheus seems to be down...");
-            goto end;
-        }
-
-        var json = await response.Content.ReadFromJsonAsync<JsonObject>();
-        if (json == null)
-            goto end;
-        var data = json["data"];
-        if (data == null)
-            goto end;
-        var result = data["result"];
-        if (result == null)
-            goto end;
-        foreach (var item in result.AsArray())
-        {
-            if (item == null)
-                continue;
-            var valuesObj = item["values"];
-            if (valuesObj == null)
-                continue;
-            var values = valuesObj.AsArray();
-            foreach (var value in values)
-            {
-                if (value == null)
-                    continue;
-
-                try
-                {
-                    result_list.Add(new(new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds((double)value[0]), double.Parse((string)value[1])));
-                }
-                catch (NullReferenceException e)
-                {
-                    Console.WriteLine("nullreferenceexception: " + e);
+        var jsonString = await response.Content.ReadAsStringAsync();
+        try {
+            // These warnings are useless, as the nullreference exceptions are handled in the catch block anyway
+            #pragma warning disable CS8602, CS8604, CS8600
+            var json = await response.Content.ReadFromJsonAsync<JsonObject>();
+            var result =  json["data"]["result"];
+            foreach(var item in result.AsArray()) {
+                foreach(var value in item["values"].AsArray()) {
+                    var datetime = new DateTime(1970, 1, 1, 0, 0, 0).AddSeconds((double)value[0]);
+                    var realValue = double.Parse((string)value[1]);
+                    // TODO: implement this:  results.Add(new(datetime, realValue));
                 }
             }
+            #pragma warning restore CS8602, CS8604, CS8600
+        } catch(NullReferenceException e) {
+            Console.WriteLine("Somehow there was an issue decoding json");
+            Console.WriteLine($"json content: {jsonString}");
+            HandleException(e);
         }
-
-        // todo: maybe let prometheus descide what max is if possible?
-        end:
-        return result_list;
+        return results;
     }
 
-    public string EncodeQuery(string target)
-    {
+    private static string EncodeQuery(string target) {
         return HttpUtility.UrlEncode(target);
     }
 
-    private string ToRFC3339(DateTime date)
-    {
+    private static string ToRFC3339(DateTime date) {
         return date.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fffK");
     }
+
+    static void HandleException(Exception e) { // TODO: Move to an interface
+        Console.WriteLine(e.Message);
+        if (e.InnerException != null)
+            HandleException(e.InnerException);
+
+    }
+
+    public bool IsUp() { // TODO: implement logic to check if the service is up
+        return false;
+    }
+
 }
