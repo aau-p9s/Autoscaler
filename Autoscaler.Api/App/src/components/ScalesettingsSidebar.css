@@ -1,0 +1,104 @@
+/* Sidebar container */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0; /* Sidebar is fixed on the left */
+    width: 300px;
+    height: 100%;
+    background-color: white;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 1000;
+    border-right: 1px solid #ccc;
+}
+
+/* Form styling */
+.form-group {
+    margin-bottom: 15px;
+    
+}
+
+.form-group label {
+    display: flex;
+    flex-direction: column;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.form-group input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.submit-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #28A745;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.submit-button:hover {
+    background-color: #218838;
+}
+
+/* Response and error messages */
+.response {
+    margin-top: 20px;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.response.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.response.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.response pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+/* Section for displaying current values */
+.current-values {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f1f1f1;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.current-values h4 {
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.current-values p {
+    margin: 5px 0;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.current-values strong {
+    color: #222;
+}

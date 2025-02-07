@@ -1,0 +1,24 @@
+﻿a.navbar-brand {
+  white-space: normal;
+  text-align: center;
+  word-break: break-all;
+}
+.navmenu-container {
+  margin-left: 250px; /* Sidebar width */
+  width: calc(100% - 250px); /* Subtract sidebar width from the full width */
+}
+
+/* Adjust navbar responsiveness */
+@media (max-width: 768px) {
+  .navmenu-container {
+    margin-left: 0; /* Sidebar may collapse or disappear on smaller screens */
+    width: 100%;
+  }
+}
+html {
+  font-size: 14px;
+}
+
+.box-shadow {
+  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
