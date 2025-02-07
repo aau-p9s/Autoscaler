@@ -7,4 +7,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Autoscaler.Persistence\Autoscaler.Persistence.csproj" />
+  </ItemGroup>
 </Project>
