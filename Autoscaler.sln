@@ -8,6 +8,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7558}") = "Autoscaler.Persistence", "A
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7557}") = "Autoscaler.Runner", "Autoscaler.Runner\Autoscaler.Runner.csproj", "{046F8421-CE79-452A-AF1C-1E1A74DA12B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoscaler.Tests", "Autoscaler.Tests\Autoscaler.Tests.csproj", "{24DBDE5A-20E4-47EB-9D21-84ABDA1E2EB5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +25,10 @@ Global
 		{046F8421-CE79-452A-AF1C-1E1A74DA12B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{046F8421-CE79-452A-AF1C-1E1A74DA12B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{046F8421-CE79-452A-AF1C-1E1A74DA12B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-        {046F8421-CE79-452A-AF1C-1E1A74DA12B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+								{046F8421-CE79-452A-AF1C-1E1A74DA12B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24DBDE5A-20E4-47EB-9D21-84ABDA1E2EB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24DBDE5A-20E4-47EB-9D21-84ABDA1E2EB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24DBDE5A-20E4-47EB-9D21-84ABDA1E2EB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24DBDE5A-20E4-47EB-9D21-84ABDA1E2EB5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
