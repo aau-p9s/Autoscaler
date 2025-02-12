@@ -19,7 +19,7 @@ public class ForecastController : ControllerBase
     public async Task<IActionResult> Get()
     {
         return Ok(new Dictionary<DateTime, double>(
-            Database.Prediction(DateTime.Now.AddDays(7))
+            //Database.Prediction(DateTime.Now.AddDays(7))
         ));
     }
 

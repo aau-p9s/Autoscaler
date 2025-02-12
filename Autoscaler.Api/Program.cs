@@ -1,16 +1,10 @@
-using System.Diagnostics;
-using System.Text.Json;
-using Autoscaler;
 using Autoscaler.Lib.Database;
-using Autoscaler.Scaler;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 ArgumentParser Args = new(args);
 Database database = new(Args.Get("--database"));
-Scaler scaler = new(database, Args.Get("--deployment"), int.Parse(Args.Get("--period")), Args.Get("--kube-api"),
-    Args.Get("--prometheus-addr"), Args.Get("--scaler"), Args.Get("--re-trainer"));
 
 builder.Services.AddSingleton(database);
 // Add services to the container.

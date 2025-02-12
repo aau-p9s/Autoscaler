@@ -17,14 +17,15 @@ public class SettingsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Set([FromBody] Settings settings)
     {
-        Database.SetSettings(settings);
+        //Database.SetSettings(settings);
         return Ok();
     }
 
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var settings = Database.GetSettings();
+        //var settings = Database.GetSettings();
+        var settings = new Settings(1, 50, 20, 5000);
         return Ok(settings);
     }
 }
