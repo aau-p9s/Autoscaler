@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import { Collapse, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
-import { Link } from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 import './NavMenu.css';
 
 export class NavMenu extends Component {
   static displayName = NavMenu.name;
-
+  
   constructor(props) {
     super(props);
 
@@ -29,14 +29,11 @@ export class NavMenu extends Component {
               container
               light
           >
-            <NavbarBrand tag={Link} to="/">
-              Forecast
-            </NavbarBrand>
             <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
             <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
               <ul className="navbar-nav flex-grow">
                 <NavItem>
-                  <NavLink tag={Link} className="text-dark" to="/">
+                  <NavLink tag={Link} className="text-dark" to="">
                     Home
                   </NavLink>
                 </NavItem>
