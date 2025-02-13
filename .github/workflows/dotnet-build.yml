@@ -10,13 +10,7 @@ jobs:
   build:
     strategy: 
       matrix:
-        project: [
-          "Api"
-          "DbUp"
-          "Persistence"
-          "Tests", 
-          "Runner"
-        ]
+        project: ["Api", "DbUp", "Persistence", "Tests", "Runner"]
       
     runs-on: ubuntu-latest
     steps:
