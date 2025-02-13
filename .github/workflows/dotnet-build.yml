@@ -20,4 +20,4 @@ jobs:
       #- name: Restore Cache
       #  run: dotnet restore --locked-mode
       - name: Build Application
-        run: dotnet build Autoscaler -c Release
+        run: dotnet build Autoscaler.Api -c Release
