@@ -7,11 +7,9 @@ namespace Autoscaler.Controllers;
 [Route("settings")]
 public class SettingsController : ControllerBase
 {
-    readonly Database Database;
 
-    public SettingsController(Database database)
+    public SettingsController()
     {
-        Database = database;
     }
 
     [HttpPost]

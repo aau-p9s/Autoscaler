@@ -4,9 +4,7 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 ArgumentParser Args = new(args);
-Database database = new(Args.Get("--database"));
 
-builder.Services.AddSingleton(database);
 // Add services to the container.
 builder.Services.AddControllers();
 // Add Swagger services
