@@ -1,4 +1,3 @@
-using Autoscaler.Lib.Database;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Autoscaler.Controllers;

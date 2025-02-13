@@ -1,4 +1,3 @@
-using Autoscaler.Lib.Database;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
