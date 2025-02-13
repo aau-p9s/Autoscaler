@@ -1,5 +1,4 @@
-﻿using Autoscaler.Lib.Database;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace Autoscaler.Controllers;
 
@@ -8,27 +7,23 @@ namespace Autoscaler.Controllers;
 public class ForecastController : ControllerBase
 {
     private readonly ILogger<ForecastController> _logger;
-    readonly Database Database;
 
-    public ForecastController(Database database)
+    public ForecastController()
     {
-        Database = database;
     }
 
     [HttpGet]
     public async Task<IActionResult> Get()
     {
         return Ok(new Dictionary<DateTime, double>(
-            Database.Prediction(DateTime.Now.AddDays(7))
+            //Database.Prediction(DateTime.Now.AddDays(7))
         ));
     }
 
     [HttpPost]
     public async Task<IActionResult> ManualChange([FromBody] Dictionary<DateTime, double> data)
     {
-        Database.ManualChange(data);
         return Ok(new Dictionary<DateTime, double>(
-            Database.Prediction(DateTime.Now.AddDays(-7))
         ));
     }
 }

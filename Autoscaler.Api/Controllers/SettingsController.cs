@@ -1,4 +1,3 @@
-using Autoscaler.Lib.Database;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Autoscaler.Controllers;
@@ -7,24 +6,23 @@ namespace Autoscaler.Controllers;
 [Route("settings")]
 public class SettingsController : ControllerBase
 {
-    readonly Database Database;
 
-    public SettingsController(Database database)
+    public SettingsController()
     {
-        Database = database;
     }
 
     [HttpPost]
     public async Task<IActionResult> Set([FromBody] Settings settings)
     {
-        Database.SetSettings(settings);
+        //Database.SetSettings(settings);
         return Ok();
     }
 
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var settings = Database.GetSettings();
+        //var settings = Database.GetSettings();
+        var settings = new Settings(1, 50, 20, 5000);
         return Ok(settings);
     }
 }

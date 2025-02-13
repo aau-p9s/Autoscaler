@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoscaler", "Autoscaler/Autoscaler.csproj", "{3C20A336-B7FE-4BCF-A5B1-566C0AA36454}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoscaler.Api", "Autoscaler.Api\Autoscaler.Api.csproj", "{3C20A336-B7FE-4BCF-A5B1-566C0AA36454}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autoscaler.DbUp", "Autoscaler.DbUp\Autoscaler.DbUp.csproj", "{4996B481-D7F9-4A25-A1A4-9218BEAF6CC3}"
 EndProject
