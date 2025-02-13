@@ -7,12 +7,12 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-ArgumentParser Args = new(args);
-Database database = new(Args.Get("--database"));
-Scaler scaler = new(database, Args.Get("--deployment"), int.Parse(Args.Get("--period")), Args.Get("--kube-api"),
+//ArgumentParser Args = new(args);
+//Database database = new(Args.Get("--database"));
+/*Scaler scaler = new(database, Args.Get("--deployment"), int.Parse(Args.Get("--period")), Args.Get("--kube-api"),
     Args.Get("--prometheus-addr"), Args.Get("--scaler"), Args.Get("--re-trainer"));
-
-builder.Services.AddSingleton(database);
+*/
+//builder.Services.AddSingleton(database);
 // Add services to the container.
 builder.Services.AddControllers();
 // Add Swagger services
@@ -40,9 +40,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
-}
-else
-{
     // Enable Swagger in development environment
     app.UseSwagger();
     app.UseSwaggerUI(options =>
@@ -51,7 +48,6 @@ else
         options.RoutePrefix = string.Empty; // Makes Swagger UI available at the root ("/")
     });
 }
-
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors();
