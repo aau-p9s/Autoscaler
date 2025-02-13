@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
@@ -8,9 +7,9 @@ import dragDataPlugin from 'chartjs-plugin-dragdata';
 Chart.register(dragDataPlugin);
 
 const TimePeriodGraph = () => {
-    const [chartData, setChartData] = useState(null); // Start with null since data is fetched
-    const [isLoading, setIsLoading] = useState(true); // Track loading state
-    const [dragEnabled, setDragEnabled] = useState(false); // Toggle dragging
+    const [chartData, setChartData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [dragEnabled, setDragEnabled] = useState(false);
     const chartRef = useRef(null);
 
     const generateData = async (interval) => {
@@ -31,7 +30,7 @@ const TimePeriodGraph = () => {
             labels,
             datasets: [
                 {
-                    label: `No data from server, using generated data`,
+                    label: 'No data from server, using generated data',
                     data,
                     fill: false,
                     backgroundColor: 'rgba(75, 192, 192, 0.6)',
@@ -60,7 +59,7 @@ const TimePeriodGraph = () => {
                     labels,
                     datasets: [
                         {
-                            label: `Current forecast data`,
+                            label: 'Current forecast data',
                             data,
                             fill: false,
                             backgroundColor: 'rgba(75, 192, 192, 0.6)',
@@ -69,43 +68,20 @@ const TimePeriodGraph = () => {
                     ],
                 });
             } else {
-                const fallbackData = await generateData("hour"); // Generate fallback data
-                setChartData({
-                    labels: fallbackData.labels || [],
-                    datasets: [
-                        {
-                            label: `No data from server, using generated data`,
-                            data: fallbackData.data || [],
-                            fill: false,
-                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                        },
-                    ],
-                });
+                const fallbackData = await generateData("hour");
+                setChartData(fallbackData);
             }
         } catch (error) {
             console.error("Error fetching data:", error);
-            
             const fallbackData = await generateData("hour");
-            setChartData({
-                labels: fallbackData.labels || [],
-                datasets: [
-                    {
-                        label: `Error fetching data, using generated data`,
-                        data: fallbackData.data || [],
-                        fill: false,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                    },
-                ],
-            });
+            setChartData(fallbackData);
         } finally {
             setIsLoading(false);
         }
     };
 
-    useEffect(async () => {
-        await fetchData();
+    useEffect(() => {
+        fetchData();
     }, []);
 
     if (isLoading) {
@@ -157,13 +133,12 @@ const TimePeriodGraph = () => {
     };
 
     const handleSave = async () => {
-        console.log('Saving data:', chartData);
         try {
             const payload = chartData.labels.reduce((acc, label, index) => {
                 acc[label] = chartData.datasets[0].data[index];
                 return acc;
             }, {});
-            console.log('Payload:', payload);
+
             const response = await fetch(`http://${window.location.hostname}:8080/forecast`, {
                 method: 'POST',
                 headers: {
@@ -176,32 +151,23 @@ const TimePeriodGraph = () => {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
-            const data = await response.json();
-            console.log('Success:', data);
-
             await fetchData();
         } catch (error) {
             console.error('Error:', error);
         }
     };
 
-    const toggleDragMode = () => {
-        setDragEnabled((prev) => !prev);
-    };
-
     return (
         <div style={{ width: '80%', height: '800px', margin: '0 auto' }}>
             <Line ref={chartRef} data={chartData} options={options} />
-            <div
-                style={{
-                    marginBottom: '20px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                }}
-            >
+            <div style={{
+                marginBottom: '20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+            }}>
                 <div>
-                    <button onClick={toggleDragMode} style={buttonStyle}>
+                    <button onClick={() => setDragEnabled(!dragEnabled)} style={buttonStyle}>
                         {dragEnabled ? 'Disable Modify' : 'Modify'}
                     </button>
                     <button onClick={handleSave} style={buttonStyle}>

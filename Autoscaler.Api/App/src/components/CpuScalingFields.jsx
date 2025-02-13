@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import './ScalesettingsSidebar.css';
 
-const ScaleSettingsSidebar = () => {
+const CpuScalingFields = () => {
     const [currentValues, setCurrentValues] = useState(null);
     const [scaleUpPercentage, setScaleUpPercentage] = useState('');
     const [scaleDownPercentage, setScaleDownPercentage] = useState('');
     const [interval, setInterval] = useState('');
-    const [id, setId] = useState('')
+    const [id, setId] = useState('');
     const [response, setResponse] = useState(null);
     const [error, setError] = useState(null);
 
-    // Fetch current values from API when component mounts
-
     const fetchCurrentValues = async () => {
         try {
-            const res = await fetch("http://" + window.location.hostname + ":8080/settings");
+            const res = await fetch(`http://${window.location.hostname}:8080/settings`);
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
@@ -28,6 +26,7 @@ const ScaleSettingsSidebar = () => {
             setError('Failed to fetch current values');
         }
     };
+
     useEffect(() => {
         fetchCurrentValues();
     }, []);
@@ -36,14 +35,14 @@ const ScaleSettingsSidebar = () => {
         e.preventDefault();
 
         const payload = {
-            id: id,
+            id,
             scaleUp: parseFloat(scaleUpPercentage),
             scaleDown: parseFloat(scaleDownPercentage),
             scalePeriod: parseInt(interval, 10),
         };
 
         try {
-            const res = await fetch("http://" + window.location.hostname + ":8080/settings", {
+            const res = await fetch(`http://${window.location.hostname}:8080/settings`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -67,7 +66,6 @@ const ScaleSettingsSidebar = () => {
         <div className="sidebar">
             <h3>Scale Settings</h3>
 
-            {/* Display Current Values */}
             <div className="current-values">
                 <h4>Current Values</h4>
                 {currentValues ? (
@@ -81,7 +79,6 @@ const ScaleSettingsSidebar = () => {
                 )}
             </div>
 
-            {/* Form to update values */}
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
                     <label>
@@ -150,4 +147,4 @@ const buttonStyle = {
     transition: 'all 0.3s ease',
 };
 
-export default ScaleSettingsSidebar;
+export default CpuScalingFields;
