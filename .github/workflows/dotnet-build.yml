@@ -8,6 +8,16 @@ on:
 
 jobs:
   build:
+    strategy: 
+      matrix:
+        project: [
+          "Api"
+          "DbUp"
+          "Persistence"
+          "Tests"
+          "Runner"
+        ]
+      
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -20,4 +30,4 @@ jobs:
       #- name: Restore Cache
       #  run: dotnet restore --locked-mode
       - name: Build Application
-        run: dotnet build Autoscaler.Api -c Release
+        run: dotnet build Autoscaler.${{ matrix.project }} -c Release
