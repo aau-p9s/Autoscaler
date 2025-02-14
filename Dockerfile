@@ -20,7 +20,7 @@ RUN dotnet publish -c Release -o out
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /App
 
-# Install Node.js and Python
+# Install Node.js
 RUN apt-get update && apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
@@ -28,5 +28,7 @@ RUN apt-get update && apt-get install -y curl && \
 
 # Copy application files
 COPY --from=build-env /App/out .
+
+EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "Autoscaler.Api.dll"]
