@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
-import { Layout } from "./components/Layout";
+import Layout  from "./components/Layout";
 import ServicePage from "./service/[id]/service";
 
 const services = [
