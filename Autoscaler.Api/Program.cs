@@ -42,6 +42,8 @@ else
         options.RoutePrefix = string.Empty; // Makes Swagger UI available at the root ("/")
     });
 }
+app.MapFallbackToFile("index.html");
+
 
 app.UseStaticFiles();
 app.UseRouting();
