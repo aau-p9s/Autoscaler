@@ -25,3 +25,5 @@ jobs:
       #  run: dotnet restore --locked-mode
       - name: Build Application
         run: dotnet build Autoscaler.${{ matrix.project }} -c Release
+      - name: Test Application
+        run: dotnet test Autoscaler.Test -c Release
