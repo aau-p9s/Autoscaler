@@ -5,6 +5,6 @@ namespace Autoscaler.Persistence.ScaleSettingsRepository;
 
 public interface IScaleSettingsRepository
 {
-    Task<ScaleSettingsEntity> GetSettingsForServiceAsync(Guid serviceId);
-    Task<bool> UpsertSettingsAsync(ScaleSettingsEntity settings);
+    public Task<ScaleSettingsEntity> GetSettingsForServiceAsync(Guid serviceId);
+    public Task<bool> UpsertSettingsAsync(ScaleSettingsEntity settings);
 }

@@ -5,7 +5,7 @@ namespace Autoscaler.Persistence.ServicesRepository;
 
 public interface IServicesRepository
 {
-    Task<ServiceEntity> GetServiceAsync(Guid serviceId);
-    Task<Guid> GetServiceIdByNameAsync(string serviceName);
-    Task<bool> UpsertServiceAsync(ServiceEntity service);
+    public Task<ServiceEntity> GetServiceAsync(Guid serviceId);
+    public Task<Guid> GetServiceIdByNameAsync(string serviceName);
+    public Task<bool> UpsertServiceAsync(ServiceEntity service);
 }
