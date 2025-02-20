@@ -2,6 +2,6 @@ START TRANSACTION;
 
 CREATE TABLE IF NOT EXISTS Services(
     Id varchar(40) NOT NULL PRIMARY KEY,
-    Name varchar(255),
-)
+    Name varchar(255) NOT NULL
+);
 COMMIT;
