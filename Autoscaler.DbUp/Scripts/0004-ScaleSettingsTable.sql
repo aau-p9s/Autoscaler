@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS Settings(
     ScaleUp integer NOT NULL,
     ScaleDown integer NOT NULL,
     ScalePeriod integer NOT NULL
-)
+);
 COMMIT;

@@ -6,13 +6,12 @@ namespace Autoscaler.Controllers;
 [Route("settings")]
 public class SettingsController : ControllerBase
 {
-
     public SettingsController()
     {
     }
 
     [HttpPost]
-    public async Task<IActionResult> Set([FromBody] Settings settings)
+    public async Task<IActionResult> Set()
     {
         //Database.SetSettings(settings);
         return Ok();
@@ -22,7 +21,7 @@ public class SettingsController : ControllerBase
     public async Task<IActionResult> Get()
     {
         //var settings = Database.GetSettings();
-        var settings = new Settings(1, 50, 20, 5000);
-        return Ok(settings);
+        //var settings = new Settings(1, 50, 20, 5000);
+        return Ok();
     }
 }

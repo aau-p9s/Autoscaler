@@ -1,9 +1,22 @@
 using Microsoft.OpenApi.Models;
+using Autoscaler.Persistence.Extensions;
+using Autoscaler.Persistence.ScaleSettingsRepository;
+using Autoscaler.Runner;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 ArgumentParser Args = new(args);
-
+builder.Services.ConfigurePersistenceMySqlConnection(builder.Configuration.GetConnectionString("MySqlConnection"));
+builder.Services.AddSingleton<Runner>(provider => 
+    new Runner(
+        "something", // Deployment name
+        "http://forecaster", 
+        "http://kubernetes", 
+        "http://prometheus",
+        provider.GetRequiredService<IScaleSettingsRepository>()
+    )
+);//Get connectionstring from appsettings.json
 // Add services to the container.
 builder.Services.AddControllers();
 // Add Swagger services
@@ -42,6 +55,7 @@ else
         options.RoutePrefix = string.Empty; // Makes Swagger UI available at the root ("/")
     });
 }
+
 app.MapFallbackToFile("index.html");
 
 
