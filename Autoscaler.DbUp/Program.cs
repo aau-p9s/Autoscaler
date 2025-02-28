@@ -7,7 +7,7 @@ namespace Autoscaler.DbUp
     {
         static int Main(string[] args)
         {
-            var connectionString = "Server=127.0.0.1;Port=3308;Database=INSERT-DB-HERE;Uid=root;Pwd=password;";
+            var connectionString = "Server=127.0.0.1;Port=3308;Database=autoscaler;Uid=root;Pwd=password;";
 
             var sqlUpgrader =
                 DeployChanges.To

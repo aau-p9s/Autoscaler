@@ -17,7 +17,7 @@ public class ServicesRepository : IServicesRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<ServiceEntity> GetServiceAsync(Guid serviceId)
+    public async Task<ServiceEntity> GetServiceByIdAsync(Guid serviceId)
     {
         var service =
             await Connection.QueryFirstOrDefaultAsync<ServiceEntity>($"SELECT * FROM {TableName} WHERE Id = @Id",

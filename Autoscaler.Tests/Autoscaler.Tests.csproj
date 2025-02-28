@@ -15,10 +15,18 @@
         <PackageReference Include="NUnit" Version="3.14.0"/>
         <PackageReference Include="NUnit.Analyzers" Version="3.9.0"/>
         <PackageReference Include="NUnit3TestAdapter" Version="4.5.0"/>
+        <PackageReference Include="Moq" Version="4.20.69" />
+        <PackageReference Include="System.IO.Abstractions" Version="19.2.87" />
+        <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="19.2.87" />
+        <PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" Version="19.2.87" />
     </ItemGroup>
 
     <ItemGroup>
         <Using Include="NUnit.Framework"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Autoscaler.Persistence\Autoscaler.Persistence.csproj" />
     </ItemGroup>
 
 </Project>

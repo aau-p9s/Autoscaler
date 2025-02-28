@@ -1,6 +1,7 @@
 using Microsoft.OpenApi.Models;
 using Autoscaler.Persistence.Extensions;
 using Autoscaler.Persistence.ScaleSettingsRepository;
+using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner;
 
 
@@ -14,7 +15,7 @@ builder.Services.AddSingleton<Runner>(provider =>
         "http://forecaster", 
         "http://kubernetes", 
         "http://prometheus",
-        provider.GetRequiredService<IScaleSettingsRepository>()
+        provider.GetRequiredService<ISettingsRepository>()
     )
 );//Get connectionstring from appsettings.json
 // Add services to the container.
