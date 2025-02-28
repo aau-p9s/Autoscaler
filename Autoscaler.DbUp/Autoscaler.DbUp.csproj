@@ -24,9 +24,12 @@
       <None Remove="Scripts\0003-HistoricTable.sql" />
       <EmbeddedResource Include="Scripts\0003-HistoricTable.sql" />
       <None Remove="Scripts\0004-ScaleSettingsTable.sql" />
-      <EmbeddedResource Include="Scripts\0004-ScaleSettingsTable.sql" />
       <None Remove="Scripts\0005-ServicesTable.sql" />
       <EmbeddedResource Include="Scripts\0005-ServicesTable.sql" />
+      <None Remove="Scripts\0006-SeedData.sql" />
+      <EmbeddedResource Include="Scripts\0006-SeedData.sql" />
+      <None Remove="Scripts\0004-SettingsTable.sql" />
+      <EmbeddedResource Include="Scripts\0004-SettingsTable.sql" />
     </ItemGroup>
 
     

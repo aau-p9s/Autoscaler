@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Autoscaler.Persistence.ScaleSettingsRepository;
+using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner.Kubernetes;
 
 namespace Autoscaler.Runner;
@@ -11,20 +12,20 @@ namespace Autoscaler.Runner;
 public class Runner
 {
     private readonly string _deployment;
-    private readonly IScaleSettingsRepository _scaleSettingsRepository;
+    private readonly ISettingsRepository _settingsRepository;
 
     private readonly Forecaster _forecaster;
     private readonly Prometheus _prometheus;
     private readonly Kubernetes.Kubernetes _kubernetes;
 
     public Runner(string deployment, string forecasterAddress, string kubernetesAddress, string prometheusAddress,
-        IScaleSettingsRepository scaleSettingsRepository)
+        ISettingsRepository settingsRepository)
     {
         this._deployment = deployment;
         _forecaster = new(forecasterAddress);
         _kubernetes = new(kubernetesAddress);
         _prometheus = new(prometheusAddress);
-        _scaleSettingsRepository = scaleSettingsRepository;
+        _settingsRepository = settingsRepository;
         Console.WriteLine("Created runner");
     }
 

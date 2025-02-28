@@ -5,6 +5,7 @@ using Autoscaler.Persistence.HistoricRepository;
 using Autoscaler.Persistence.ModelRepository;
 using Autoscaler.Persistence.ScaleSettingsRepository;
 using Autoscaler.Persistence.ServicesRepository;
+using Autoscaler.Persistence.SettingsRepository;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,7 +20,7 @@ public static class ServiceCollectionExtension
 
         // Add repositories
         services.AddScoped<IModelRepository, ModelRepository.ModelRepository>();
-        services.AddScoped<IScaleSettingsRepository, ScaleSettingsRepository.ScaleSettingsRepository>();
+        services.AddScoped<ISettingsRepository, ScaleSettingsRepository.SettingsRepository>();
         services.AddScoped<IForecastRepository, ForecastRepository.ForecastRepository>();
         services.AddScoped<IHistoricRepository, HistoricRepository.HistoricRepository>();
         services.AddScoped<IServicesRepository, ServicesRepository.ServicesRepository>();
