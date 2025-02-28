@@ -6,7 +6,7 @@ import dragDataPlugin from 'chartjs-plugin-dragdata';
 
 Chart.register(dragDataPlugin);
 
-const TimePeriodGraph = () => {
+const TimePeriodGraph = (id) => {
     const [chartData, setChartData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [dragEnabled, setDragEnabled] = useState(false);

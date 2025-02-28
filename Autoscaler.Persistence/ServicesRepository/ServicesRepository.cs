@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using Autoscaler.Persistence.Connection;
@@ -17,6 +18,12 @@ public class ServicesRepository : IServicesRepository
         _connectionFactory = connectionFactory;
     }
 
+    public async Task<List<ServiceEntity>> GetAllServicesAsync()
+    {
+        var services = await Connection.QueryAsync<ServiceEntity>($"SELECT * FROM {TableName}");
+        return services.AsList();
+    }
+    
     public async Task<ServiceEntity> GetServiceByIdAsync(Guid serviceId)
     {
         var service =

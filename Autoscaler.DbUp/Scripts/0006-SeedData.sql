@@ -1,13 +1,14 @@
 START TRANSACTION;
 
 -- Insert sample data into Services table
-INSERT INTO autoscaler.Services (Id, Name)
-VALUES ('1a2b3c4d-1111-2222-3333-444455556666', 'Image Recognition'),
-       ('2b3c4d5e-1111-2222-3333-444455556666', 'Speech-to-Text'),
-       ('3c4d5e6f-1111-2222-3333-444455556666', 'Recommendation System');
+INSERT INTO autoscaler.Services (Id, Name, AutoscalingEnabled)
+VALUES ('1a2b3c4d-1111-2222-3333-444455556666', 'Image Recognition', true),
+       ('2b3c4d5e-1111-2222-3333-444455556666', 'Speech-to-Text', true),
+       ('3c4d5e6f-1111-2222-3333-444455556666', 'Recommendation System', true);
 
 -- Insert sample data into Settings table
-INSERT INTO autoscaler.Settings (Id, ServiceId, ScaleUp, ScaleDown, ScalePeriod, TrainInterval, ModelHyperParams, OptunaConfig)
+INSERT INTO autoscaler.Settings (Id, ServiceId, ScaleUp, ScaleDown, ScalePeriod, TrainInterval, ModelHyperParams,
+                                 OptunaConfig)
 VALUES ('a1b2c3d4-aaaa-bbbb-cccc-ddddeeeeffff', '1a2b3c4d-1111-2222-3333-444455556666', 5, 2, 10, 30,
         '{"learning_rate": 0.01, "batch_size": 32, "epochs": 50}',
         '{"n_trials": 100, "direction": "maximize"}'),

@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import './ScalesettingsSidebar.css';
+import {useParams} from "react-router-dom";
 
-const CpuScalingFields = () => {
+const CpuScalingFields = (id) => {
     const [currentValues, setCurrentValues] = useState(null);
     const [scaleUpPercentage, setScaleUpPercentage] = useState('');
     const [scaleDownPercentage, setScaleDownPercentage] = useState('');
     const [interval, setInterval] = useState('');
-    const [id, setId] = useState('');
     const [response, setResponse] = useState(null);
     const [error, setError] = useState(null);
-
     const fetchCurrentValues = async () => {
         try {
-            const res = await fetch(`http://${window.location.hostname}:8080/settings`);
+            const res = await fetch(`http://${window.location.hostname}:8080/services/${id.id}/settings`, {method: 'GET'});
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
@@ -20,7 +19,6 @@ const CpuScalingFields = () => {
             setCurrentValues(data);
             setScaleUpPercentage(data.scaleUp || '');
             setScaleDownPercentage(data.scaleDown || '');
-            setId(data.id);
             setInterval(data.scalePeriod || '');
         } catch (err) {
             setError('Failed to fetch current values');

@@ -12,15 +12,25 @@ public class SettingsEntity
     public int ScalePeriod { get; set; }
     public int TrainInterval { get; set; }
     //Change the type of Hyperparameters and OptunaConfig to custom objects when we know what they have in them
-    public JsonObject Hyperparameters { get; set; }
-    public JsonObject OptunaConfig { get; set; }
+    public string Hyperparameters { get; set; }
+    public string OptunaConfig { get; set; }
+
+    public JsonObject GetOptunaConfig()
+    {
+        return OptunaConfig != null ? JsonNode.Parse(OptunaConfig)?.AsObject() : null;
+    }
+
+    public JsonObject GetHyperparameters()
+    {
+        return Hyperparameters != null ? JsonNode.Parse(Hyperparameters)?.AsObject() : null;
+    }
 
     //Empty constructor for Dapper
     public SettingsEntity()
     {
     }
 
-    public SettingsEntity(Guid id, Guid serviceId, int scaleUp, int scaleDown, int scalePeriod, int trainInterval, JsonObject hyperparameters, JsonObject optunaConfig)
+    public SettingsEntity(Guid id, Guid serviceId, int scaleUp, int scaleDown, int scalePeriod, int trainInterval, string hyperparameters, string optunaConfig)
     {
         Id = id;
         ServiceId = serviceId;

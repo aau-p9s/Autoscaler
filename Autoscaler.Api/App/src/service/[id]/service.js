@@ -2,29 +2,20 @@ import React from 'react';
 import TimePeriodGraph from "../../components/TimePeriodGraph";
 import { useParams } from "react-router-dom";
 import CpuScalingFields from "../../components/CpuScalingFields";
-
-const services = [
-    { id: 1, name: "Service A" },
-    { id: 2, name: "Service B" },
-    { id: 3, name: "Service C" },
-    { id: 4, name: "Service D" }
-];
-
 const ServicePage = () => {
-    const { id } = useParams();
-    const service = services.find(s => s.id === Number(id));
+    const params = useParams();
 
     return (
         <div className="container">
             <div className="row">
                 <div className="col-md-3">
-                    <CpuScalingFields />
+                    <CpuScalingFields id={params.id} />
                 </div>
                 <div className="col-md-9">
                     <h1 className="mt-3 mb-4">
-                        Managing {service?.name || "Service"}
+                        Managing {"Service"}
                     </h1>
-                    <TimePeriodGraph />
+                    <TimePeriodGraph id={params.id} />
                 </div>
             </div>
         </div>
