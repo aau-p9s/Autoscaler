@@ -7,7 +7,7 @@ using Autoscaler.Runner;
 var builder = WebApplication.CreateBuilder(args);
 
 ArgumentParser Args = new(args);
-builder.Services.ConfigurePersistencePostGreSqlConnection(builder.Configuration.GetConnectionString("MySqlDatabase"));
+builder.Services.ConfigurePersistencePostGreSqlConnection(builder.Configuration.GetConnectionString("db"));
 builder.Services.AddSingleton<Runner>(provider => 
     new Runner(
         "something", // Deployment name
