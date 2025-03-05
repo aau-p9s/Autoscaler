@@ -4,11 +4,10 @@ using Autoscaler.Persistence.ScaleSettingsRepository;
 using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 ArgumentParser Args = new(args);
-builder.Services.ConfigurePersistenceMySqlConnection(builder.Configuration.GetConnectionString("MySqlConnection"));
+builder.Services.ConfigurePersistencePostGreSqlConnection(builder.Configuration.GetConnectionString("MySqlConnection"));
 builder.Services.AddSingleton<Runner>(provider => 
     new Runner(
         "something", // Deployment name
