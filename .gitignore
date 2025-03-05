@@ -20,3 +20,5 @@ model
 .idea
 __pycache__
 Autoscaler.sln.DotSettings.user
+appsettings.Development.json
+appsettings.json
