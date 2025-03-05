@@ -5,9 +5,19 @@ services:
         image: postgres
         restart: always
         shm_size: 128mb
+        hostname: db
         environment:
             POSTGRES_PASSWORD: password
             POSTGRES_USER: root
             POSTGRES_DB: autoscaler
         ports:
             - "5432:5432"
+    autoscaler:
+        image: ghcr.io/aau-p9s/autoscaler
+        restart: always
+        environment:
+            AUTOSCALER_PGSQL_ADDR: db
+            
+        
+        ports:
+            - "8080:8080"
