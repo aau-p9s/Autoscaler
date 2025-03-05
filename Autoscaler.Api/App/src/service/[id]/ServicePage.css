@@ -1,6 +1,5 @@
 /* Sidebar container */
 .sidebar {
-    position: fixed;
     top: 0;
     left: 0; /* Sidebar is fixed on the left */
     width: 300px;
@@ -12,10 +11,21 @@
     border-right: 1px solid #ccc;
 }
 
+.sidebar-right {
+    top: 0;
+    left: 0; /* Sidebar is fixed on the left */
+    width: 300px;
+    height: 100%;
+    background-color: white;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 1000;
+    border-left: 1px solid #ccc;
+}
+
 /* Form styling */
 .form-group {
     margin-bottom: 15px;
-    
 }
 
 .form-group label {
@@ -34,7 +44,7 @@
 .submit-button {
     width: 100%;
     padding: 10px;
-    background-color: #28A745;
+    background-color: #0d6efd;
     color: #fff;
     border: none;
     border-radius: 5px;
@@ -43,7 +53,7 @@
 }
 
 .submit-button:hover {
-    background-color: #218838;
+    background-color: #0a58ca;
 }
 
 /* Response and error messages */
@@ -67,13 +77,15 @@
     white-space: pre-wrap;
     word-wrap: break-word;
 }
+
+/* Remove spin buttons for number inputs */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-/* Firefox */
+/* Firefox number input styling */
 input[type=number] {
     -moz-appearance: textfield;
 }
