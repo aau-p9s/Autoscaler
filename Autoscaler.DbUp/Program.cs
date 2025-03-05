@@ -1,24 +1,18 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using DbUp;
 
-namespace Autoscaler.DbUp
-{
-    class Program
-    {
-        static int Main(string[] args)
-        {
-            var connectionString = "Server=127.0.0.1;Port=5432;Database=autoscaler;Uid=root;Pwd=password;";
+var addr = Environment.GetEnvironmentVariable("AUTOSCALER_PGSQL_ADDR");
+var port = Environment.GetEnvironmentVariable("AUTOSCALER_PGSQL_PORT");
+var database = Environment.GetEnvironmentVariable("AUTOSCALER_PGSQL_DATABASE");
+var user = Environment.GetEnvironmentVariable("AUTOSCALER_PGSQL_USER");
+var password = Environment.GetEnvironmentVariable("AUTOSCALER_PGSQL_PASSWORD"); // TODO: fix
 
-            var sqlUpgrader =
-                DeployChanges.To
-                    .PostgresqlDatabase(connectionString)
-                    .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
-                    .LogToConsole()
-                    .Build();
+var sqlUpgrader =
+    DeployChanges.To
+        .PostgresqlDatabase($"Server={addr};Port={port};Database={database};Uid={user};Pwd={password}")
+        .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
+        .LogToConsole()
+        .Build();
 
-            sqlUpgrader.PerformUpgrade();
-
-            return 0;
-        }
-    }
-}
+sqlUpgrader.PerformUpgrade();
