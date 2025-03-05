@@ -1,5 +1,4 @@
 ﻿using Autoscaler.Persistence.Connection;
-using Autoscaler.Persistence.Dapper;
 using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.HistoricRepository;
 using Autoscaler.Persistence.ModelRepository;
@@ -24,9 +23,6 @@ public static class ServiceCollectionExtension
         services.AddScoped<IForecastRepository, ForecastRepository.ForecastRepository>();
         services.AddScoped<IHistoricRepository, HistoricRepository.HistoricRepository>();
         services.AddScoped<IServicesRepository, ServicesRepository.ServicesRepository>();
-
-        // Dapper
-        SqlMapper.AddTypeHandler(new GuidTypeHandler());
 
         return services;
     }

@@ -2,7 +2,7 @@ START TRANSACTION;
 
 CREATE TABLE IF NOT EXISTS Services
 (
-    Id                 varchar(40)  NOT NULL PRIMARY KEY,
+    Id                 UUID  NOT NULL PRIMARY KEY,
     Name               varchar(255) NOT NULL,
     AutoscalingEnabled boolean      NOT NULL
 );

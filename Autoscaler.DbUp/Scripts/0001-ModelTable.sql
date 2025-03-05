@@ -2,9 +2,9 @@ START TRANSACTION;
 
 CREATE TABLE IF NOT EXISTS Models
 (
-    Id        varchar(40) NOT NULL PRIMARY KEY,
+    Id        UUID NOT NULL PRIMARY KEY,
     Name      varchar(40) NOT NULL,
-    ServiceId varchar(40) NOT NULL,
+    ServiceId UUID NOT NULL,
     Bin       bytea      NOT NULL,
     TrainedAt timestamp   NOT NULL
 );
