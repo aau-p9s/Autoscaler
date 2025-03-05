@@ -23,6 +23,13 @@ public class PublicController : ControllerBase
         var services = await _servicesRepository.GetAllServicesAsync();
         return Ok(services);
     }
+    
+    [HttpGet("{serviceId}")]
+    public async Task<IActionResult> GetServiceById([FromRoute] Guid serviceId)
+    {
+        var service = await _servicesRepository.GetServiceByIdAsync(serviceId);
+        return Ok(service);
+    }
 
     [HttpGet ("{serviceId}/settings")]
     public async Task<IActionResult> GetSettingsForServiceById([FromRoute] Guid serviceId)
