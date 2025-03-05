@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
-import { Line } from 'react-chartjs-2';
+import React, {useState, useEffect, useRef} from 'react';
+import {Link, useParams} from 'react-router-dom';
+import {Line} from 'react-chartjs-2';
 import 'chart.js/auto';
 import Chart from 'chart.js/auto';
 import dragDataPlugin from 'chartjs-plugin-dragdata';
 import './ServicePage.css';
+import {Navbar, NavbarBrand} from "reactstrap";
+
 Chart.register(dragDataPlugin);
 
 const ServicePage = (name) => {
     const params = useParams();
-    
+
     const [serviceName, setServiceName] = useState([]);
 
     // CPU Scaling State
@@ -34,7 +36,7 @@ const ServicePage = (name) => {
     // Fetch Current Scale Values
     const fetchCurrentScaleValues = async () => {
         try {
-            const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/settings`, { method: 'GET' });
+            const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/settings`, {method: 'GET'});
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
@@ -123,10 +125,10 @@ const ServicePage = (name) => {
             setIsLoading(false);
         }
     };
-    
+
     const fetchServiceInformation = async () => {
         try {
-            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}`, { method: 'GET' });
+            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}`, {method: 'GET'});
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
@@ -139,7 +141,7 @@ const ServicePage = (name) => {
 
     // Generate Fallback Graph Data
     const generateFallbackData = async (interval) => {
-        let labels = Array.from({ length: 12 }, (_, i) => `${i * 5} min`);
+        let labels = Array.from({length: 12}, (_, i) => `${i * 5} min`);
         let data = [45, 50, 55, 60, 58, 63, 70, 68, 75, 80, 85, 90];
 
         return {
@@ -256,6 +258,13 @@ const ServicePage = (name) => {
 
     return (
         <div className="min-h-screen w-full">
+            <div className="nav-bar">
+                <Link to="/" className="secondary-button">
+                    Go to Overview
+                </Link>
+                
+            </div>
+
             <div style={{height: "100vh", width: "100vw"}} className="row">
                 {/* Left Sidebar - CPU Scaling */}
                 <div className="col-md-2 sidebar">
@@ -321,8 +330,8 @@ const ServicePage = (name) => {
                     {isLoading ? (
                         <div>Loading chart data...</div>
                     ) : (
-                        <div style={{ height: '500px' }}>
-                            <Line ref={chartRef} data={chartData} options={graphOptions} />
+                        <div style={{height: '500px'}}>
+                            <Line ref={chartRef} data={chartData} options={graphOptions}/>
                             <div className="d-flex justify-content-center mt-3">
                                 <button
                                     onClick={() => setDragEnabled(!dragEnabled)}
@@ -360,7 +369,6 @@ const ServicePage = (name) => {
         </div>
     );
 };
-
 
 
 export default ServicePage;

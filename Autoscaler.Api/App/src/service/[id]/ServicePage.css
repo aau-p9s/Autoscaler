@@ -13,7 +13,7 @@
 
 .sidebar-right {
     top: 0;
-    left: 0; /* Sidebar is fixed on the left */
+    right: 0; /* Sidebar is fixed on the left */
     width: 300px;
     height: 100%;
     background-color: white;
@@ -113,4 +113,23 @@ input[type=number] {
 
 .current-values strong {
     color: #222;
+}
+
+.nav-bar{
+    background-color: white;
+    padding: 20px;
+    border-bottom: 1px solid #ccc;
+}
+.secondary-button {
+    padding: 10px 16px;
+    border: 1px solid #ccc;
+    color: #333;
+    background: none;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.secondary-button:hover {
+    background: #f0f0f0;
 }
