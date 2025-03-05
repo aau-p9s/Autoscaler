@@ -1,19 +1,26 @@
 using Microsoft.OpenApi.Models;
 using Autoscaler.Persistence.Extensions;
-using Autoscaler.Persistence.ScaleSettingsRepository;
 using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
 
-ArgumentParser Args = new(args);
-builder.Services.ConfigurePersistencePostGreSqlConnection(builder.Configuration.GetConnectionString("db"));
+var port = builder.Configuration.GetValue<int>("AUTOSCALER_PORT");
+var host = builder.Configuration.GetValue<string>("AUTOSCALER_HOST");
+var dbAddr = builder.Configuration.GetValue<string>("AUTOSCALER_PGSQL_ADDR");
+var dbPort = builder.Configuration.GetValue<int>("AUTOSCALER_PGSQL_PORT");
+var dbName = builder.Configuration.GetValue<string>("AUTOSCALER_PGSQL_DATABASE");
+var dbUser = builder.Configuration.GetValue<string>("AUTOSCALER_PGSQL_USER");
+var dbPassword = builder.Configuration.GetValue<string>("AUTOSCALER_PGSQL_PASSWORD"); // TODO: fix
+
+builder.Services.ConfigurePersistencePostGreSqlConnection($"Server={dbAddr};Port={dbPort};Database={dbName};Uid={dbUser};Password={dbPassword}");
 builder.Services.AddSingleton<Runner>(provider => 
     new Runner(
         "something", // Deployment name
-        "http://forecaster", 
-        "http://kubernetes", 
-        "http://prometheus",
+        builder.Configuration.GetValue<string>("AUTOSCALER_FORECASTER_ADDR"), 
+        builder.Configuration.GetValue<string>("AUTOSCALER_KUBERNETES_ADDR"), 
+        builder.Configuration.GetValue<string>("AUTOSCALER_PROMETHEUS_ADDR"),
         provider.GetRequiredService<ISettingsRepository>()
     )
 );//Get connectionstring from appsettings.json
@@ -38,7 +45,7 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
-builder.WebHost.UseUrls("http://0.0.0.0:8080");
+builder.WebHost.UseUrls($"{host}:{port}");
 var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
