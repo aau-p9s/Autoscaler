@@ -16,8 +16,7 @@ services:
         image: ghcr.io/aau-p9s/autoscaler
         restart: always
         environment:
-            AUTOSCALER_PGSQL_ADDR: db
-            
+            AUTOSCALER.PGSQL.ADDR: db
         
         ports:
             - "8080:8080"

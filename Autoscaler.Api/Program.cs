@@ -6,21 +6,25 @@ using Autoscaler.Runner;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-var port = builder.Configuration.GetValue<int>("AUTOSCALER_PORT");
-var host = builder.Configuration.GetValue<string>("AUTOSCALER_HOST");
-var dbAddr = builder.Configuration.GetValue<string>("AUTOSCALER_PGSQL_ADDR");
-var dbPort = builder.Configuration.GetValue<int>("AUTOSCALER_PGSQL_PORT");
-var dbName = builder.Configuration.GetValue<string>("AUTOSCALER_PGSQL_DATABASE");
-var dbUser = builder.Configuration.GetValue<string>("AUTOSCALER_PGSQL_USER");
-var dbPassword = builder.Configuration.GetValue<string>("AUTOSCALER_PGSQL_PASSWORD"); // TODO: fix
+var autoscalerSettings = builder.Configuration.GetSection("AUTOSCALER");
+var port = autoscalerSettings.GetValue<int>("PORT");
+var host = autoscalerSettings.GetValue<string>("HOST");
+var dbSettings = autoscalerSettings.GetSection("PGSQL");
+var dbAddr = dbSettings.GetValue<string>("ADDR");
+var dbPort = dbSettings.GetValue<int>("PORT");
+var dbName = dbSettings.GetValue<string>("DATABASE");
+var dbUser = dbSettings.GetValue<string>("USER");
+var dbPassword = dbSettings.GetValue<string>("PASSWORD"); // TODO: FIX
+var apis = autoscalerSettings.GetSection("APIS");
 
 builder.Services.ConfigurePersistencePostGreSqlConnection($"Server={dbAddr};Port={dbPort};Database={dbName};Uid={dbUser};Password={dbPassword}");
+
 builder.Services.AddSingleton<Runner>(provider => 
     new Runner(
         "something", // Deployment name
-        builder.Configuration.GetValue<string>("AUTOSCALER_FORECASTER_ADDR"), 
-        builder.Configuration.GetValue<string>("AUTOSCALER_KUBERNETES_ADDR"), 
-        builder.Configuration.GetValue<string>("AUTOSCALER_PROMETHEUS_ADDR"),
+        apis.GetValue<string>("FORECASTER"), 
+        apis.GetValue<string>("KUBERNETES"), 
+        apis.GetValue<string>("PROMETHEUS"),
         provider.GetRequiredService<ISettingsRepository>()
     )
 );//Get connectionstring from appsettings.json
