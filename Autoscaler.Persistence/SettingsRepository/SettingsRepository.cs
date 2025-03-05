@@ -21,7 +21,7 @@ public class SettingsRepository : ISettingsRepository
     public async Task<SettingsEntity> GetSettingsForServiceAsync(Guid serviceId)
     {
         var settings = await Connection.QueryFirstOrDefaultAsync<SettingsEntity>(
-            $"SELECT * FROM {TableName} WHERE ServiceId = @ServiceId", new { ServiceId = serviceId });
+            $"SELECT * FROM {TableName} WHERE (ServiceId::uuid) = @ServiceId", new { ServiceId = serviceId });
         return settings;
     }
 

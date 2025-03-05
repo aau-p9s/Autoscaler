@@ -13,10 +13,10 @@ namespace Autoscaler.Persistence.Extensions;
 
 public static class ServiceCollectionExtension
 {
-    public static IServiceCollection ConfigurePersistenceMySqlConnection(this IServiceCollection services,
+    public static IServiceCollection ConfigurePersistencePostGreSqlConnection(this IServiceCollection services,
         string? connectionString)
     {
-        services.AddSingleton<IDbConnectionFactory>(new MySqlConnectionFactory(connectionString));
+        services.AddSingleton<IDbConnectionFactory>(new NpgsqlConnectionFactory(connectionString));
 
         // Add repositories
         services.AddScoped<IModelRepository, ModelRepository.ModelRepository>();
