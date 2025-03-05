@@ -7,7 +7,7 @@ using Autoscaler.Runner;
 var builder = WebApplication.CreateBuilder(args);
 
 ArgumentParser Args = new(args);
-builder.Services.ConfigurePersistencePostGreSqlConnection(builder.Configuration.GetConnectionString("MySqlConnection"));
+builder.Services.ConfigurePersistencePostGreSqlConnection(builder.Configuration.GetConnectionString("MySqlDatabase"));
 builder.Services.AddSingleton<Runner>(provider => 
     new Runner(
         "something", // Deployment name
@@ -52,7 +52,7 @@ else
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "AutoScaler API v1");
-        options.RoutePrefix = string.Empty; // Makes Swagger UI available at the root ("/")
+        options.RoutePrefix = "autoscaler/swagger";
     });
 }
 
@@ -61,7 +61,7 @@ app.MapFallbackToFile("index.html");
 
 app.UseStaticFiles();
 app.UseRouting();
-app.UseCors();
-app.UseEndpoints(endpoints => { endpoints.MapControllers().RequireCors("AllowSpecificOrigin"); });
+app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
 app.Lifetime.ApplicationStopping.Register(() => { });
 app.Run();
