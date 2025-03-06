@@ -22,6 +22,7 @@ const ServicePage = (name) => {
     const [interval, setInterval] = useState('');
     const [trainInterval, setTrainInterval] = useState('');
     const [scaleError, setScaleError] = useState(null);
+    const [scaleSuccess, setScaleSuccess] = useState(null);
 
     // Graph State
     const [chartData, setChartData] = useState(null);
@@ -80,7 +81,7 @@ const ServicePage = (name) => {
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
-
+            setScaleSuccess('Settings changed successfully');
             setScaleError(null);
             fetchCurrentScaleValues();
         } catch (err) {
@@ -105,6 +106,11 @@ const ServicePage = (name) => {
             
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            if(isAutoscalingEnabled){
+                setScaleSuccess('Autoscaling disabled');
+            } else {
+                setScaleSuccess('Autoscaling enabled');
             }
             setScaleError(null);
             fetchServiceInformation();
@@ -239,6 +245,26 @@ const ServicePage = (name) => {
         ));
     };
 
+    useEffect(() => {
+        if (scaleError) {
+            const timer = setTimeout(() => {
+                setScaleError(null); // Hide error after 2 seconds
+            }, 2000);
+
+            return () => clearTimeout(timer); // Cleanup on unmount or re-render
+        }
+    }, [scaleError]);
+
+    useEffect(() => {
+        if (scaleSuccess) {
+            const timer = setTimeout(() => {
+                setScaleSuccess(null); // Hide success after 2 seconds
+            }, 2000);
+
+            return () => clearTimeout(timer); // Cleanup on unmount or re-render
+        }
+    }, [scaleSuccess]);
+
     // Initial Data Fetching
     useEffect(() => {
         fetchCurrentScaleValues();
@@ -367,6 +393,7 @@ const ServicePage = (name) => {
                         </div>
                         <button type="submit" className="submit-button">Submit</button>
                         {scaleError && <div className="response error mt-2">{scaleError}</div>}
+                        {scaleSuccess && <div className="response success mt-2">{scaleSuccess}</div>}
                     </form>
                 </div>
 
