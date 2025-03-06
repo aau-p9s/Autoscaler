@@ -54,6 +54,7 @@
 
 .submit-button:hover {
     background-color: #0a58ca;
+    cursor: pointer;
 }
 
 /* Response and error messages */
@@ -142,4 +143,9 @@ input[type=number] {
     border-radius: 6px;
     text-decoration: none;
     transition: background 0.2s;
+}
+
+.primary-button:hover {
+    background: #0a58ca;
+    cursor: pointer;
 }

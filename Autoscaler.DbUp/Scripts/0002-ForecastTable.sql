@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS Forecasts
     ServiceId UUID NOT NULL,
     CreatedAt timestamp   NOT NULL,
     ModelId   UUID NOT NULL,
-    Forecast  json        NOT NULL
+    Forecast  jsonb        NOT NULL,
+    HasManualChange boolean NOT NULL DEFAULT false
 );
 COMMIT;
