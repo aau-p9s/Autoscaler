@@ -5,7 +5,6 @@ import 'chart.js/auto';
 import Chart from 'chart.js/auto';
 import dragDataPlugin from 'chartjs-plugin-dragdata';
 import './ServicePage.css';
-import {Navbar, NavbarBrand} from "reactstrap";
 
 Chart.register(dragDataPlugin);
 
