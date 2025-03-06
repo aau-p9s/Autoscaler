@@ -6,14 +6,12 @@ namespace Autoscaler.Controllers;
 [Route("/forecast")]
 public class ForecastController : ControllerBase
 {
-    private readonly ILogger<ForecastController> _logger;
-
     public ForecastController()
     {
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get()
+    public IActionResult Get()
     {
         return Ok(new Dictionary<DateTime, double>(
             //Database.Prediction(DateTime.Now.AddDays(7))
@@ -21,7 +19,7 @@ public class ForecastController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> ManualChange([FromBody] Dictionary<DateTime, double> data)
+    public IActionResult ManualChange([FromBody] Dictionary<DateTime, double> data)
     {
         return Ok(new Dictionary<DateTime, double>(
         ));

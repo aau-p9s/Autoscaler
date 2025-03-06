@@ -4,15 +4,26 @@ using Autoscaler.Runner;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
 
-ArgumentParser Args = new(args);
-builder.Services.ConfigurePersistencePostGreSqlConnection(builder.Configuration.GetConnectionString("db"));
-builder.Services.AddSingleton<Runner>(provider =>
+var autoscalerSettings = builder.Configuration.GetSection("AUTOSCALER");
+var port = autoscalerSettings.GetValue<int>("PORT");
+var host = autoscalerSettings.GetValue<string>("HOST");
+var dbSettings = autoscalerSettings.GetSection("PGSQL");
+var dbAddr = dbSettings.GetValue<string>("ADDR");
+var dbPort = dbSettings.GetValue<int>("PORT");
+var dbName = dbSettings.GetValue<string>("DATABASE");
+var dbUser = dbSettings.GetValue<string>("USER");
+var dbPassword = dbSettings.GetValue<string>("PASSWORD"); // TODO: FIX
+var apis = autoscalerSettings.GetSection("APIS");
+
+builder.Services.ConfigurePersistencePostGreSqlConnection($"Server={dbAddr};Port={dbPort};Database={dbName};Uid={dbUser};Password={dbPassword}");
+builder.Services.AddSingleton<Runner>(provider => 
     new Runner(
         "something", // Deployment name
-        "http://forecaster",
-        "http://kubernetes",
-        "http://prometheus",
+        apis.GetValue<string>("FORECASTER") ?? "http://forecaster", 
+        apis.GetValue<string>("KUBERNETES") ?? "http://kubernetes", 
+        apis.GetValue<string>("PROMETHEUS") ?? "http://prometheus",
         provider.GetRequiredService<ISettingsRepository>()
     )
 ); //Get connectionstring from appsettings.json
@@ -37,7 +48,7 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
-builder.WebHost.UseUrls("http://0.0.0.0:8080");
+builder.WebHost.UseUrls($"{host}:{port}");
 var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
