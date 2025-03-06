@@ -13,7 +13,7 @@ namespace Autoscaler.Persistence.Extensions;
 public static class ServiceCollectionExtension
 {
     public static IServiceCollection ConfigurePersistencePostGreSqlConnection(this IServiceCollection services,
-        string? connectionString)
+        string connectionString)
     {
         services.AddSingleton<IDbConnectionFactory>(new NpgsqlConnectionFactory(connectionString));
 
