@@ -1,22 +1,21 @@
-using Microsoft.OpenApi.Models;
 using Autoscaler.Persistence.Extensions;
-using Autoscaler.Persistence.ScaleSettingsRepository;
 using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 ArgumentParser Args = new(args);
 builder.Services.ConfigurePersistencePostGreSqlConnection(builder.Configuration.GetConnectionString("db"));
-builder.Services.AddSingleton<Runner>(provider => 
+builder.Services.AddSingleton<Runner>(provider =>
     new Runner(
         "something", // Deployment name
-        "http://forecaster", 
-        "http://kubernetes", 
+        "http://forecaster",
+        "http://kubernetes",
         "http://prometheus",
         provider.GetRequiredService<ISettingsRepository>()
     )
-);//Get connectionstring from appsettings.json
+); //Get connectionstring from appsettings.json
 // Add services to the container.
 builder.Services.AddControllers();
 // Add Swagger services

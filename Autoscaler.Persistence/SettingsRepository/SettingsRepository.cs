@@ -1,13 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Autoscaler.Persistence.Connection;
 using Autoscaler.Persistence.SettingsRepository;
 using Dapper;
-using Npgsql;
-using NpgsqlTypes;
 
 namespace Autoscaler.Persistence.ScaleSettingsRepository;
 
@@ -43,7 +39,7 @@ public class SettingsRepository : ISettingsRepository
         TrainInterval = @TrainInterval,
         ModelHyperParams = COALESCE(EXCLUDED.ModelHyperParams, {TableName}.ModelHyperParams),
         OptunaConfig = COALESCE(EXCLUDED.OptunaConfig, {TableName}.OptunaConfig);";
-        
+
         var result = await Connection.ExecuteAsync(query, new
         {
             Id = settings.Id,
@@ -55,7 +51,7 @@ public class SettingsRepository : ISettingsRepository
             ModelHyperParams = settings.ModelHyperParams,
             OptunaConfig = settings.OptunaConfig
         });
-        
+
         return result > 0;
     }
 }

@@ -4,6 +4,7 @@ using Autoscaler.Persistence.SettingsRepository;
 using Moq;
 
 namespace Autoscaler.Tests.RepositoryTests;
+
 [TestFixture()]
 public class SettingsRepositoryTests
 {
@@ -11,8 +12,8 @@ public class SettingsRepositoryTests
     private Mock<ISettingsRepository> _settingsRepository;
     private Mock<IDbConnection> _dbConnection = new Mock<IDbConnection>();
     private Mock<IDbConnectionFactory> _dbConnectionFactory = new Mock<IDbConnectionFactory>();
-    
-    
+
+
     [SetUp]
     public void Setup()
     {
@@ -20,14 +21,14 @@ public class SettingsRepositoryTests
         _settingsRepository = new Mock<ISettingsRepository>();
         _dbConnectionFactory.Setup(x => x.Connection).Returns(_dbConnection.Object);
     }
-    
+
     [Test()]
     public void GetSettingsByServiceIdAsyncFailure()
     {
         _settingsRepository.Setup(x => x.GetSettingsForServiceAsync(It.IsAny<Guid>())).ThrowsAsync(new Exception());
         Assert.ThrowsAsync<Exception>(() => _settingsRepository.Object.GetSettingsForServiceAsync(It.IsAny<Guid>()));
     }
-    
+
     [Test()]
     public void GetSettingsByServiceIdAsync()
     {
@@ -35,14 +36,14 @@ public class SettingsRepositoryTests
         var result = _settingsRepository.Object.GetSettingsForServiceAsync(It.IsAny<Guid>());
         Assert.That(result.Result, Is.EqualTo(_settingsEntity));
     }
-    
+
     [Test()]
     public void UpsertSettingsAsyncFailure()
     {
         _settingsRepository.Setup(x => x.UpsertSettingsAsync(It.IsAny<SettingsEntity>())).ThrowsAsync(new Exception());
         Assert.ThrowsAsync<Exception>(() => _settingsRepository.Object.UpsertSettingsAsync(It.IsAny<SettingsEntity>()));
     }
-    
+
     [Test()]
     public void UpsertSettingsAsync()
     {
@@ -50,5 +51,4 @@ public class SettingsRepositoryTests
         var result = _settingsRepository.Object.UpsertSettingsAsync(It.IsAny<SettingsEntity>());
         Assert.That(result.Result, Is.EqualTo(true));
     }
-    
 }

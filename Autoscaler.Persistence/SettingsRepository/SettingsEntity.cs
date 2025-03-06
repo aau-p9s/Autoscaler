@@ -1,6 +1,4 @@
 using System;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace Autoscaler.Persistence.SettingsRepository;
 
@@ -11,7 +9,9 @@ public class SettingsEntity
     public int ScaleUp { get; set; }
     public int ScaleDown { get; set; }
     public int ScalePeriod { get; set; }
+
     public int TrainInterval { get; set; }
+
     //Change the type of Hyperparameters and OptunaConfig to custom objects when we know what they have in them
     public string ModelHyperParams { get; set; }
     public string OptunaConfig { get; set; }
@@ -21,7 +21,8 @@ public class SettingsEntity
     {
     }
 
-    public SettingsEntity(Guid id, Guid serviceId, int scaleUp, int scaleDown, int scalePeriod, int trainInterval, string modelHyperParams, string optunaConfig)
+    public SettingsEntity(Guid id, Guid serviceId, int scaleUp, int scaleDown, int scalePeriod, int trainInterval,
+        string modelHyperParams, string optunaConfig)
     {
         Id = id;
         ServiceId = serviceId;

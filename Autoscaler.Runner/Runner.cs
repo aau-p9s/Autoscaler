@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Autoscaler.Persistence.ScaleSettingsRepository;
 using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner.Kubernetes;
 
