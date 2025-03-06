@@ -323,7 +323,6 @@ const ServicePage = (name) => {
                 <Link to="/" className="secondary-button">
                     Go to Overview
                 </Link>
-                
             </div>
 
             <div style={{height: "100vh", width: "100vw"}} className="row">
