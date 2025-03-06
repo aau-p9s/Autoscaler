@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Autoscaler.Persistence.SettingsRepository;
@@ -14,16 +15,6 @@ public class SettingsEntity
     //Change the type of Hyperparameters and OptunaConfig to custom objects when we know what they have in them
     public string ModelHyperParams { get; set; }
     public string OptunaConfig { get; set; }
-
-    public JsonObject GetOptunaConfig()
-    {
-        return OptunaConfig != null ? JsonNode.Parse(OptunaConfig)?.AsObject() : null;
-    }
-
-    public JsonObject GetHyperparameters()
-    {
-        return ModelHyperParams != null ? JsonNode.Parse(ModelHyperParams)?.AsObject() : null;
-    }
 
     //Empty constructor for Dapper
     public SettingsEntity()

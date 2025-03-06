@@ -23,7 +23,7 @@ public class ServicesRepository : IServicesRepository
         var services = await Connection.QueryAsync<ServiceEntity>($"SELECT * FROM {TableName}");
         return services.AsList();
     }
-    
+
     public async Task<ServiceEntity> GetServiceByIdAsync(Guid serviceId)
     {
         var service =
@@ -43,10 +43,11 @@ public class ServicesRepository : IServicesRepository
     public async Task<bool> UpsertServiceAsync(ServiceEntity service)
     {
         var result = await Connection.ExecuteAsync($@"
-            INSERT INTO {TableName} (Id, Name)
-            VALUES (@Id, @Name)
+            INSERT INTO {TableName} (Id, Name, AutoscalingEnabled)
+            VALUES (@Id, @Name, @AutoscalingEnabled)
             ON CONFLICT (Id) DO UPDATE SET
-                Name = @Name",
+                Name = @Name,
+                AutoscalingEnabled = @AutoscalingEnabled",
             service);
         return result > 0;
     }

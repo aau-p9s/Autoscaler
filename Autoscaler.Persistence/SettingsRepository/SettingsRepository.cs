@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Autoscaler.Persistence.Connection;
 using Autoscaler.Persistence.SettingsRepository;
 using Dapper;
+using Npgsql;
+using NpgsqlTypes;
 
 namespace Autoscaler.Persistence.ScaleSettingsRepository;
 
@@ -27,17 +31,31 @@ public class SettingsRepository : ISettingsRepository
 
     public async Task<bool> UpsertSettingsAsync(SettingsEntity settings)
     {
-        var result = await Connection.ExecuteAsync($@"
-            INSERT INTO {TableName} (Id, ServiceId, ScaleUp, ScaleDown, ScalePeriod, TrainInterval, Hyperparameters, OptunaConfig)
-            VALUES (@Id, @ServiceId, @ScaleUp, @ScaleDown, @ScalePeriod, @TrainInterval, @Hyperparameters, @OptunaConfig)
-            ON CONFLICT (ServiceId) DO UPDATE SET
-                ScaleUp = @ScaleUp,
-                ScaleDown = @ScaleDown,
-                ScalePeriod = @ScalePeriod,
-                TrainInterval = @TrainInterval,
-                Hyperparameters = @Hyperparameters,
-                OptunaConfig = @OptunaConfig",
-            settings);
+        var query = $@"
+    INSERT INTO {TableName} (Id, ServiceId, ScaleUp, ScaleDown, ScalePeriod, TrainInterval, ModelHyperParams, OptunaConfig)
+    VALUES (@Id, @ServiceId, @ScaleUp, @ScaleDown, @ScalePeriod, @TrainInterval, 
+            COALESCE((SELECT ModelHyperParams FROM {TableName} WHERE ServiceId = @ServiceId), @ModelHyperParams::jsonb),
+            COALESCE((SELECT OptunaConfig FROM {TableName} WHERE ServiceId = @ServiceId), @OptunaConfig::jsonb))
+    ON CONFLICT (ServiceId) DO UPDATE SET
+        ScaleUp = @ScaleUp,
+        ScaleDown = @ScaleDown,
+        ScalePeriod = @ScalePeriod,
+        TrainInterval = @TrainInterval,
+        ModelHyperParams = COALESCE(EXCLUDED.ModelHyperParams, {TableName}.ModelHyperParams),
+        OptunaConfig = COALESCE(EXCLUDED.OptunaConfig, {TableName}.OptunaConfig);";
+        
+        var result = await Connection.ExecuteAsync(query, new
+        {
+            Id = settings.Id,
+            ServiceId = settings.ServiceId,
+            ScaleUp = settings.ScaleUp,
+            ScaleDown = settings.ScaleDown,
+            ScalePeriod = settings.ScalePeriod,
+            TrainInterval = settings.TrainInterval,
+            ModelHyperParams = settings.ModelHyperParams,
+            OptunaConfig = settings.OptunaConfig
+        });
+        
         return result > 0;
     }
 }

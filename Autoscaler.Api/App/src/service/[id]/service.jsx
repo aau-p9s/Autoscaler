@@ -12,7 +12,9 @@ Chart.register(dragDataPlugin);
 const ServicePage = (name) => {
     const params = useParams();
 
-    const [serviceName, setServiceName] = useState([]);
+    const [service, setService] = useState([]);
+    const [isAutoscalingEnabled, setIsAutoscalingEnabled] = useState(false);
+
 
     // CPU Scaling State
     const [currentScaleValues, setCurrentScaleValues] = useState(null);
@@ -63,10 +65,12 @@ const ServicePage = (name) => {
             scaleDown: parseFloat(scaleDownPercentage),
             scalePeriod: parseInt(interval, 10),
             trainInterval: parseInt(trainInterval, 10),
+            modelHyperParams: modelHyperParams,
+            optunaConfig: optunaConfig,
         };
 
         try {
-            const res = await fetch(`http://${window.location.hostname}:8080/settings`, {
+            const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/settings`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -84,7 +88,38 @@ const ServicePage = (name) => {
             setScaleError('Failed to submit the settings');
         }
     };
+    
+    const handleAutoscalingEnabled = async () => {
+        const payload = {
+            id: params.id,
+            name: service.name,
+            autoscalingEnabled: !isAutoscalingEnabled,
+        };
+        try {
+            const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+            
+            if (!res.ok) {
+                throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            setScaleError(null);
+            fetchServiceInformation();
+        } catch (err) {
+            setScaleError('Failed to submit the settings');
+        }
+    };
 
+    const handleAutoscalingChange = async () => {
+        const newStatus = !isAutoscalingEnabled;
+        await handleAutoscalingEnabled(newStatus);
+        setIsAutoscalingEnabled(newStatus);
+    };
+    
     // Fetch Graph Data
     const fetchGraphData = async () => {
         setIsLoading(true);
@@ -133,7 +168,8 @@ const ServicePage = (name) => {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
             const data = await response.json();
-            setServiceName(data.name);
+            setService(data);
+            setIsAutoscalingEnabled(data.autoscalingEnabled);
         } catch (err) {
             console.error("Error fetching data:", err);
         }
@@ -272,12 +308,23 @@ const ServicePage = (name) => {
                     {currentScaleValues && (
                         <div className="current-values">
                             <h4>Current Settings</h4>
-                            <p><strong>Scale Up:</strong> {currentScaleValues.scaleUp}%</p>
-                            <p><strong>Scale Down:</strong> {currentScaleValues.scaleDown}%</p>
+                            <p><strong>Scale Up at:</strong> {currentScaleValues.scaleUp}%</p>
+                            <p><strong>Scale Down at:</strong> {currentScaleValues.scaleDown}%</p>
                             <p><strong>Interval:</strong> {currentScaleValues.scalePeriod} ms</p>
                             <p><strong>Train Interval:</strong> {currentScaleValues.trainInterval} ms</p>
                         </div>
                     )}
+                    <h4>Update Settings</h4>
+                    <button
+                        onClick={handleAutoscalingChange}
+                        className={` ${
+                            isAutoscalingEnabled
+                                ? "secondary-button" // Secondary button
+                                : "primary-button" // Primary button
+                        }`}
+                    >
+                        {isAutoscalingEnabled ? "Disable Autoscaling" : "Enable Autoscaling"}
+                    </button>
                     <form onSubmit={handleScaleSubmit}>
                         <div className="form-group mb-2">
                             <label>Scale Up Percentage</label>
@@ -326,7 +373,7 @@ const ServicePage = (name) => {
 
                 {/* Center - Graph */}
                 <div className="col-md-8 p-3">
-                    <h1 className="text-center mb-4">Managing {serviceName}</h1>
+                    <h1 className="text-center mb-4">Managing {service.name}</h1>
                     {isLoading ? (
                         <div>Loading chart data...</div>
                     ) : (

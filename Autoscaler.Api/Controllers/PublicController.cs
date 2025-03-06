@@ -38,4 +38,20 @@ public class PublicController : ControllerBase
         Console.WriteLine(settings);
         return Ok(settings);
     }
+    
+    [HttpPost("{serviceId}/settings")]
+    public async Task<IActionResult> UpsertSettingsForServiceById([FromRoute] Guid serviceId, [FromBody] SettingsEntity settings)
+    {
+        settings.ServiceId = serviceId;
+        var result = await _settingsRepository.UpsertSettingsAsync(settings);
+        return Ok(result);
+    }
+    
+    [HttpPost("{serviceId}")]
+    public async Task<IActionResult> UpsertServiceById([FromRoute] Guid serviceId, [FromBody] ServiceEntity service)
+    {
+        service.Id = serviceId;
+        var result = await _servicesRepository.UpsertServiceAsync(service);
+        return Ok(result);
+    }
 }
