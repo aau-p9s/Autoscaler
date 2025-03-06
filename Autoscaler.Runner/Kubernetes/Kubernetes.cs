@@ -44,11 +44,11 @@ public class Kubernetes : IAPI
         }
     }
 
-    public async Task<bool> Update(string endpoint, object body)
+    public async Task Update(string endpoint, object body)
     {
         if (!IsUp())
         {
-            return false;
+            return;
         }
 
         try
@@ -63,19 +63,16 @@ public class Kubernetes : IAPI
 
             if (_authHeader != null)
                 request.Headers.Add(_authHeader.Item1, _authHeader.Item2);
-            var response = await _client.SendAsync(request);
-            return response.IsSuccessStatusCode;
+            await _client.SendAsync(request);
         }
         catch (HttpRequestException e)
         {
             Console.WriteLine("Kubernetes seems to be down");
             HandleException(e);
         }
-
-        return false;
     }
 
-    public async Task<KubernetesResponse> Get(string endpoint)
+    public async Task<KubernetesResponse?> Get(string endpoint)
     {
         if (!IsUp())
         {

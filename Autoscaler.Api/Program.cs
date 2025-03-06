@@ -22,9 +22,9 @@ builder.Services.ConfigurePersistencePostGreSqlConnection($"Server={dbAddr};Port
 builder.Services.AddSingleton<Runner>(provider => 
     new Runner(
         "something", // Deployment name
-        apis.GetValue<string>("FORECASTER"), 
-        apis.GetValue<string>("KUBERNETES"), 
-        apis.GetValue<string>("PROMETHEUS"),
+        apis.GetValue<string>("FORECASTER") ?? "http://forecaster", 
+        apis.GetValue<string>("KUBERNETES") ?? "http://kubernetes", 
+        apis.GetValue<string>("PROMETHEUS") ?? "http://prometheus",
         provider.GetRequiredService<ISettingsRepository>()
     )
 );//Get connectionstring from appsettings.json
