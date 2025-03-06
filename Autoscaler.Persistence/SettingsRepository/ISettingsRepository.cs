@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Autoscaler.Persistence.ScaleSettingsRepository;
 
 namespace Autoscaler.Persistence.SettingsRepository;
 

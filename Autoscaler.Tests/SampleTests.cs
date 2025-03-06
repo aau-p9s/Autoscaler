@@ -1,4 +1,5 @@
 namespace Autoscaler.Tests;
+
 [TestFixture]
 public class SampleTests
 {
@@ -6,11 +7,10 @@ public class SampleTests
     public void Setup()
     {
     }
-    
+
     [Test()]
     public void Test1()
     {
         Assert.True(true);
     }
-   
 }

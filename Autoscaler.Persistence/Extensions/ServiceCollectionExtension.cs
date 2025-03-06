@@ -2,10 +2,8 @@
 using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.HistoricRepository;
 using Autoscaler.Persistence.ModelRepository;
-using Autoscaler.Persistence.ScaleSettingsRepository;
 using Autoscaler.Persistence.ServicesRepository;
 using Autoscaler.Persistence.SettingsRepository;
-using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Autoscaler.Persistence.Extensions;

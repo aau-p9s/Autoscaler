@@ -1,7 +1,7 @@
-using Microsoft.OpenApi.Models;
 using Autoscaler.Persistence.Extensions;
 using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
@@ -18,7 +18,6 @@ var dbPassword = dbSettings.GetValue<string>("PASSWORD"); // TODO: FIX
 var apis = autoscalerSettings.GetSection("APIS");
 
 builder.Services.ConfigurePersistencePostGreSqlConnection($"Server={dbAddr};Port={dbPort};Database={dbName};Uid={dbUser};Password={dbPassword}");
-
 builder.Services.AddSingleton<Runner>(provider => 
     new Runner(
         "something", // Deployment name
@@ -27,7 +26,7 @@ builder.Services.AddSingleton<Runner>(provider =>
         apis.GetValue<string>("PROMETHEUS") ?? "http://prometheus",
         provider.GetRequiredService<ISettingsRepository>()
     )
-);//Get connectionstring from appsettings.json
+); //Get connectionstring from appsettings.json
 // Add services to the container.
 builder.Services.AddControllers();
 // Add Swagger services

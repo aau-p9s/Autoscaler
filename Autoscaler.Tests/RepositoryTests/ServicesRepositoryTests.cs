@@ -51,14 +51,14 @@ public class ServicesRepositoryTests
         var result = _servicesRepository.Object.GetServiceIdByNameAsync(It.IsAny<string>());
         Assert.That(result.Result, Is.EqualTo(It.IsAny<Guid>()));
     }
-    
+
     [Test()]
     public void GetAllServicesAsyncFailure()
     {
         _servicesRepository.Setup(x => x.GetAllServicesAsync()).ThrowsAsync(new Exception());
         Assert.ThrowsAsync<Exception>(() => _servicesRepository.Object.GetAllServicesAsync());
     }
-    
+
     [Test()]
     public void GetAllServicesAsync()
     {
@@ -66,14 +66,14 @@ public class ServicesRepositoryTests
         var result = _servicesRepository.Object.GetAllServicesAsync();
         Assert.That(result.Result, Is.EqualTo(new List<ServiceEntity>()));
     }
-    
+
     [Test()]
     public void UpsertServiceAsyncFailure()
     {
         _servicesRepository.Setup(x => x.UpsertServiceAsync(It.IsAny<ServiceEntity>())).ThrowsAsync(new Exception());
         Assert.ThrowsAsync<Exception>(() => _servicesRepository.Object.UpsertServiceAsync(It.IsAny<ServiceEntity>()));
     }
-    
+
     [Test()]
     public void UpsertServiceAsync()
     {

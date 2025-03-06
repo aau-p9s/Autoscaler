@@ -4,6 +4,7 @@ using Autoscaler.Persistence.ModelRepository;
 using Moq;
 
 namespace Autoscaler.Tests.RepositoryTests;
+
 [TestFixture()]
 public class ModelRepositoryTests
 {
@@ -11,6 +12,7 @@ public class ModelRepositoryTests
     private Mock<IModelRepository> _modelRepository;
     private Mock<IDbConnection> _dbConnection = new Mock<IDbConnection>();
     private Mock<IDbConnectionFactory> _dbConnectionFactory = new Mock<IDbConnectionFactory>();
+
     [SetUp]
     public void Setup()
     {
@@ -18,14 +20,14 @@ public class ModelRepositoryTests
         _modelRepository = new Mock<IModelRepository>();
         _dbConnectionFactory.Setup(x => x.Connection).Returns(_dbConnection.Object);
     }
-    
+
     [Test()]
     public void GetModelsForServiceAsyncFailure()
     {
         _modelRepository.Setup(x => x.GetModelsForServiceAsync(It.IsAny<Guid>())).ThrowsAsync(new Exception());
         Assert.ThrowsAsync<Exception>(() => _modelRepository.Object.GetModelsForServiceAsync(It.IsAny<Guid>()));
     }
-    
+
     [Test()]
     public void GetModelsForServiceAsync()
     {
@@ -33,5 +35,4 @@ public class ModelRepositoryTests
         var result = _modelRepository.Object.GetModelsForServiceAsync(It.IsAny<Guid>());
         Assert.That(result.Result, Is.EqualTo(new List<ModelEntity>()));
     }
-    
 }

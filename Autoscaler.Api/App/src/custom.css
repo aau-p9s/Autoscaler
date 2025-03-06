@@ -16,3 +16,11 @@ code {
   background-color: #1b6ec2;
   border-color: #1861ac;
 }
+
+.divider-column{
+  border-right: 1px solid #ccc;
+}
+
+.colm{
+  border-bottom: 1px solid #ccc;
+}
