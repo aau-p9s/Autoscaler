@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Autoscaler.Persistence.Connection;
 using Dapper;
@@ -32,4 +33,20 @@ public class ForecastRepository : IForecastRepository
                 new { Id = id });
         return forecast;
     }
+    
+    public async Task<bool> UpdateForecastAsync(ForecastEntity forecast)
+    {
+        var query = $"UPDATE {TableName} SET Forecast = CAST(@Forecast AS jsonb), HasManualChange = @HasManualChange WHERE Id = @Id";
+    
+        var parameters = new 
+        {
+            Forecast = forecast.Forecast, 
+            Id = forecast.Id,
+            HasManualChange = forecast.HasManualChange
+        };
+    
+        var result = await Connection.ExecuteAsync(query, parameters);
+        return result > 0;
+    }
+
 }

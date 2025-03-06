@@ -17,6 +17,7 @@ var dbUser = dbSettings.GetValue<string>("USER");
 var dbPassword = dbSettings.GetValue<string>("PASSWORD"); // TODO: FIX
 var apis = autoscalerSettings.GetSection("APIS");
 
+
 builder.Services.ConfigurePersistencePostGreSqlConnection($"Server={dbAddr};Port={dbPort};Database={dbName};Uid={dbUser};Password={dbPassword}");
 builder.Services.AddSingleton<Runner>(provider => 
     new Runner(

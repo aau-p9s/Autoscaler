@@ -22,9 +22,10 @@ const ServicePage = (name) => {
     const [interval, setInterval] = useState('');
     const [trainInterval, setTrainInterval] = useState('');
     const [scaleError, setScaleError] = useState(null);
-    const [scaleSuccess, setScaleSuccess] = useState(null);
+    const [success, setSuccess] = useState(null);
 
     // Graph State
+    const [forecast, setForecast] = useState(null);
     const [chartData, setChartData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [dragEnabled, setDragEnabled] = useState(false);
@@ -81,7 +82,7 @@ const ServicePage = (name) => {
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
-            setScaleSuccess('Settings changed successfully');
+            setSuccess('Settings changed successfully');
             setScaleError(null);
             fetchCurrentScaleValues();
         } catch (err) {
@@ -108,9 +109,9 @@ const ServicePage = (name) => {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
             if(isAutoscalingEnabled){
-                setScaleSuccess('Autoscaling disabled');
+                setSuccess('Autoscaling disabled');
             } else {
-                setScaleSuccess('Autoscaling enabled');
+                setSuccess('Autoscaling enabled');
             }
             setScaleError(null);
             fetchServiceInformation();
@@ -130,17 +131,21 @@ const ServicePage = (name) => {
         setIsLoading(true);
 
         try {
-            const response = await fetch(`http://${window.location.hostname}:8080/forecast`);
+            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/forecast`, {method: 'GET'});
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
-
+            
             const json = await response.json();
+            setForecast(json);
+            const forecastData = JSON.parse(json.forecast); // Parse the forecast string into an array
 
-            if (json && Object.keys(json).length > 0) {
-                const labels = Object.keys(json);
-                const data = Object.values(json);
-                labels.sort((a, b) => new Date(a) - new Date(b));
+            if (forecastData && forecastData.length > 0) {
+                const labels = forecastData.map(entry => entry.timestamp); // Extract timestamps for labels
+                const data = forecastData.map(entry => entry.cpu_percentage); // Extract CPU percentages for data
+
+                labels.sort((a, b) => new Date(a) - new Date(b)); // Sort by timestamp
+
                 setChartData({
                     labels,
                     datasets: [
@@ -148,12 +153,13 @@ const ServicePage = (name) => {
                             label: 'Current forecast data',
                             data,
                             fill: false,
-                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgb(10,88,202)',
+                            borderColor: 'rgb(13,110,253)',
                         },
                     ],
                 });
-            } else {
+            }
+             else {
                 const fallbackData = await generateFallbackData("hour");
                 setChartData(fallbackData);
             }
@@ -202,12 +208,20 @@ const ServicePage = (name) => {
     // Handle Graph Save
     const handleGraphSave = async () => {
         try {
-            const payload = chartData.labels.reduce((acc, label, index) => {
-                acc[label] = chartData.datasets[0].data[index];
-                return acc;
-            }, {});
-
-            const response = await fetch(`http://${window.location.hostname}:8080/forecast`, {
+            const payload = {
+                id: forecast.id, // Generating a new UUID for the forecast entry
+                serviceId: params.id, // Assuming `params.id` is the ServiceId
+                createdAt: forecast.createdAt, // Current timestamp
+                modelId: forecast.modelId, // Replace with the actual ModelId if needed
+                forecast: JSON.stringify(
+                    chartData.labels.map((label, index) => ({
+                        timestamp: label,
+                        cpu_percentage: chartData.datasets[0].data[index],
+                    }))
+                ),
+                hasManualChange: true,
+            };
+            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/forecast`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -219,11 +233,13 @@ const ServicePage = (name) => {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
+            setSuccess('Forecast saved successfully');
             await fetchGraphData();
         } catch (error) {
             console.error('Error:', error);
         }
     };
+
 
     // Render JSON for Model Settings
     const parseStringifiedJson = (jsonString) => {
@@ -256,14 +272,14 @@ const ServicePage = (name) => {
     }, [scaleError]);
 
     useEffect(() => {
-        if (scaleSuccess) {
+        if (success) {
             const timer = setTimeout(() => {
-                setScaleSuccess(null); // Hide success after 2 seconds
+                setSuccess(null); // Hide success after 2 seconds
             }, 2000);
 
             return () => clearTimeout(timer); // Cleanup on unmount or re-render
         }
-    }, [scaleSuccess]);
+    }, [success]);
 
     // Initial Data Fetching
     useEffect(() => {
@@ -392,7 +408,7 @@ const ServicePage = (name) => {
                         </div>
                         <button type="submit" className="submit-button">Submit</button>
                         {scaleError && <div className="response error mt-2">{scaleError}</div>}
-                        {scaleSuccess && <div className="response success mt-2">{scaleSuccess}</div>}
+                        {success && <div className="response success mt-2">{success}</div>}
                     </form>
                 </div>
 
@@ -413,7 +429,8 @@ const ServicePage = (name) => {
                                 </button>
                                 <button
                                     onClick={handleGraphSave}
-                                    className="btn btn-primary"
+                                    disabled={!dragEnabled}
+                                    className="primary-button"
                                 >
                                     Save Forecast
                                 </button>
