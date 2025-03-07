@@ -15,6 +15,7 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    container: node:20-bookworm-slim 
     services:
       image: postgres
       env:
