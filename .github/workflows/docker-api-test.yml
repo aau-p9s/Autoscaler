@@ -15,13 +15,13 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: node:20-bookworm-slim 
     services:
-      image: postgres
-      env:
-        POSTGRES_PASSWORD: password
-        POSTGRES_USER: root
-        POSTGRES_DB: autoscaler
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_USER: root
+          POSTGRES_DB: autoscaler
     steps:
       - name: checkout repo
         uses: actions/checkout@v4.1.1
