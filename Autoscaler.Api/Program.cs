@@ -19,8 +19,8 @@ var dbUser = dbSettings.GetValue<string>("USER");
 var dbPassword = dbSettings.GetValue<string>("PASSWORD"); // TODO: FIX
 var apis = autoscalerSettings.GetSection("APIS");
 
-logger.Log(LogLevel.Information, "Settings set by env vars:");
-logger.Log(LogLevel.Information, $@"
+Console.WriteLine("Settings set by env vars:");
+Console.WriteLine($@"
     AUTOSCALER.PORT: {port}
     AUTOSCALER.HOST: {host}
     AUTOSCALER.PGSQL.ADDR: {dbAddr}
