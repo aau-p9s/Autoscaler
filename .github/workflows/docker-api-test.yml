@@ -16,6 +16,7 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    container: mcr.microsoft.com/dotnet/sdk:8.0
     services:
       postgres:
         image: postgres
@@ -26,10 +27,6 @@ jobs:
     steps:
       - name: checkout repo
         uses: actions/checkout@v4.1.1
-      - name: Setup Dotnet
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8"
       - name: migrate db
         run: dotnet run --project Autoscaler.DbUp
       - name: run docker
