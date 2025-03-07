@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 env:
-  AUTOSCALER__PGSQL__ADDR: postgres
+  AUTOSCALER__PGSQL__ADDR: localhost
   AUTOSCALER__PGSQL__PASSWORD: password
   AUTOSCALER__PGSQL__USER: root
   AUTOSCALER__HOST: 0.0.0.0
