@@ -34,4 +34,4 @@ jobs:
       - name: run docker
         run: docker run -d $(docker build . -q)
       - name: test API
-        run: ./.github/workflows/api_test.sh "$AUTOSCALER_HOST:$AUTOSCALER_PORT"
+        run: bash .github/workflows/api_test.sh "$AUTOSCALER_HOST:$AUTOSCALER_PORT"
