@@ -30,6 +30,9 @@
         <Content Remove="$(SpaRoot)**" />
         <None Remove="$(SpaRoot)**" />
         <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
+        <None Include="DevelopmentData\kubectl_GET__apis_apps_v1_namespaces_default_deployments.json" />
+        <None Include="DevelopmentData\kubectl_GET__apis_apps_v1_namespaces_default_deployments_workload-api-deployment_scale.json" />
+        <None Include="DevelopmentData\prometheus_trace.json" />
     </ItemGroup>
 
     <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">

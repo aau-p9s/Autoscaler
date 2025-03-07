@@ -20,7 +20,7 @@ public class HistoricRepository : IHistoricRepository
     public async Task<HistoricEntity> GetHistoricDataByServiceIdAsync(Guid serviceId)
     {
         var historicData = await Connection.QueryFirstOrDefaultAsync<HistoricEntity>(
-            $"SELECT * FROM {TableName} WHERE ServiceId = @ServiceId", new { ServiceId = serviceId });
+            $"SELECT * FROM {TableName} WHERE ServiceId = @ServiceId", new {ServiceId = serviceId});
         return historicData;
     }
 
@@ -28,8 +28,10 @@ public class HistoricRepository : IHistoricRepository
     {
         var result = await Connection.ExecuteAsync($@"
             INSERT INTO {TableName} (Id, ServiceId, CreatedAt, HistoricData)
-            VALUES (@Id, @ServiceId, @CreatedAt, @HistoricData)
-            ON CONFLICT (Id) DO UPDATE SET HistoricData = @HistoricData AND CreatedAt = @CreatedAt",
+            VALUES (@Id, @ServiceId, @CreatedAt, CAST(@HistoricData AS jsonb))
+            ON CONFLICT (Id) DO UPDATE SET 
+                HistoricData = CAST(@HistoricData AS jsonb), 
+                CreatedAt = @CreatedAt",
             new
             {
                 Id = historicEntity.Id,

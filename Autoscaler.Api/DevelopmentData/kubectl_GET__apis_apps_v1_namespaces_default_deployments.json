@@ -1,0 +1,933 @@
+{
+  "kind": "DeploymentList",
+  "apiVersion": "apps/v1",
+  "metadata": {
+    "resourceVersion": "1387407"
+  },
+  "items": [
+    {
+      "metadata": {
+        "name": "autoscaler-deployment",
+        "namespace": "default",
+        "uid": "925cdb48-cc0e-47cf-aec3-020bd3307a48",
+        "resourceVersion": "1323734",
+        "generation": 1,
+        "creationTimestamp": "2025-03-06T11:05:50Z",
+        "annotations": {
+          "deployment.kubernetes.io/revision": "1",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"autoscaler-deployment\",\"namespace\":\"default\"},\"spec\":{\"selector\":{\"matchLabels\":{\"app\":\"autoscaler\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"autoscaler\"}},\"spec\":{\"containers\":[{\"args\":[\"Autoscaler.dll\",\"--kube-api\",\"https://kubernetes\",\"--prometheus-addr\",\"http://prometheus-server\",\"--scaler\",\"./predict.py\",\"--re-trainer\",\"./train.py\"],\"command\":[\"dotnet\"],\"image\":\"ghcr.io/aau-p9s/autoscaler-frontend:latest\",\"name\":\"autoscaler\",\"ports\":[{\"containerPort\":8080}],\"resources\":{\"limits\":{\"cpu\":\"2000m\",\"memory\":\"32Gi\"},\"requests\":{\"cpu\":\"500m\",\"memory\":\"2048Mi\"}}}]}}}}\n"
+        },
+        "managedFields": [
+          {
+            "manager": "kubectl-client-side-apply",
+            "operation": "Update",
+            "apiVersion": "apps/v1",
+            "time": "2025-03-06T11:05:50Z",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:annotations": {
+                  ".": {},
+                  "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                }
+              },
+              "f:spec": {
+                "f:progressDeadlineSeconds": {},
+                "f:replicas": {},
+                "f:revisionHistoryLimit": {},
+                "f:selector": {},
+                "f:strategy": {
+                  "f:rollingUpdate": {
+                    ".": {},
+                    "f:maxSurge": {},
+                    "f:maxUnavailable": {}
+                  },
+                  "f:type": {}
+                },
+                "f:template": {
+                  "f:metadata": {
+                    "f:labels": {
+                      ".": {},
+                      "f:app": {}
+                    }
+                  },
+                  "f:spec": {
+                    "f:containers": {
+                      "k:{\"name\":\"autoscaler\"}": {
+                        ".": {},
+                        "f:args": {},
+                        "f:command": {},
+                        "f:image": {},
+                        "f:imagePullPolicy": {},
+                        "f:name": {},
+                        "f:ports": {
+                          ".": {},
+                          "k:{\"containerPort\":8080,\"protocol\":\"TCP\"}": {
+                            ".": {},
+                            "f:containerPort": {},
+                            "f:protocol": {}
+                          }
+                        },
+                        "f:resources": {
+                          ".": {},
+                          "f:limits": {
+                            ".": {},
+                            "f:cpu": {},
+                            "f:memory": {}
+                          },
+                          "f:requests": {
+                            ".": {},
+                            "f:cpu": {},
+                            "f:memory": {}
+                          }
+                        },
+                        "f:terminationMessagePath": {},
+                        "f:terminationMessagePolicy": {}
+                      }
+                    },
+                    "f:dnsPolicy": {},
+                    "f:restartPolicy": {},
+                    "f:schedulerName": {},
+                    "f:securityContext": {},
+                    "f:terminationGracePeriodSeconds": {}
+                  }
+                }
+              }
+            }
+          },
+          {
+            "manager": "k3s",
+            "operation": "Update",
+            "apiVersion": "apps/v1",
+            "time": "2025-03-06T11:15:51Z",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:annotations": {
+                  "f:deployment.kubernetes.io/revision": {}
+                }
+              },
+              "f:status": {
+                "f:conditions": {
+                  ".": {},
+                  "k:{\"type\":\"Available\"}": {
+                    ".": {},
+                    "f:lastTransitionTime": {},
+                    "f:lastUpdateTime": {},
+                    "f:message": {},
+                    "f:reason": {},
+                    "f:status": {},
+                    "f:type": {}
+                  },
+                  "k:{\"type\":\"Progressing\"}": {
+                    ".": {},
+                    "f:lastTransitionTime": {},
+                    "f:lastUpdateTime": {},
+                    "f:message": {},
+                    "f:reason": {},
+                    "f:status": {},
+                    "f:type": {}
+                  }
+                },
+                "f:observedGeneration": {},
+                "f:replicas": {},
+                "f:unavailableReplicas": {},
+                "f:updatedReplicas": {}
+              }
+            },
+            "subresource": "status"
+          }
+        ]
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "autoscaler"
+          }
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "autoscaler"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "autoscaler",
+                "image": "ghcr.io/aau-p9s/autoscaler-frontend:latest",
+                "command": [
+                  "dotnet"
+                ],
+                "args": [
+                  "Autoscaler.dll",
+                  "--kube-api",
+                  "https://kubernetes",
+                  "--prometheus-addr",
+                  "http://prometheus-server",
+                  "--scaler",
+                  "./predict.py",
+                  "--re-trainer",
+                  "./train.py"
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "2",
+                    "memory": "32Gi"
+                  },
+                  "requests": {
+                    "cpu": "500m",
+                    "memory": "2Gi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "imagePullPolicy": "Always"
+              }
+            ],
+            "restartPolicy": "Always",
+            "terminationGracePeriodSeconds": 30,
+            "dnsPolicy": "ClusterFirst",
+            "securityContext": {},
+            "schedulerName": "default-scheduler"
+          }
+        },
+        "strategy": {
+          "type": "RollingUpdate",
+          "rollingUpdate": {
+            "maxUnavailable": "25%",
+            "maxSurge": "25%"
+          }
+        },
+        "revisionHistoryLimit": 10,
+        "progressDeadlineSeconds": 600
+      },
+      "status": {
+        "observedGeneration": 1,
+        "replicas": 1,
+        "updatedReplicas": 1,
+        "unavailableReplicas": 1,
+        "conditions": [
+          {
+            "type": "Available",
+            "status": "False",
+            "lastUpdateTime": "2025-03-06T11:05:50Z",
+            "lastTransitionTime": "2025-03-06T11:05:50Z",
+            "reason": "MinimumReplicasUnavailable",
+            "message": "Deployment does not have minimum availability."
+          },
+          {
+            "type": "Progressing",
+            "status": "False",
+            "lastUpdateTime": "2025-03-06T11:15:51Z",
+            "lastTransitionTime": "2025-03-06T11:15:51Z",
+            "reason": "ProgressDeadlineExceeded",
+            "message": "ReplicaSet \"autoscaler-deployment-7bb4597797\" has timed out progressing."
+          }
+        ]
+      }
+    },
+    {
+      "metadata": {
+        "name": "mysql",
+        "namespace": "default",
+        "uid": "62ed7061-8781-43f2-bca5-1df8848aa92f",
+        "resourceVersion": "1323285",
+        "generation": 1,
+        "creationTimestamp": "2025-03-06T11:05:58Z",
+        "annotations": {
+          "deployment.kubernetes.io/revision": "1",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"mysql\",\"namespace\":\"default\"},\"spec\":{\"selector\":{\"matchLabels\":{\"app\":\"mysql\"}},\"strategy\":{\"type\":\"Recreate\"},\"template\":{\"metadata\":{\"labels\":{\"app\":\"mysql\"}},\"spec\":{\"containers\":[{\"env\":[{\"name\":\"MYSQL_ROOT_PASSWORD\",\"value\":\"1234\"}],\"image\":\"mysql:8.0\",\"name\":\"mysql\",\"ports\":[{\"containerPort\":3306,\"name\":\"mysql\"}],\"volumeMounts\":[{\"mountPath\":\"/var/lib/mysql\",\"name\":\"mysql-persistent-storage\"}]}],\"volumes\":[{\"name\":\"mysql-persistent-storage\",\"persistentVolumeClaim\":{\"claimName\":\"mysql-pv-claim\"}}]}}}}\n"
+        },
+        "managedFields": [
+          {
+            "manager": "kubectl-client-side-apply",
+            "operation": "Update",
+            "apiVersion": "apps/v1",
+            "time": "2025-03-06T11:05:58Z",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:annotations": {
+                  ".": {},
+                  "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                }
+              },
+              "f:spec": {
+                "f:progressDeadlineSeconds": {},
+                "f:replicas": {},
+                "f:revisionHistoryLimit": {},
+                "f:selector": {},
+                "f:strategy": {
+                  "f:type": {}
+                },
+                "f:template": {
+                  "f:metadata": {
+                    "f:labels": {
+                      ".": {},
+                      "f:app": {}
+                    }
+                  },
+                  "f:spec": {
+                    "f:containers": {
+                      "k:{\"name\":\"mysql\"}": {
+                        ".": {},
+                        "f:env": {
+                          ".": {},
+                          "k:{\"name\":\"MYSQL_ROOT_PASSWORD\"}": {
+                            ".": {},
+                            "f:name": {},
+                            "f:value": {}
+                          }
+                        },
+                        "f:image": {},
+                        "f:imagePullPolicy": {},
+                        "f:name": {},
+                        "f:ports": {
+                          ".": {},
+                          "k:{\"containerPort\":3306,\"protocol\":\"TCP\"}": {
+                            ".": {},
+                            "f:containerPort": {},
+                            "f:name": {},
+                            "f:protocol": {}
+                          }
+                        },
+                        "f:resources": {},
+                        "f:terminationMessagePath": {},
+                        "f:terminationMessagePolicy": {},
+                        "f:volumeMounts": {
+                          ".": {},
+                          "k:{\"mountPath\":\"/var/lib/mysql\"}": {
+                            ".": {},
+                            "f:mountPath": {},
+                            "f:name": {}
+                          }
+                        }
+                      }
+                    },
+                    "f:dnsPolicy": {},
+                    "f:restartPolicy": {},
+                    "f:schedulerName": {},
+                    "f:securityContext": {},
+                    "f:terminationGracePeriodSeconds": {},
+                    "f:volumes": {
+                      ".": {},
+                      "k:{\"name\":\"mysql-persistent-storage\"}": {
+                        ".": {},
+                        "f:name": {},
+                        "f:persistentVolumeClaim": {
+                          ".": {},
+                          "f:claimName": {}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "manager": "k3s",
+            "operation": "Update",
+            "apiVersion": "apps/v1",
+            "time": "2025-03-06T11:06:34Z",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:annotations": {
+                  "f:deployment.kubernetes.io/revision": {}
+                }
+              },
+              "f:status": {
+                "f:availableReplicas": {},
+                "f:conditions": {
+                  ".": {},
+                  "k:{\"type\":\"Available\"}": {
+                    ".": {},
+                    "f:lastTransitionTime": {},
+                    "f:lastUpdateTime": {},
+                    "f:message": {},
+                    "f:reason": {},
+                    "f:status": {},
+                    "f:type": {}
+                  },
+                  "k:{\"type\":\"Progressing\"}": {
+                    ".": {},
+                    "f:lastTransitionTime": {},
+                    "f:lastUpdateTime": {},
+                    "f:message": {},
+                    "f:reason": {},
+                    "f:status": {},
+                    "f:type": {}
+                  }
+                },
+                "f:observedGeneration": {},
+                "f:readyReplicas": {},
+                "f:replicas": {},
+                "f:updatedReplicas": {}
+              }
+            },
+            "subresource": "status"
+          }
+        ]
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "mysql"
+          }
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "mysql"
+            }
+          },
+          "spec": {
+            "volumes": [
+              {
+                "name": "mysql-persistent-storage",
+                "persistentVolumeClaim": {
+                  "claimName": "mysql-pv-claim"
+                }
+              }
+            ],
+            "containers": [
+              {
+                "name": "mysql",
+                "image": "mysql:8.0",
+                "ports": [
+                  {
+                    "name": "mysql",
+                    "containerPort": 3306,
+                    "protocol": "TCP"
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "MYSQL_ROOT_PASSWORD",
+                    "value": "1234"
+                  }
+                ],
+                "resources": {},
+                "volumeMounts": [
+                  {
+                    "name": "mysql-persistent-storage",
+                    "mountPath": "/var/lib/mysql"
+                  }
+                ],
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "imagePullPolicy": "IfNotPresent"
+              }
+            ],
+            "restartPolicy": "Always",
+            "terminationGracePeriodSeconds": 30,
+            "dnsPolicy": "ClusterFirst",
+            "securityContext": {},
+            "schedulerName": "default-scheduler"
+          }
+        },
+        "strategy": {
+          "type": "Recreate"
+        },
+        "revisionHistoryLimit": 10,
+        "progressDeadlineSeconds": 600
+      },
+      "status": {
+        "observedGeneration": 1,
+        "replicas": 1,
+        "updatedReplicas": 1,
+        "readyReplicas": 1,
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "type": "Available",
+            "status": "True",
+            "lastUpdateTime": "2025-03-06T11:06:34Z",
+            "lastTransitionTime": "2025-03-06T11:06:34Z",
+            "reason": "MinimumReplicasAvailable",
+            "message": "Deployment has minimum availability."
+          },
+          {
+            "type": "Progressing",
+            "status": "True",
+            "lastUpdateTime": "2025-03-06T11:06:34Z",
+            "lastTransitionTime": "2025-03-06T11:05:58Z",
+            "reason": "NewReplicaSetAvailable",
+            "message": "ReplicaSet \"mysql-659747d944\" has successfully progressed."
+          }
+        ]
+      }
+    },
+    {
+      "metadata": {
+        "name": "workload-api-deployment",
+        "namespace": "default",
+        "uid": "12a7869f-88a2-4afc-804b-7b9518400e65",
+        "resourceVersion": "1204468",
+        "generation": 75,
+        "creationTimestamp": "2025-02-28T12:33:52Z",
+        "annotations": {
+          "deployment.kubernetes.io/revision": "1",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"workload-api-deployment\",\"namespace\":\"default\"},\"spec\":{\"selector\":{\"matchLabels\":{\"app\":\"workload-api\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"workload-api\"}},\"spec\":{\"containers\":[{\"args\":[\"--port\",\"8123\"],\"image\":\"ghcr.io/aau-p9s/workload-api:latest\",\"name\":\"workload-api\",\"ports\":[{\"containerPort\":8123}],\"resources\":{\"limits\":{\"cpu\":\"2000m\",\"memory\":\"1024Mi\"},\"requests\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"}}}]}}}}\n"
+        },
+        "managedFields": [
+          {
+            "manager": "k3s",
+            "operation": "Update",
+            "apiVersion": "apps/v1",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:spec": {
+                "f:replicas": {}
+              }
+            },
+            "subresource": "scale"
+          },
+          {
+            "manager": "kubectl-client-side-apply",
+            "operation": "Update",
+            "apiVersion": "apps/v1",
+            "time": "2025-02-28T12:33:52Z",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:annotations": {
+                  ".": {},
+                  "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                }
+              },
+              "f:spec": {
+                "f:progressDeadlineSeconds": {},
+                "f:revisionHistoryLimit": {},
+                "f:selector": {},
+                "f:strategy": {
+                  "f:rollingUpdate": {
+                    ".": {},
+                    "f:maxSurge": {},
+                    "f:maxUnavailable": {}
+                  },
+                  "f:type": {}
+                },
+                "f:template": {
+                  "f:metadata": {
+                    "f:labels": {
+                      ".": {},
+                      "f:app": {}
+                    }
+                  },
+                  "f:spec": {
+                    "f:containers": {
+                      "k:{\"name\":\"workload-api\"}": {
+                        ".": {},
+                        "f:args": {},
+                        "f:image": {},
+                        "f:imagePullPolicy": {},
+                        "f:name": {},
+                        "f:ports": {
+                          ".": {},
+                          "k:{\"containerPort\":8123,\"protocol\":\"TCP\"}": {
+                            ".": {},
+                            "f:containerPort": {},
+                            "f:protocol": {}
+                          }
+                        },
+                        "f:resources": {
+                          ".": {},
+                          "f:limits": {
+                            ".": {},
+                            "f:cpu": {},
+                            "f:memory": {}
+                          },
+                          "f:requests": {
+                            ".": {},
+                            "f:cpu": {},
+                            "f:memory": {}
+                          }
+                        },
+                        "f:terminationMessagePath": {},
+                        "f:terminationMessagePolicy": {}
+                      }
+                    },
+                    "f:dnsPolicy": {},
+                    "f:restartPolicy": {},
+                    "f:schedulerName": {},
+                    "f:securityContext": {},
+                    "f:terminationGracePeriodSeconds": {}
+                  }
+                }
+              }
+            }
+          },
+          {
+            "manager": "k3s",
+            "operation": "Update",
+            "apiVersion": "apps/v1",
+            "time": "2025-03-04T16:20:02Z",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:annotations": {
+                  "f:deployment.kubernetes.io/revision": {}
+                }
+              },
+              "f:status": {
+                "f:availableReplicas": {},
+                "f:conditions": {
+                  ".": {},
+                  "k:{\"type\":\"Available\"}": {
+                    ".": {},
+                    "f:lastTransitionTime": {},
+                    "f:lastUpdateTime": {},
+                    "f:message": {},
+                    "f:reason": {},
+                    "f:status": {},
+                    "f:type": {}
+                  },
+                  "k:{\"type\":\"Progressing\"}": {
+                    ".": {},
+                    "f:lastTransitionTime": {},
+                    "f:lastUpdateTime": {},
+                    "f:message": {},
+                    "f:reason": {},
+                    "f:status": {},
+                    "f:type": {}
+                  }
+                },
+                "f:observedGeneration": {},
+                "f:readyReplicas": {},
+                "f:replicas": {},
+                "f:updatedReplicas": {}
+              }
+            },
+            "subresource": "status"
+          }
+        ]
+      },
+      "spec": {
+        "replicas": 10,
+        "selector": {
+          "matchLabels": {
+            "app": "workload-api"
+          }
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "workload-api"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "workload-api",
+                "image": "ghcr.io/aau-p9s/workload-api:latest",
+                "args": [
+                  "--port",
+                  "8123"
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8123,
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "2",
+                    "memory": "1Gi"
+                  },
+                  "requests": {
+                    "cpu": "500m",
+                    "memory": "512Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "imagePullPolicy": "Always"
+              }
+            ],
+            "restartPolicy": "Always",
+            "terminationGracePeriodSeconds": 30,
+            "dnsPolicy": "ClusterFirst",
+            "securityContext": {},
+            "schedulerName": "default-scheduler"
+          }
+        },
+        "strategy": {
+          "type": "RollingUpdate",
+          "rollingUpdate": {
+            "maxUnavailable": "25%",
+            "maxSurge": "25%"
+          }
+        },
+        "revisionHistoryLimit": 10,
+        "progressDeadlineSeconds": 600
+      },
+      "status": {
+        "observedGeneration": 75,
+        "replicas": 10,
+        "updatedReplicas": 10,
+        "readyReplicas": 10,
+        "availableReplicas": 10,
+        "conditions": [
+          {
+            "type": "Progressing",
+            "status": "True",
+            "lastUpdateTime": "2025-02-28T12:34:05Z",
+            "lastTransitionTime": "2025-02-28T12:33:52Z",
+            "reason": "NewReplicaSetAvailable",
+            "message": "ReplicaSet \"workload-api-deployment-6c49df78fd\" has successfully progressed."
+          },
+          {
+            "type": "Available",
+            "status": "True",
+            "lastUpdateTime": "2025-03-04T16:19:43Z",
+            "lastTransitionTime": "2025-03-04T16:19:43Z",
+            "reason": "MinimumReplicasAvailable",
+            "message": "Deployment has minimum availability."
+          }
+        ]
+      }
+    },
+    {
+      "metadata": {
+        "name": "workload-generator-deployment",
+        "namespace": "default",
+        "uid": "463130f3-7d20-4486-be7a-14932779cf58",
+        "resourceVersion": "1204303",
+        "generation": 6,
+        "creationTimestamp": "2025-02-28T12:20:43Z",
+        "annotations": {
+          "deployment.kubernetes.io/revision": "6",
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"name\":\"workload-generator-deployment\",\"namespace\":\"default\"},\"spec\":{\"selector\":{\"matchLabels\":{\"app\":\"workload-generator\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"workload-generator\"}},\"spec\":{\"containers\":[{\"args\":[\"--addr\",\"workload-api\",\"--port\",\"8123\",\"-x\",\"150\",\"-y\",\"150\"],\"image\":\"ghcr.io/aau-p9s/workload-generator:latest\",\"name\":\"workload-generator\",\"ports\":[{\"containerPort\":8124}],\"resources\":{\"limits\":{\"cpu\":\"2000m\",\"memory\":\"1024Mi\"},\"requests\":{\"cpu\":\"500m\",\"memory\":\"512Mi\"}}}]}}}}\n"
+        },
+        "managedFields": [
+          {
+            "manager": "kubectl-client-side-apply",
+            "operation": "Update",
+            "apiVersion": "apps/v1",
+            "time": "2025-03-04T16:18:58Z",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:annotations": {
+                  ".": {},
+                  "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                }
+              },
+              "f:spec": {
+                "f:progressDeadlineSeconds": {},
+                "f:replicas": {},
+                "f:revisionHistoryLimit": {},
+                "f:selector": {},
+                "f:strategy": {
+                  "f:rollingUpdate": {
+                    ".": {},
+                    "f:maxSurge": {},
+                    "f:maxUnavailable": {}
+                  },
+                  "f:type": {}
+                },
+                "f:template": {
+                  "f:metadata": {
+                    "f:labels": {
+                      ".": {},
+                      "f:app": {}
+                    }
+                  },
+                  "f:spec": {
+                    "f:containers": {
+                      "k:{\"name\":\"workload-generator\"}": {
+                        ".": {},
+                        "f:args": {},
+                        "f:image": {},
+                        "f:imagePullPolicy": {},
+                        "f:name": {},
+                        "f:ports": {
+                          ".": {},
+                          "k:{\"containerPort\":8124,\"protocol\":\"TCP\"}": {
+                            ".": {},
+                            "f:containerPort": {},
+                            "f:protocol": {}
+                          }
+                        },
+                        "f:resources": {
+                          ".": {},
+                          "f:limits": {
+                            ".": {},
+                            "f:cpu": {},
+                            "f:memory": {}
+                          },
+                          "f:requests": {
+                            ".": {},
+                            "f:cpu": {},
+                            "f:memory": {}
+                          }
+                        },
+                        "f:terminationMessagePath": {},
+                        "f:terminationMessagePolicy": {}
+                      }
+                    },
+                    "f:dnsPolicy": {},
+                    "f:restartPolicy": {},
+                    "f:schedulerName": {},
+                    "f:securityContext": {},
+                    "f:terminationGracePeriodSeconds": {}
+                  }
+                }
+              }
+            }
+          },
+          {
+            "manager": "k3s",
+            "operation": "Update",
+            "apiVersion": "apps/v1",
+            "time": "2025-03-04T16:19:18Z",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:annotations": {
+                  "f:deployment.kubernetes.io/revision": {}
+                }
+              },
+              "f:status": {
+                "f:availableReplicas": {},
+                "f:conditions": {
+                  ".": {},
+                  "k:{\"type\":\"Available\"}": {
+                    ".": {},
+                    "f:lastTransitionTime": {},
+                    "f:lastUpdateTime": {},
+                    "f:message": {},
+                    "f:reason": {},
+                    "f:status": {},
+                    "f:type": {}
+                  },
+                  "k:{\"type\":\"Progressing\"}": {
+                    ".": {},
+                    "f:lastTransitionTime": {},
+                    "f:lastUpdateTime": {},
+                    "f:message": {},
+                    "f:reason": {},
+                    "f:status": {},
+                    "f:type": {}
+                  }
+                },
+                "f:observedGeneration": {},
+                "f:readyReplicas": {},
+                "f:replicas": {},
+                "f:updatedReplicas": {}
+              }
+            },
+            "subresource": "status"
+          }
+        ]
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "workload-generator"
+          }
+        },
+        "template": {
+          "metadata": {
+            "creationTimestamp": null,
+            "labels": {
+              "app": "workload-generator"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "workload-generator",
+                "image": "ghcr.io/aau-p9s/workload-generator:latest",
+                "args": [
+                  "--addr",
+                  "workload-api",
+                  "--port",
+                  "8123",
+                  "-x",
+                  "150",
+                  "-y",
+                  "150"
+                ],
+                "ports": [
+                  {
+                    "containerPort": 8124,
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "2",
+                    "memory": "1Gi"
+                  },
+                  "requests": {
+                    "cpu": "500m",
+                    "memory": "512Mi"
+                  }
+                },
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "imagePullPolicy": "Always"
+              }
+            ],
+            "restartPolicy": "Always",
+            "terminationGracePeriodSeconds": 30,
+            "dnsPolicy": "ClusterFirst",
+            "securityContext": {},
+            "schedulerName": "default-scheduler"
+          }
+        },
+        "strategy": {
+          "type": "RollingUpdate",
+          "rollingUpdate": {
+            "maxUnavailable": "25%",
+            "maxSurge": "25%"
+          }
+        },
+        "revisionHistoryLimit": 10,
+        "progressDeadlineSeconds": 600
+      },
+      "status": {
+        "observedGeneration": 6,
+        "replicas": 1,
+        "updatedReplicas": 1,
+        "readyReplicas": 1,
+        "availableReplicas": 1,
+        "conditions": [
+          {
+            "type": "Available",
+            "status": "True",
+            "lastUpdateTime": "2025-02-28T12:20:52Z",
+            "lastTransitionTime": "2025-02-28T12:20:52Z",
+            "reason": "MinimumReplicasAvailable",
+            "message": "Deployment has minimum availability."
+          },
+          {
+            "type": "Progressing",
+            "status": "True",
+            "lastUpdateTime": "2025-03-04T16:19:18Z",
+            "lastTransitionTime": "2025-02-28T12:20:43Z",
+            "reason": "NewReplicaSetAvailable",
+            "message": "ReplicaSet \"workload-generator-deployment-85bbd46c9d\" has successfully progressed."
+          }
+        ]
+      }
+    }
+  ]
+}
