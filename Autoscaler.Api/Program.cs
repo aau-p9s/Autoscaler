@@ -21,12 +21,12 @@ var apis = autoscalerSettings.GetSection("APIS");
 
 Console.WriteLine("Settings set by env vars:");
 Console.WriteLine($@"
-    AUTOSCALER.PORT: {port}
-    AUTOSCALER.HOST: {host}
-    AUTOSCALER.PGSQL.ADDR: {dbAddr}
-    AUTOSCALER.PGSQL.PORT: {dbPort}
-    AUTOSCALER.PGSQL.DATABASE: {dbName}
-    AUTOSCALER.PGSQL.USER: {dbUser}
+    AUTOSCALER.PORT:            {port}
+    AUTOSCALER.HOST:            {host}
+    AUTOSCALER.PGSQL.ADDR:      {dbAddr}
+    AUTOSCALER.PGSQL.PORT:      {dbPort}
+    AUTOSCALER.PGSQL.DATABASE:  {dbName}
+    AUTOSCALER.PGSQL.USER:      {dbUser}
     AUTOSCALER.APIS.FORECASTER: {apis.GetValue<string>("FORECASTER")}
     AUTOSCALER.APIS.KUBERNETES: {apis.GetValue<string>("KUBERNETES")}
     AUTOSCALER.APIS.PROMETHEUS: {apis.GetValue<string>("PROMETHEUS")}
