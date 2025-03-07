@@ -30,7 +30,7 @@ jobs:
         with:
           dotnet-version: "8"
       - name: migrate db
-        run: dotnet run Autoscaler.DbUp
+        run: dotnet run --project Autoscaler.DbUp
       - name: run docker
         run: docker run -d $(docker build . -q)
       - name: test API
