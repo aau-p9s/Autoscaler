@@ -13,7 +13,7 @@ services:
         ports:
             - "5432:5432"
     autoscaler:
-        image: ghcr.io/aau-p9s/autoscaler
+        image: ghcr.io/aau-p9s/autoscaler:latest
         restart: always
         environment:
             AUTOSCALER__PGSQL__ADDR: db

@@ -16,37 +16,18 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_PASSWORD: password
-          POSTGRES_USER: root
-          POSTGRES_DB: autoscaler
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5 
     steps:
       - name: checkout repo
         uses: actions/checkout@v4.1.1
+      - name: build docker image
+        run: docker build . -t ghcr.io/aau-p9s/autoscaler
+      - name: run docker compose
+        run: docker compose -f Autoscaler.Persistence/docker-compose up -d 
       - name: Setup Dotnet
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8"
       - name: migrate db
         run: dotnet run --project Autoscaler.DbUp
-      - name: run docker
-        run: >- 
-          docker run -d
-          -p 8080:8080
-          -e "AUTOSCALER__PGSQL__ADDR=postgres"
-          -e "AUTOSCALER__HOST=$AUTOSCALER__HOST"
-          -e "AUTOSCALER__PORT=$AUTOSCALER__PORT"
-          $(docker build . -q)
-          && sleep 10 # TODO: healthcheck
       - name: test API
         run: bash .github/workflows/api_test.sh "$AUTOSCALER__HOST:$AUTOSCALER__PORT"
