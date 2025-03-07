@@ -29,6 +29,8 @@ jobs:
         uses: actions/checkout@v4.1.1
       - name: migrate db
         run: dotnet run --project Autoscaler.DbUp
+      - name: setup docker
+        run: sudo apt update && sudo apt install docker.io
       - name: run docker
         run: docker run -d $(docker build . -q)
       - name: test API
