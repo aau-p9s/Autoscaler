@@ -9,6 +9,7 @@ on:
 env:
   AUTOSCALER__PGSQL__ADDR: postgres
   AUTOSCALER__PGSQL__PASSWORD: password
+  AUTOSCALER__PGSQL__USER: root
   AUTOSCALER__HOST: 0.0.0.0
   AUTOSCALER__PORT: 8080
 
@@ -34,4 +35,4 @@ jobs:
       - name: run docker
         run: docker run -d $(docker build . -q)
       - name: test API
-        run: bash .github/workflows/api_test.sh "$AUTOSCALER_HOST:$AUTOSCALER_PORT"
+        run: bash .github/workflows/api_test.sh "$AUTOSCALER__HOST:$AUTOSCALER__PORT"
