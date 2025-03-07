@@ -1,4 +1,4 @@
-name: Dotnet Test
+name: Docker API Test
 
 on:
   push:
