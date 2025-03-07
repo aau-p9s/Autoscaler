@@ -30,7 +30,7 @@ jobs:
       - name: migrate db
         run: dotnet run --project Autoscaler.DbUp
       - name: setup docker
-        run: sudo apt update && sudo apt install docker.io
+        uses: docker-practice/actions-setup-docker@master
       - name: run docker
         run: docker run -d $(docker build . -q)
       - name: test API
