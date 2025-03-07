@@ -6,6 +6,8 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
+var logger = new LoggerFactory().CreateLogger<Program>();
+
 var autoscalerSettings = builder.Configuration.GetSection("AUTOSCALER");
 var port = autoscalerSettings.GetValue<int>("PORT");
 var host = autoscalerSettings.GetValue<string>("HOST");
@@ -17,6 +19,18 @@ var dbUser = dbSettings.GetValue<string>("USER");
 var dbPassword = dbSettings.GetValue<string>("PASSWORD"); // TODO: FIX
 var apis = autoscalerSettings.GetSection("APIS");
 
+logger.Log(LogLevel.Information, "Settings set by env vars:");
+logger.Log(LogLevel.Information, $@"
+    AUTOSCALER.PORT: {port}
+    AUTOSCALER.HOST: {host}
+    AUTOSCALER.PGSQL.ADDR: {dbAddr}
+    AUTOSCALER.PGSQL.PORT: {dbPort}
+    AUTOSCALER.PGSQL.DATABASE: {dbName}
+    AUTOSCALER.PGSQL.USER: {dbUser}
+    AUTOSCALER.APIS.FORECASTER: {apis.GetValue<string>("FORECASTER")}
+    AUTOSCALER.APIS.KUBERNETES: {apis.GetValue<string>("KUBERNETES")}
+    AUTOSCALER.APIS.PROMETHEUS: {apis.GetValue<string>("PROMETHEUS")}
+");
 
 builder.Services.ConfigurePersistencePostGreSqlConnection($"Server={dbAddr};Port={dbPort};Database={dbName};Uid={dbUser};Password={dbPassword}");
 builder.Services.AddSingleton<Runner>(provider => 

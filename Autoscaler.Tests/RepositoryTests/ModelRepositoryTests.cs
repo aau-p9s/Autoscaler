@@ -21,14 +21,14 @@ public class ModelRepositoryTests
         _dbConnectionFactory.Setup(x => x.Connection).Returns(_dbConnection.Object);
     }
 
-    [Test()]
+    [Test]
     public void GetModelsForServiceAsyncFailure()
     {
         _modelRepository.Setup(x => x.GetModelsForServiceAsync(It.IsAny<Guid>())).ThrowsAsync(new Exception());
         Assert.ThrowsAsync<Exception>(() => _modelRepository.Object.GetModelsForServiceAsync(It.IsAny<Guid>()));
     }
 
-    [Test()]
+    [Test]
     public void GetModelsForServiceAsync()
     {
         _modelRepository.Setup(x => x.GetModelsForServiceAsync(It.IsAny<Guid>())).ReturnsAsync(new List<ModelEntity>());

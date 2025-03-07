@@ -5,7 +5,7 @@ using Moq;
 
 namespace Autoscaler.Tests.RepositoryTests;
 
-[TestFixture()]
+[TestFixture]
 public class ForecastRepositoryTests
 {
     private ForecastEntity _forecastEntity;
@@ -22,14 +22,14 @@ public class ForecastRepositoryTests
         _dbConnectionFactory.Setup(x => x.Connection).Returns(_dbConnection.Object);
     }
 
-    [Test()]
+    [Test]
     public void GetForecastsByServiceIdAsyncFailure()
     {
         _forecastRepository.Setup(x => x.GetForecastsByServiceIdAsync(It.IsAny<Guid>())).ThrowsAsync(new Exception());
         Assert.ThrowsAsync<Exception>(() => _forecastRepository.Object.GetForecastsByServiceIdAsync(It.IsAny<Guid>()));
     }
 
-    [Test()]
+    [Test]
     public void GetForecastsByServiceIdAsync()
     {
         _forecastRepository.Setup(x => x.GetForecastsByServiceIdAsync(It.IsAny<Guid>())).ReturnsAsync(_forecastEntity);
@@ -37,14 +37,14 @@ public class ForecastRepositoryTests
         Assert.That(result.Result, Is.EqualTo(_forecastEntity));
     }
 
-    [Test()]
+    [Test]
     public void GetForecastByIdAsyncFailure()
     {
         _forecastRepository.Setup(x => x.GetForecastByIdAsync(It.IsAny<Guid>())).ThrowsAsync(new Exception());
         Assert.ThrowsAsync<Exception>(() => _forecastRepository.Object.GetForecastByIdAsync(It.IsAny<Guid>()));
     }
 
-    [Test()]
+    [Test]
     public void GetForecastByIdAsync()
     {
         _forecastRepository.Setup(x => x.GetForecastByIdAsync(It.IsAny<Guid>())).ReturnsAsync(_forecastEntity);
