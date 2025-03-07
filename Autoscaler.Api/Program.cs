@@ -6,8 +6,6 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-var logger = new LoggerFactory().CreateLogger<Program>();
-
 var autoscalerSettings = builder.Configuration.GetSection("AUTOSCALER");
 var port = autoscalerSettings.GetValue<int>("PORT");
 var host = autoscalerSettings.GetValue<string>("HOST");

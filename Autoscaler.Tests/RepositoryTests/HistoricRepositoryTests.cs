@@ -5,7 +5,7 @@ using Moq;
 
 namespace Autoscaler.Tests.RepositoryTests;
 
-[TestFixture]
+[TestFixture()]
 public class HistoricRepositoryTests
 {
     private HistoricEntity _historicEntity;
@@ -22,7 +22,7 @@ public class HistoricRepositoryTests
         _dbConnectionFactory.Setup(x => x.Connection).Returns(_dbConnection.Object);
     }
 
-    [Test]
+    [Test()]
     public void GetHistoricDataByServiceIdAsyncFailure()
     {
         _historicRepository.Setup(x => x.GetHistoricDataByServiceIdAsync(It.IsAny<Guid>()))
@@ -31,7 +31,7 @@ public class HistoricRepositoryTests
             () => _historicRepository.Object.GetHistoricDataByServiceIdAsync(It.IsAny<Guid>()));
     }
 
-    [Test]
+    [Test()]
     public void GetHistoricDataByServiceIdAsync()
     {
         _historicRepository.Setup(x => x.GetHistoricDataByServiceIdAsync(It.IsAny<Guid>()))
@@ -40,7 +40,7 @@ public class HistoricRepositoryTests
         Assert.That(result.Result, Is.EqualTo(_historicEntity));
     }
 
-    [Test]
+    [Test()]
     public void UpsertHistoricDataAsyncFailure()
     {
         _historicRepository.Setup(x => x.UpsertHistoricDataAsync(It.IsAny<HistoricEntity>()))
@@ -49,7 +49,7 @@ public class HistoricRepositoryTests
             _historicRepository.Object.UpsertHistoricDataAsync(It.IsAny<HistoricEntity>()));
     }
 
-    [Test]
+    [Test()]
     public void UpsertHistoricDataAsync()
     {
         _historicRepository.Setup(x => x.UpsertHistoricDataAsync(It.IsAny<HistoricEntity>())).ReturnsAsync(true);

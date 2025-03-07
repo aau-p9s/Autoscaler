@@ -5,7 +5,7 @@ using Moq;
 
 namespace Autoscaler.Tests.RepositoryTests;
 
-[TestFixture]
+[TestFixture()]
 public class ServicesRepositoryTests
 {
     private ServiceEntity _serviceEntity;
@@ -22,14 +22,14 @@ public class ServicesRepositoryTests
         _dbConnectionFactory.Setup(x => x.Connection).Returns(_dbConnection.Object);
     }
 
-    [Test]
+    [Test()]
     public void GetServiceByIdAsyncFailure()
     {
         _servicesRepository.Setup(x => x.GetServiceByIdAsync(It.IsAny<Guid>())).ThrowsAsync(new Exception());
         Assert.ThrowsAsync<Exception>(() => _servicesRepository.Object.GetServiceByIdAsync(It.IsAny<Guid>()));
     }
 
-    [Test]
+    [Test()]
     public void GetServiceByIdAsync()
     {
         _servicesRepository.Setup(x => x.GetServiceByIdAsync(It.IsAny<Guid>())).ReturnsAsync(_serviceEntity);
@@ -37,7 +37,7 @@ public class ServicesRepositoryTests
         Assert.That(result.Result, Is.EqualTo(_serviceEntity));
     }
 
-    [Test]
+    [Test()]
     public void GetServiceIdByNameAsyncFailure()
     {
         _servicesRepository.Setup(x => x.GetServiceIdByNameAsync(It.IsAny<string>())).ThrowsAsync(new Exception());
