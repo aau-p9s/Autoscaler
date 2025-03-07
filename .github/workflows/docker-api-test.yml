@@ -22,7 +22,7 @@ jobs:
       - name: build docker image
         run: docker build . -t ghcr.io/aau-p9s/autoscaler
       - name: run docker compose
-        run: docker compose -f Autoscaler.Persistence/docker-compose up -d 
+        run: docker compose -f Autoscaler.Persistence/docker-compose.yml up -d 
       - name: Setup Dotnet
         uses: actions/setup-dotnet@v4
         with:
