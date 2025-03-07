@@ -15,7 +15,7 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services: 
+    services:
       image: postgres
       env:
         POSTGRES_PASSWORD: password
@@ -23,7 +23,7 @@ jobs:
         POSTGRES_DB: autoscaler
     steps:
       - name: checkout repo
-        uses: actions/checkout
+        uses: actions/checkout@v4.1.1
       - name: Setup Dotnet
         uses: actions/setup-dotnet@v4
         with:
