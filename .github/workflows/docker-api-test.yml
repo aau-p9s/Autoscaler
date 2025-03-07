@@ -40,6 +40,6 @@ jobs:
       - name: migrate db
         run: dotnet run --project Autoscaler.DbUp
       - name: run docker
-        run: docker run -d $(docker build . -q)
+        run: docker run -d -p 8080:8080 -e "AUTOSCALER__PGSQL__ADDR=postgres" $(docker build . -q)
       - name: test API
         run: bash .github/workflows/api_test.sh "$AUTOSCALER__HOST:$AUTOSCALER__PORT"
