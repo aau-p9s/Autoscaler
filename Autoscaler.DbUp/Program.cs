@@ -2,11 +2,11 @@
 using System.Reflection;
 using DbUp;
 
-var addr = Environment.GetEnvironmentVariable("AUTOSCALER_PGSQL_ADDR");
-var port = Environment.GetEnvironmentVariable("AUTOSCALER_PGSQL_PORT");
-var database = Environment.GetEnvironmentVariable("AUTOSCALER_PGSQL_DATABASE");
-var user = Environment.GetEnvironmentVariable("AUTOSCALER_PGSQL_USER");
-var password = Environment.GetEnvironmentVariable("AUTOSCALER_PGSQL_PASSWORD"); // TODO: fix
+var addr = Environment.GetEnvironmentVariable("AUTOSCALER__PGSQL__ADDR");
+var port = Environment.GetEnvironmentVariable("AUTOSCALER__PGSQL__PORT");
+var database = Environment.GetEnvironmentVariable("AUTOSCALER__PGSQL__DATABASE");
+var user = Environment.GetEnvironmentVariable("AUTOSCALER__PGSQL__USER");
+var password = Environment.GetEnvironmentVariable("AUTOSCALER__PGSQL__PASSWORD"); // TODO: fix
 
 var sqlUpgrader =
     DeployChanges.To

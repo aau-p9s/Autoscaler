@@ -17,6 +17,18 @@ var dbUser = dbSettings.GetValue<string>("USER");
 var dbPassword = dbSettings.GetValue<string>("PASSWORD"); // TODO: FIX
 var apis = autoscalerSettings.GetSection("APIS");
 
+Console.WriteLine("Settings set by env vars:");
+Console.WriteLine($@"
+    AUTOSCALER.PORT:            {port}
+    AUTOSCALER.HOST:            {host}
+    AUTOSCALER.PGSQL.ADDR:      {dbAddr}
+    AUTOSCALER.PGSQL.PORT:      {dbPort}
+    AUTOSCALER.PGSQL.DATABASE:  {dbName}
+    AUTOSCALER.PGSQL.USER:      {dbUser}
+    AUTOSCALER.APIS.FORECASTER: {apis.GetValue<string>("FORECASTER")}
+    AUTOSCALER.APIS.KUBERNETES: {apis.GetValue<string>("KUBERNETES")}
+    AUTOSCALER.APIS.PROMETHEUS: {apis.GetValue<string>("PROMETHEUS")}
+");
 
 builder.Services.ConfigurePersistencePostGreSqlConnection($"Server={dbAddr};Port={dbPort};Database={dbName};Uid={dbUser};Password={dbPassword}");
 builder.Services.AddSingleton<Runner>(provider => 
