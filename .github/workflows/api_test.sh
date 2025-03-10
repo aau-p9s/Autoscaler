@@ -17,7 +17,7 @@ pass() {
 }
 
 assert() {
-    echo "got: $1"
+    echo "$1" | jq
     if ! [[ "$1" == "$2" ]]; then
         error "assertion failed"
     fi
