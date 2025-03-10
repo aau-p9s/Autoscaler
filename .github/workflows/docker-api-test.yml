@@ -1,0 +1,35 @@
+name: Docker API Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AUTOSCALER__PGSQL__ADDR: localhost
+  AUTOSCALER__PGSQL__PASSWORD: password
+  AUTOSCALER__PGSQL__USER: root
+  AUTOSCALER__HOST: 0.0.0.0
+  AUTOSCALER__PORT: 8080
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4.1.1
+      - name: build docker image
+        run: docker build . -t ghcr.io/aau-p9s/autoscaler
+      - name: run docker compose
+        run: docker compose -f Autoscaler.Persistence/docker-compose.yml up -d 
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8"
+      - name: migrate db
+        run: dotnet run --project Autoscaler.DbUp
+      - name: test API
+        run: bash .github/workflows/api_test.sh "$AUTOSCALER__HOST:$AUTOSCALER__PORT"
+      - name: reverse API test (check if test fails due to changes)
+        run: (! bash .github/workflows/api_test.sh "$AUTOSCALER__HOST:$AUTOSCALER__PORT")
