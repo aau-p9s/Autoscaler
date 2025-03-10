@@ -32,4 +32,4 @@ jobs:
       - name: test API
         run: bash .github/workflows/api_test.sh "$AUTOSCALER__HOST:$AUTOSCALER__PORT"
       - name: reverse API test (check if test fails due to changes)
-        run: ! bash .github/workflows/api_test.sh "$AUTOSCALER__HOST:$AUTOSCALER__PORT"
+        run: (! bash .github/workflows/api_test.sh "$AUTOSCALER__HOST:$AUTOSCALER__PORT")
