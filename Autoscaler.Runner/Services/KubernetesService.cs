@@ -7,6 +7,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Autoscaler.Runner.Services;
 
@@ -40,6 +41,11 @@ public class KubernetesService
 
     public async Task Update(string endpoint, object body)
     {
+        if (_useMockData)
+        {
+            Console.WriteLine("Using mock Kubernetes data...");
+            return;
+        }
         try
         {
             var request = new HttpRequestMessage
@@ -61,9 +67,16 @@ public class KubernetesService
         }
     }
 
-    public async Task<JsonObject?> Get(string endpoint)
+    public async Task<JObject?> Get(string endpoint)
     {
 
+        if (_useMockData)
+        {
+            Console.WriteLine("Using mock Kubernetes data...");
+            var promTrace = await File.ReadAllTextAsync("./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
+            return JObject.Parse(promTrace);
+        }
+        
         var request = new HttpRequestMessage
         {
             Method = HttpMethod.Get,
@@ -86,7 +99,7 @@ public class KubernetesService
             return null;
         }
 
-        return await response.Content.ReadFromJsonAsync<JsonObject>();
+        return await response.Content.ReadFromJsonAsync<JObject>();
     }
     
     public async Task<int> GetReplicas(string deploymentName)
@@ -110,4 +123,5 @@ public class KubernetesService
         if (e.InnerException != null)
             HandleException(e.InnerException);
     }
+    
 }

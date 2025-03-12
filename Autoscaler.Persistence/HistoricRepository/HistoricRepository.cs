@@ -26,19 +26,27 @@ public class HistoricRepository : IHistoricRepository
 
     public async Task<bool> UpsertHistoricDataAsync(HistoricEntity historicEntity)
     {
+        var parameters = new
+        {
+            Id = historicEntity.Id,
+            ServiceId = historicEntity.ServiceId,
+            CreatedAt = historicEntity.CreatedAt,
+            HistoricData = historicEntity.HistoricData
+        };
+        await Connection.ExecuteAsync($@"
+                    DELETE FROM {TableName} 
+                    WHERE ServiceId = @ServiceId",
+            parameters);
+
         var result = await Connection.ExecuteAsync($@"
-            INSERT INTO {TableName} (Id, ServiceId, CreatedAt, HistoricData)
-            VALUES (@Id, @ServiceId, @CreatedAt, CAST(@HistoricData AS jsonb))
-            ON CONFLICT (Id) DO UPDATE SET 
+                    INSERT INTO {TableName} (Id, ServiceId, CreatedAt, HistoricData)
+                    VALUES (@Id, @ServiceId, @CreatedAt, CAST(@HistoricData AS jsonb))
+                    ON CONFLICT (Id) DO UPDATE SET 
                 HistoricData = CAST(@HistoricData AS jsonb), 
                 CreatedAt = @CreatedAt",
-            new
-            {
-                Id = historicEntity.Id,
-                ServiceId = historicEntity.ServiceId,
-                CreatedAt = historicEntity.CreatedAt,
-                HistoricData = historicEntity.HistoricData
-            });
+            parameters);
+
+
         return result > 0;
     }
 }

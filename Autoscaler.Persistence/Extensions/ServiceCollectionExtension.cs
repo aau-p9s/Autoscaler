@@ -13,7 +13,7 @@ public static class ServiceCollectionExtension
     public static IServiceCollection ConfigurePersistencePostGreSqlConnection(this IServiceCollection services,
         string connectionString)
     {
-        services.AddSingleton<IDbConnectionFactory>(new NpgsqlConnectionFactory(connectionString));
+        services.AddSingleton<IDbConnectionFactory>(provider => new NpgsqlConnectionFactory(connectionString));
 
         // Add repositories
         services.AddScoped<IModelRepository, ModelRepository.ModelRepository>();

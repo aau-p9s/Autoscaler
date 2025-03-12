@@ -10,6 +10,7 @@ using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner.Entities;
 using Autoscaler.Runner.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 
 namespace Autoscaler.Runner;
 
@@ -42,12 +43,47 @@ public class Runner
         {
             var servicesRepository = scope.ServiceProvider.GetRequiredService<IServicesRepository>();
             var settingsRepository = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
-            
+
             var services = await servicesRepository.GetAllServicesAsync();
             foreach (var service in services)
             {
                 var settings = await settingsRepository.GetSettingsForServiceAsync(service.Id);
                 _deployments.Add(new DeploymentEntity(service, settings));
+            }
+
+
+            var getServicesFromKubernetes = await _kubernetes.Get("/api/v1/services");
+            if (getServicesFromKubernetes != null)
+            {
+                var deployments = ExtractNonSystemDeployments(getServicesFromKubernetes,
+                    new[] {"autoscaler", "mysql", "generator"});
+                foreach (var deployment in deployments)
+                {
+                    var serviceId = Guid.NewGuid();
+
+
+                    if (_deployments.All(d => d.Service.Name != deployment))
+                    {
+                        await servicesRepository.UpsertServiceAsync(new ServiceEntity
+                        {
+                            Id = serviceId,
+                            Name = deployment,
+                            AutoscalingEnabled = false
+                        });
+
+                        await settingsRepository.UpsertSettingsAsync(new SettingsEntity
+                        {
+                            Id = Guid.NewGuid(),
+                            ServiceId = serviceId,
+                            ScalePeriod = 60000,
+                            ScaleUp = 80,
+                            ScaleDown = 20,
+                            TrainInterval = 600000,
+                            ModelHyperParams = "",
+                            OptunaConfig = ""
+                        });
+                    }
+                }
             }
         }
 
@@ -60,11 +96,6 @@ public class Runner
             thread.Start();
             Console.WriteLine($"Started monitoring thread for {deployment.Service.Name}");
         }
-
-        foreach (var thread in _runningThreads)
-        {
-            thread.Join();
-        }
     }
 
     private async void DeploymentMonitorLoop(DeploymentEntity deployment, CancellationToken cancellationToken)
@@ -74,29 +105,24 @@ public class Runner
             while (!cancellationToken.IsCancellationRequested)
             {
                 var startTime = DateTime.Now;
-                
+
                 try
                 {
                     Console.WriteLine($"Checking deployment {deployment.Service.Name}");
-                    
+
                     // Create a new scope for each iteration to get fresh repository instances
                     using (var scope = _serviceProvider.CreateScope())
                     {
                         var historicRepository = scope.ServiceProvider.GetRequiredService<IHistoricRepository>();
-                        
+
                         var data = await _prometheus.QueryRange(
                             deployment.Service.Id,
-                            deployment.Service.Name, 
-                            DateTime.Now.AddHours(-12), 
-                            DateTime.Now, 
+                            deployment.Service.Name,
+                            DateTime.Now.AddHours(-12),
+                            DateTime.Now,
                             deployment.Settings.ScalePeriod);
-
-                        Console.WriteLine($"Data points for {deployment.Service.Name}: {data.HistoricData.Length}");
-
                         //var forecast = _forecaster.Forecast(data);
-
-                        // Store historic data if needed
-                        // await historicRepository.StoreHistoricDataAsync(...);
+                        await historicRepository.UpsertHistoricDataAsync(data);
 
                         var replicas = await _kubernetes.GetReplicas(deployment.Service.Name);
                         if (true) // TODO: forecast.value > scaleUp
@@ -117,18 +143,19 @@ public class Runner
                             }
                         };
 
-                        await _kubernetes.Update($"/apis/apps/v1/namespaces/default/deployments/{deployment.Service.Name}/scale", 
+                        await _kubernetes.Update(
+                            $"/apis/apps/v1/namespaces/default/deployments/{deployment.Service.Name}/scale",
                             jsonObject);
                     }
 
                     // Calculate delay based on the processing time
                     var processingTime = (DateTime.Now - startTime).TotalMilliseconds;
                     var delay = Math.Max(0, deployment.Settings.ScalePeriod - processingTime);
-                    
+
                     if (true) // TODO: forecast.timestamp > (Datetime.Now - delay)
                     {
                         Console.WriteLine($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
-                        await Task.Delay((int)delay, cancellationToken);
+                        await Task.Delay((int) delay, cancellationToken);
                     }
                 }
                 catch (Exception ex)
@@ -153,5 +180,49 @@ public class Runner
     {
         Console.WriteLine("Stopping all monitoring threads");
         _cancellationTokenSource.Cancel();
+    }
+
+    public static List<string> ExtractNonSystemDeployments(JObject kubeApiResponse, string[] excludePatterns = null)
+    {
+        // Initialize result list
+        List<string> deploymentNames = new List<string>();
+
+        // Use default exclusion patterns if none provided
+        HashSet<string> patternsToExclude = new HashSet<string>(
+            excludePatterns ?? new[] {"kubernetes", "prometheus", "autoscaler-deployment"},
+            StringComparer.OrdinalIgnoreCase);
+
+        // Get the "items" array which contains all deployments
+        JArray items = (JArray) kubeApiResponse["items"];
+
+        // Check if items exist
+        if (items == null)
+        {
+            return deploymentNames;
+        }
+
+        // Iterate through each deployment
+        foreach (JToken item in items)
+        {
+            string name = item["metadata"]?["name"]?.ToString();
+
+            // Skip if name is null
+            if (string.IsNullOrEmpty(name))
+            {
+                continue;
+            }
+
+            // Check if name contains any of the exclude patterns
+            bool shouldExclude = patternsToExclude.Any(pattern =>
+                name.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0);
+
+            // If it doesn't match any exclusion pattern, add it to our list
+            if (!shouldExclude)
+            {
+                deploymentNames.Add(name);
+            }
+        }
+
+        return deploymentNames;
     }
 }

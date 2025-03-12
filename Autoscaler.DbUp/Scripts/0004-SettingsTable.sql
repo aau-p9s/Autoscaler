@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS Settings
     ScaleDown        integer     NOT NULL,
     ScalePeriod      integer     NOT NULL,
     TrainInterval    integer     NOT NULL,
-    ModelHyperParams jsonb        NOT NULL,
-    OptunaConfig     jsonb        NOT NULL
+    ModelHyperParams jsonb,
+    OptunaConfig     jsonb
 );
 
 COMMIT;
