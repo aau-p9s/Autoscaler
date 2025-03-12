@@ -73,8 +73,8 @@ public class KubernetesService
         if (_useMockData)
         {
             Console.WriteLine("Using mock Kubernetes data...");
-            var promTrace = await File.ReadAllTextAsync("./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
-            return JObject.Parse(promTrace);
+            var kubeRes = await File.ReadAllTextAsync("./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
+            return JObject.Parse(kubeRes);
         }
         
         var request = new HttpRequestMessage
@@ -104,6 +104,22 @@ public class KubernetesService
     
     public async Task<int> GetReplicas(string deploymentName)
     {
+        if (_useMockData)
+        {
+            Console.WriteLine("Using mock Kubernetes data...");
+            var kubeRes = await File.ReadAllTextAsync("./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
+            var dummyJson = JObject.Parse(kubeRes);
+            if (dummyJson == null)
+                return 0;
+            var dummySpec = dummyJson["spec"];
+            if (dummySpec == null)
+                return 0;
+            var dummyReplicas = dummySpec["replicas"];
+            if (dummyReplicas == null)
+                return 0;
+            return (int)dummyReplicas;
+        }
+        
         var json = await Get($"/apis/apps/v1/namespaces/default/deployments/{deploymentName}/scale");
         if (json == null)
             return 0;
