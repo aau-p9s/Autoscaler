@@ -1,26 +1,27 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
-namespace Autoscaler.Runner.Kubernetes;
+namespace Autoscaler.Runner.Services;
 
-// TODO:  make an actual more complete mapping of kubernetes responses
-using KubernetesResponse = JsonObject;
-
-public class Kubernetes : IAPI
+public class KubernetesService
 {
     readonly HttpClient _client;
     readonly Tuple<string, string>? _authHeader;
     readonly string _addr;
+    private readonly bool _useMockData;
 
-    public Kubernetes(string addr)
+    public KubernetesService(string addr,bool useMockData)
     {
         _addr = addr;
+        _useMockData = useMockData;
         HttpClientHandler handler = new()
         {
             ClientCertificateOptions = ClientCertificateOption.Manual,
@@ -36,28 +37,22 @@ public class Kubernetes : IAPI
         {
             _authHeader = null;
         }
-
-        if (!IsUp())
-        {
-            Console.WriteLine("Kubernetes shouldn't be down");
-            Environment.Exit(1);
-        }
     }
 
     public async Task Update(string endpoint, object body)
     {
-        if (!IsUp())
+        if (_useMockData)
         {
+            Console.WriteLine("Using mock Kubernetes data...");
             return;
         }
-
         try
         {
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Patch,
                 RequestUri = new Uri(_addr + endpoint),
-                Content = new StringContent(JsonSerializer.Serialize(body),
+                Content = new StringContent(JsonConvert.SerializeObject(body),
                     new MediaTypeHeaderValue("application/merge-patch+json"))
             };
 
@@ -72,13 +67,16 @@ public class Kubernetes : IAPI
         }
     }
 
-    public async Task<KubernetesResponse?> Get(string endpoint)
+    public async Task<JObject?> Get(string endpoint)
     {
-        if (!IsUp())
-        {
-            return new();
-        }
 
+        if (_useMockData)
+        {
+            Console.WriteLine("Using mock Kubernetes data...");
+            var kubeRes = await File.ReadAllTextAsync("./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
+            return JObject.Parse(kubeRes);
+        }
+        
         var request = new HttpRequestMessage
         {
             Method = HttpMethod.Get,
@@ -101,7 +99,37 @@ public class Kubernetes : IAPI
             return null;
         }
 
-        return await response.Content.ReadFromJsonAsync<JsonObject>();
+        return await response.Content.ReadFromJsonAsync<JObject>();
+    }
+    
+    public async Task<int> GetReplicas(string deploymentName)
+    {
+        if (_useMockData)
+        {
+            Console.WriteLine("Using mock Kubernetes data...");
+            var kubeRes = await File.ReadAllTextAsync("./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
+            var dummyJson = JObject.Parse(kubeRes);
+            if (dummyJson == null)
+                return 0;
+            var dummySpec = dummyJson["spec"];
+            if (dummySpec == null)
+                return 0;
+            var dummyReplicas = dummySpec["replicas"];
+            if (dummyReplicas == null)
+                return 0;
+            return (int)dummyReplicas;
+        }
+        
+        var json = await Get($"/apis/apps/v1/namespaces/default/deployments/{deploymentName}/scale");
+        if (json == null)
+            return 0;
+        var spec = json["spec"];
+        if (spec == null)
+            return 0;
+        var replicas = spec["replicas"];
+        if (replicas == null)
+            return 0;
+        return (int)replicas;
     }
 
     static void HandleException(Exception e)
@@ -111,10 +139,5 @@ public class Kubernetes : IAPI
         if (e.InnerException != null)
             HandleException(e.InnerException);
     }
-
-    public bool IsUp()
-    {
-        // TODO: implement actual checking function
-        return false;
-    }
+    
 }

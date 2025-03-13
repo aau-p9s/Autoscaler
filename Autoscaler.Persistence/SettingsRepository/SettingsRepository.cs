@@ -27,18 +27,32 @@ public class SettingsRepository : ISettingsRepository
 
     public async Task<bool> UpsertSettingsAsync(SettingsEntity settings)
     {
+        
+        string modelHyperParams = string.IsNullOrWhiteSpace(settings.ModelHyperParams) ? null : settings.ModelHyperParams;
+        string optunaConfig = string.IsNullOrWhiteSpace(settings.OptunaConfig) ? null : settings.OptunaConfig;
+
         var query = $@"
-    INSERT INTO {TableName} (Id, ServiceId, ScaleUp, ScaleDown, ScalePeriod, TrainInterval, ModelHyperParams, OptunaConfig)
-    VALUES (@Id, @ServiceId, @ScaleUp, @ScaleDown, @ScalePeriod, @TrainInterval, 
-            COALESCE((SELECT ModelHyperParams FROM {TableName} WHERE ServiceId = @ServiceId), @ModelHyperParams::jsonb),
-            COALESCE((SELECT OptunaConfig FROM {TableName} WHERE ServiceId = @ServiceId), @OptunaConfig::jsonb))
-    ON CONFLICT (ServiceId) DO UPDATE SET
-        ScaleUp = @ScaleUp,
-        ScaleDown = @ScaleDown,
-        ScalePeriod = @ScalePeriod,
-        TrainInterval = @TrainInterval,
-        ModelHyperParams = COALESCE(EXCLUDED.ModelHyperParams, {TableName}.ModelHyperParams),
-        OptunaConfig = COALESCE(EXCLUDED.OptunaConfig, {TableName}.OptunaConfig);";
+        INSERT INTO {TableName} (
+            Id, ServiceId, ScaleUp, ScaleDown, ScalePeriod, TrainInterval, ModelHyperParams, OptunaConfig
+        ) 
+        VALUES (
+            @Id, @ServiceId, @ScaleUp, @ScaleDown, @ScalePeriod, @TrainInterval,
+            COALESCE(
+                (SELECT ModelHyperParams FROM {TableName} WHERE ServiceId = @ServiceId),
+                CASE WHEN @ModelHyperParams IS NULL THEN NULL ELSE @ModelHyperParams::jsonb END
+            ),
+            COALESCE(
+                (SELECT OptunaConfig FROM {TableName} WHERE ServiceId = @ServiceId),
+                CASE WHEN @OptunaConfig IS NULL THEN NULL ELSE @OptunaConfig::jsonb END
+            )
+        )
+        ON CONFLICT (ServiceId) DO UPDATE SET
+            ScaleUp = @ScaleUp,
+            ScaleDown = @ScaleDown,
+            ScalePeriod = @ScalePeriod,
+            TrainInterval = @TrainInterval,
+            ModelHyperParams = COALESCE(EXCLUDED.ModelHyperParams, {TableName}.ModelHyperParams),
+            OptunaConfig = COALESCE(EXCLUDED.OptunaConfig, {TableName}.OptunaConfig);";
 
         var result = await Connection.ExecuteAsync(query, new
         {
@@ -48,8 +62,8 @@ public class SettingsRepository : ISettingsRepository
             ScaleDown = settings.ScaleDown,
             ScalePeriod = settings.ScalePeriod,
             TrainInterval = settings.TrainInterval,
-            ModelHyperParams = settings.ModelHyperParams,
-            OptunaConfig = settings.OptunaConfig
+            ModelHyperParams = modelHyperParams,
+            OptunaConfig = optunaConfig
         });
 
         return result > 0;

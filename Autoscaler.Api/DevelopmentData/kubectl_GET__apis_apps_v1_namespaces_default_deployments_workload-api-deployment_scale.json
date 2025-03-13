@@ -1,0 +1,18 @@
+{
+  "kind": "Scale",
+  "apiVersion": "autoscaling/v1",
+  "metadata": {
+    "name": "workload-api-deployment",
+    "namespace": "default",
+    "uid": "12a7869f-88a2-4afc-804b-7b9518400e65",
+    "resourceVersion": "1204468",
+    "creationTimestamp": "2025-02-28T12:33:52Z"
+  },
+  "spec": {
+    "replicas": 10
+  },
+  "status": {
+    "replicas": 10,
+    "selector": "app=workload-api"
+  }
+}
