@@ -106,6 +106,7 @@ public class Runner
         {
             while (!cancellationToken.IsCancellationRequested)
             {
+                var counter = 0;
                 var startTime = DateTime.Now;
 
                 try
@@ -138,33 +139,44 @@ public class Runner
                         var forecast = JObject.Parse(forecastEntity.Forecast);
                         var historic = JObject.Parse(data.HistoricData);
                         
-                        var newestHistorical = historic["data"]["result"][0]["values"].Last;
-                        // TODO: Implement the actual logic for scaling. We need to compare the forecasted value with the newest historical value, and scale accordingly,
-                        // and we also need to know what format the JSON from the model has such that this can be implemented.
-                        
-                        // this should probably be rewritten somehow someway
-                        /*if (!(forecast. < newestHistorical.Value<double>() * 0.8) || !(forecast.Value > newestHistorical.Value * 1.2) || Database.IsManualChange)
-                        {
-                            await _forecaster.Retrain(deployment.Service.Id, forecastEntity.ModelId);
-                            await _forecaster.Forecast(deployment.Service.Id);
-                        }*/
-                        
                         var replicas = await _kubernetes.GetReplicas(deployment.Service.Name);
-                        if (true) // TODO: forecast.value > scaleUp
-                            replicas++;
-                        //if (false) // TODO: forecast.value <= scaleDown && replicas > 1
-                        //    replicas--;
-                        //if (false) // TODO: replicas < 1
-                        //    replicas = 1;
+
+                        var newestHistorical = historic["data"]?["result"]?[0]?["values"]?.Last;
+                        // TODO: This needs to be match the actual data this is just an example of how to get the next minute in the forecast
+                        var nextForecast = forecast.GetValue(DateTime.Now.AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ssZ"));
+                        
+                        if (nextForecast == null || newestHistorical == null)
+                        {
+                            Console.WriteLine("No forecast or historical data available");
+                            continue;
+                        }
+                        
+                        //Kubernetes HPA scaling logic is: desiredReplicas = ceil[currentReplicas * ( currentMetricValue / desiredMetricValue )]
+                        // We need to scale based on the forecasted value, so we need to calculate the desiredMetricValue based on the forecasted value.
+
+                        var desiredReplicas = 0;
+
+                        if(nextForecast.Value<double>() > deployment.Settings.ScaleUp)
+                        {
+                            desiredReplicas = (int) Math.Ceiling(replicas * (nextForecast.Value<double>() / deployment.Settings.ScaleUp));
+                        }
+                        else if(nextForecast.Value<double>() < deployment.Settings.ScaleDown)
+                        {
+                            desiredReplicas = (int) Math.Ceiling(replicas * (nextForecast.Value<double>() / deployment.Settings.ScaleDown));
+                        }
+                        else
+                        {
+                            desiredReplicas = replicas;
+                        }
 
                         Console.WriteLine($"Updating {deployment.Service.Name} to {replicas} replicas");
-
+                        
                         // Using JsonObject instead of Dictionary
                         var jsonObject = new
                         {
                             spec = new
                             {
-                                replicas = replicas
+                                replicas = desiredReplicas
                             }
                         };
 
