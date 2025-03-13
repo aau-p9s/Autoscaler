@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.HistoricRepository;
 using Autoscaler.Persistence.ServicesRepository;
 using Autoscaler.Persistence.SettingsRepository;
@@ -11,6 +12,7 @@ using Autoscaler.Runner.Entities;
 using Autoscaler.Runner.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
+using ForecastEntity = Autoscaler.Persistence.ForecastRepository.ForecastEntity;
 
 namespace Autoscaler.Runner;
 
@@ -27,7 +29,7 @@ public class Runner
     public Runner(string forecasterAddress, string kubernetesAddress, string prometheusAddress,
         IServiceProvider serviceProvider, bool developmentMode = false)
     {
-        _forecaster = new();
+        _forecaster = new(forecasterAddress, developmentMode);
         _kubernetes = new(kubernetesAddress, developmentMode);
         _prometheus = new(prometheusAddress, developmentMode);
         _serviceProvider = serviceProvider;
@@ -114,6 +116,7 @@ public class Runner
                     using (var scope = _serviceProvider.CreateScope())
                     {
                         var historicRepository = scope.ServiceProvider.GetRequiredService<IHistoricRepository>();
+                        var forecastRepository = scope.ServiceProvider.GetRequiredService<IForecastRepository>();
 
                         var data = await _prometheus.QueryRange(
                             deployment.Service.Id,
@@ -121,9 +124,31 @@ public class Runner
                             DateTime.Now.AddHours(-12),
                             DateTime.Now,
                             deployment.Settings.ScalePeriod);
-                        //var forecast = _forecaster.Forecast(data);
                         await historicRepository.UpsertHistoricDataAsync(data);
 
+                        var forecastEntity = await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
+                        
+                        if(forecastEntity == null)
+                        {
+                            await _forecaster.Forecast(deployment.Service.Id);
+                        }
+                        
+                        forecastEntity = await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
+                        
+                        var forecast = JObject.Parse(forecastEntity.Forecast);
+                        var historic = JObject.Parse(data.HistoricData);
+                        
+                        var newestHistorical = historic["data"]["result"][0]["values"].Last;
+                        // TODO: Implement the actual logic for scaling. We need to compare the forecasted value with the newest historical value, and scale accordingly,
+                        // and we also need to know what format the JSON from the model has such that this can be implemented.
+                        
+                        // this should probably be rewritten somehow someway
+                        /*if (!(forecast. < newestHistorical.Value<double>() * 0.8) || !(forecast.Value > newestHistorical.Value * 1.2) || Database.IsManualChange)
+                        {
+                            await _forecaster.Retrain(deployment.Service.Id, forecastEntity.ModelId);
+                            await _forecaster.Forecast(deployment.Service.Id);
+                        }*/
+                        
                         var replicas = await _kubernetes.GetReplicas(deployment.Service.Name);
                         if (true) // TODO: forecast.value > scaleUp
                             replicas++;
