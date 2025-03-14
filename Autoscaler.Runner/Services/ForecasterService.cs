@@ -36,7 +36,7 @@ public class ForecasterService
             new KeyValuePair<string, string>("serviceId", serviceId.ToString()),
         });
         
-        var res = await _client.PostAsync(_addr + "/forecast", content);
+        var res = await _client.PostAsync(_addr + "/predict", content);
         
         if(!res.IsSuccessStatusCode)
         {
@@ -52,7 +52,7 @@ public class ForecasterService
         if (_useMockData)
         {
             Console.WriteLine("Using mock Forecaster data...");
-            Thread.Sleep(20000);
+            Thread.Sleep(100000);
             return true;
         }
         
@@ -61,7 +61,7 @@ public class ForecasterService
             new KeyValuePair<string, string>("serviceId", serviceId.ToString())
         });
         
-        var res = await _client.PostAsync(_addr + "/retrain", content);
+        var res = await _client.PostAsync(_addr + "/train", content);
         
         if(!res.IsSuccessStatusCode)
         {

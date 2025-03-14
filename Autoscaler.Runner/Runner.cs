@@ -108,6 +108,11 @@ public class Runner
             clock.Start();
             while (!cancellationToken.IsCancellationRequested)
             {
+                if(clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
+                {
+                    await _forecaster.Retrain(deployment.Service.Id);
+                    clock.Restart();
+                }
                 var counter = 0;
                 var startTime = DateTime.Now;
                 try
@@ -133,9 +138,8 @@ public class Runner
                         if(forecastEntity == null)
                         {
                             await _forecaster.Forecast(deployment.Service.Id);
+                            forecastEntity = await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
                         }
-                        
-                        forecastEntity = await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
                         
                         var forecast = JObject.Parse(forecastEntity.Forecast);
                         var historic = JObject.Parse(data.HistoricData);
@@ -194,11 +198,6 @@ public class Runner
                     {
                         Console.WriteLine($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
                         await Task.Delay((int) delay, cancellationToken);
-                    }
-                    if(clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
-                    {
-                        await _forecaster.Retrain(deployment.Service.Id);
-                        clock.Restart();
                     }
                     
                 }
