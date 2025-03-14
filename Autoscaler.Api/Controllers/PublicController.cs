@@ -1,7 +1,6 @@
 using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.ServicesRepository;
 using Autoscaler.Persistence.SettingsRepository;
-using Autoscaler.Runner;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Autoscaler.Controllers;
@@ -36,7 +35,7 @@ public class PublicController : ControllerBase
         {
             if (_isMainLoopRunning)
             {
-                return Ok(new {message = "Autoscaler is already running"});
+                return Ok(new { message = "Autoscaler is already running" });
             }
 
             // Start the MainLoop in a background task
@@ -58,7 +57,7 @@ public class PublicController : ControllerBase
                 }
             });
 
-            return Ok(new {message = "Autoscaler started successfully"});
+            return Ok(new { message = "Autoscaler started successfully" });
         }
     }
 

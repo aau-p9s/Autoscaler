@@ -2,10 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Web;
 using Autoscaler.Persistence.HistoricRepository;
@@ -24,6 +20,7 @@ public class PrometheusService
         _client = new();
         _useMockData = useMockData;
     }
+
     public async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start, DateTime end,
         int period)
     {
@@ -37,9 +34,9 @@ public class PrometheusService
 
         var target = new Dictionary<string, string>()
         {
-            {"cpu", "container_cpu_usage_seconds_total"},
-            {"memory", "container_memory_usage_bytes"},
-            {"network", "container_network_receive_bytes_total"}
+            { "cpu", "container_cpu_usage_seconds_total" },
+            { "memory", "container_memory_usage_bytes" },
+            { "network", "container_network_receive_bytes_total" }
         }[queryType];
         var queryString =
             $"(sum(rate({target}{{container=~\"{deployment}\"}}))/count({target}{{container=~\"{deployment}\"}}))*100";

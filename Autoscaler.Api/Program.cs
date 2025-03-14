@@ -1,7 +1,4 @@
 using Autoscaler.Persistence.Extensions;
-using Autoscaler.Persistence.HistoricRepository;
-using Autoscaler.Persistence.ServicesRepository;
-using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner;
 using Microsoft.OpenApi.Models;
 
@@ -32,13 +29,14 @@ Console.WriteLine($@"
     AUTOSCALER.APIS.PROMETHEUS: {apis.GetValue<string>("PROMETHEUS")}
 ");
 
-builder.Services.ConfigurePersistencePostGreSqlConnection($"Server={dbAddr};Port={dbPort};Database={dbName};Uid={dbUser};Password={dbPassword}");
-builder.Services.AddSingleton<Runner>(provider => 
+builder.Services.ConfigurePersistencePostGreSqlConnection(
+    $"Server={dbAddr};Port={dbPort};Database={dbName};Uid={dbUser};Password={dbPassword}");
+builder.Services.AddSingleton<Runner>(provider =>
     new Runner(
-        apis.GetValue<string>("FORECASTER") ?? "http://forecaster", 
-        apis.GetValue<string>("KUBERNETES") ?? "http://kubernetes", 
+        apis.GetValue<string>("FORECASTER") ?? "http://forecaster",
+        apis.GetValue<string>("KUBERNETES") ?? "http://kubernetes",
         apis.GetValue<string>("PROMETHEUS") ?? "http://prometheus",
-       provider,
+        provider,
         true
     )
 );

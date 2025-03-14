@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Autoscaler.Persistence.ForecastRepository;
@@ -12,7 +12,6 @@ using Autoscaler.Runner.Entities;
 using Autoscaler.Runner.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
-using ForecastEntity = Autoscaler.Persistence.ForecastRepository.ForecastEntity;
 
 namespace Autoscaler.Runner;
 
@@ -25,6 +24,7 @@ public class Runner
     private readonly KubernetesService _kubernetes;
     private readonly List<Thread> _runningThreads;
     private readonly CancellationTokenSource _cancellationTokenSource;
+    private readonly bool _developmentMode;
 
     public Runner(string forecasterAddress, string kubernetesAddress, string prometheusAddress,
         IServiceProvider serviceProvider, bool developmentMode = false)
@@ -36,6 +36,7 @@ public class Runner
         _deployments = new List<DeploymentEntity>();
         _runningThreads = new List<Thread>();
         _cancellationTokenSource = new CancellationTokenSource();
+        _developmentMode = developmentMode;
         Console.WriteLine("Created runner");
     }
 
@@ -45,6 +46,7 @@ public class Runner
         {
             var servicesRepository = scope.ServiceProvider.GetRequiredService<IServicesRepository>();
             var settingsRepository = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
+            var forecastRepository = scope.ServiceProvider.GetRequiredService<IForecastRepository>();
 
             var services = await servicesRepository.GetAllServicesAsync();
             foreach (var service in services)
@@ -58,11 +60,16 @@ public class Runner
             if (getServicesFromKubernetes != null)
             {
                 var deployments = ExtractNonSystemDeployments(getServicesFromKubernetes,
-                    new[] {"autoscaler", "mysql", "generator"});
+                    new[] { "autoscaler", "mysql", "generator" });
                 foreach (var deployment in deployments)
                 {
                     var serviceId = Guid.NewGuid();
 
+                    if (_developmentMode)
+                    {
+                        await forecastRepository.InsertForecast(new ForecastEntity(Guid.NewGuid(), serviceId,
+                            DateTime.Now, Guid.NewGuid(), "{}", false));
+                    }
 
                     if (_deployments.All(d => d.Service.Name != deployment))
                     {
@@ -104,15 +111,16 @@ public class Runner
     {
         try
         {
-            var clock = new System.Diagnostics.Stopwatch();
+            var clock = new Stopwatch();
             clock.Start();
             while (!cancellationToken.IsCancellationRequested)
             {
-                if(clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
+                if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
                 {
                     await _forecaster.Retrain(deployment.Service.Id);
                     clock.Restart();
                 }
+
                 var counter = 0;
                 var startTime = DateTime.Now;
                 try
@@ -133,41 +141,48 @@ public class Runner
                             deployment.Settings.ScalePeriod);
                         await historicRepository.UpsertHistoricDataAsync(data);
 
-                        var forecastEntity = await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
-                        
-                        if(forecastEntity == null)
+                        var forecastEntity =
+                            await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
+
+                        if (forecastEntity == null)
                         {
                             await _forecaster.Forecast(deployment.Service.Id);
-                            forecastEntity = await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
+                            forecastEntity =
+                                await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
                         }
-                        
+
                         var forecast = JObject.Parse(forecastEntity.Forecast);
                         var historic = JObject.Parse(data.HistoricData);
-                        
+
                         var replicas = await _kubernetes.GetReplicas(deployment.Service.Name);
 
                         var newestHistorical = historic["data"]?["result"]?[0]?["values"]?.Last;
                         // TODO: This needs to be match the actual data this is just an example of how to get the next minute in the forecast
-                        var nextForecast = forecast.GetValue(DateTime.Now.AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ssZ"));
-                        
+                        var nextForecast =
+                            forecast.GetValue(DateTime.Now.AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ssZ"));
+
                         if (nextForecast == null || newestHistorical == null)
                         {
                             Console.WriteLine("No forecast or historical data available");
                             continue;
                         }
-                        
+
                         //Kubernetes HPA scaling logic is: desiredReplicas = ceil[currentReplicas * ( currentMetricValue / desiredMetricValue )]
                         // We need to scale based on the forecasted value, so we need to calculate the desiredMetricValue based on the forecasted value.
 
                         var desiredReplicas = 0;
 
-                        if(nextForecast.Value<double>() > deployment.Settings.ScaleUp)
+                        if (nextForecast.Value<double>() > deployment.Settings.ScaleUp)
                         {
-                            desiredReplicas = (int) Math.Ceiling(replicas * (nextForecast.Value<double>() / deployment.Settings.ScaleUp));
+                            desiredReplicas =
+                                (int)Math.Ceiling(replicas *
+                                                  (nextForecast.Value<double>() / deployment.Settings.ScaleUp));
                         }
-                        else if(nextForecast.Value<double>() < deployment.Settings.ScaleDown)
+                        else if (nextForecast.Value<double>() < deployment.Settings.ScaleDown)
                         {
-                            desiredReplicas = (int) Math.Ceiling(replicas * (nextForecast.Value<double>() / deployment.Settings.ScaleDown));
+                            desiredReplicas =
+                                (int)Math.Ceiling(replicas *
+                                                  (nextForecast.Value<double>() / deployment.Settings.ScaleDown));
                         }
                         else
                         {
@@ -175,7 +190,7 @@ public class Runner
                         }
 
                         Console.WriteLine($"Updating {deployment.Service.Name} to {replicas} replicas");
-                        
+
                         // Using JsonObject instead of Dictionary
                         var jsonObject = new
                         {
@@ -197,9 +212,8 @@ public class Runner
                     if (true) // TODO: forecast.timestamp > (Datetime.Now - delay)
                     {
                         Console.WriteLine($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
-                        await Task.Delay((int) delay, cancellationToken);
+                        await Task.Delay((int)delay, cancellationToken);
                     }
-                    
                 }
                 catch (Exception ex)
                 {
@@ -232,11 +246,11 @@ public class Runner
 
         // Use default exclusion patterns if none provided
         HashSet<string> patternsToExclude = new HashSet<string>(
-            excludePatterns ?? new[] {"kubernetes", "prometheus", "autoscaler-deployment"},
+            excludePatterns ?? new[] { "kubernetes", "prometheus", "autoscaler-deployment" },
             StringComparer.OrdinalIgnoreCase);
 
         // Get the "items" array which contains all deployments
-        JArray items = (JArray) kubeApiResponse["items"];
+        JArray items = (JArray)kubeApiResponse["items"];
 
         // Check if items exist
         if (items == null)
