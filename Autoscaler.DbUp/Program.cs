@@ -10,7 +10,8 @@ var password = Environment.GetEnvironmentVariable("AUTOSCALER__PGSQL__PASSWORD")
 
 var sqlUpgrader =
     DeployChanges.To
-        .PostgresqlDatabase($"Server={addr ?? "localhost"};Port={port ?? "5432"};Database={database ?? "autoscaler"};Uid={user ?? "root"};Pwd={password ?? "password"}")
+        .PostgresqlDatabase(
+            $"Server={addr ?? "localhost"};Port={port ?? "5432"};Database={database ?? "autoscaler"};Uid={user ?? "root"};Pwd={password ?? "password"}")
         .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
         .LogToConsole()
         .Build();

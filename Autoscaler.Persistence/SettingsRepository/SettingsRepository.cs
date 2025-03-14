@@ -27,8 +27,8 @@ public class SettingsRepository : ISettingsRepository
 
     public async Task<bool> UpsertSettingsAsync(SettingsEntity settings)
     {
-        
-        string modelHyperParams = string.IsNullOrWhiteSpace(settings.ModelHyperParams) ? null : settings.ModelHyperParams;
+        string modelHyperParams =
+            string.IsNullOrWhiteSpace(settings.ModelHyperParams) ? null : settings.ModelHyperParams;
         string optunaConfig = string.IsNullOrWhiteSpace(settings.OptunaConfig) ? null : settings.OptunaConfig;
 
         var query = $@"

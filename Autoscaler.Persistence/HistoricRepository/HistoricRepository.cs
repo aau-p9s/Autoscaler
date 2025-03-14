@@ -20,7 +20,7 @@ public class HistoricRepository : IHistoricRepository
     public async Task<HistoricEntity> GetHistoricDataByServiceIdAsync(Guid serviceId)
     {
         var historicData = await Connection.QueryFirstOrDefaultAsync<HistoricEntity>(
-            $"SELECT * FROM {TableName} WHERE ServiceId = @ServiceId", new {ServiceId = serviceId});
+            $"SELECT * FROM {TableName} WHERE ServiceId = @ServiceId", new { ServiceId = serviceId });
         return historicData;
     }
 

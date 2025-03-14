@@ -1,10 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,7 +16,7 @@ public class KubernetesService
     readonly string _addr;
     private readonly bool _useMockData;
 
-    public KubernetesService(string addr,bool useMockData)
+    public KubernetesService(string addr, bool useMockData)
     {
         _addr = addr;
         _useMockData = useMockData;
@@ -46,6 +44,7 @@ public class KubernetesService
             Console.WriteLine("Using mock Kubernetes data...");
             return;
         }
+
         try
         {
             var request = new HttpRequestMessage
@@ -69,14 +68,15 @@ public class KubernetesService
 
     public async Task<JObject?> Get(string endpoint)
     {
-
         if (_useMockData)
         {
             Console.WriteLine("Using mock Kubernetes data...");
-            var kubeRes = await File.ReadAllTextAsync("./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
+            var kubeRes =
+                await File.ReadAllTextAsync(
+                    "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
             return JObject.Parse(kubeRes);
         }
-        
+
         var request = new HttpRequestMessage
         {
             Method = HttpMethod.Get,
@@ -101,13 +101,15 @@ public class KubernetesService
 
         return await response.Content.ReadFromJsonAsync<JObject>();
     }
-    
+
     public async Task<int> GetReplicas(string deploymentName)
     {
         if (_useMockData)
         {
             Console.WriteLine("Using mock Kubernetes data...");
-            var kubeRes = await File.ReadAllTextAsync("./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
+            var kubeRes =
+                await File.ReadAllTextAsync(
+                    "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
             var dummyJson = JObject.Parse(kubeRes);
             if (dummyJson == null)
                 return 0;
@@ -119,7 +121,7 @@ public class KubernetesService
                 return 0;
             return (int)dummyReplicas;
         }
-        
+
         var json = await Get($"/apis/apps/v1/namespaces/default/deployments/{deploymentName}/scale");
         if (json == null)
             return 0;
@@ -139,5 +141,4 @@ public class KubernetesService
         if (e.InnerException != null)
             HandleException(e.InnerException);
     }
-    
 }
