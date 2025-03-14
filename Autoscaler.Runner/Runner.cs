@@ -104,11 +104,12 @@ public class Runner
     {
         try
         {
+            var clock = new System.Diagnostics.Stopwatch();
+            clock.Start();
             while (!cancellationToken.IsCancellationRequested)
             {
                 var counter = 0;
                 var startTime = DateTime.Now;
-
                 try
                 {
                     Console.WriteLine($"Checking deployment {deployment.Service.Name}");
@@ -194,6 +195,12 @@ public class Runner
                         Console.WriteLine($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
                         await Task.Delay((int) delay, cancellationToken);
                     }
+                    if(clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
+                    {
+                        await _forecaster.Retrain(deployment.Service.Id);
+                        clock.Restart();
+                    }
+                    
                 }
                 catch (Exception ex)
                 {

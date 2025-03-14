@@ -47,7 +47,7 @@ public class ForecasterService
         return true;
     }
     
-    public async Task<bool> Retrain(Guid serviceId,Guid modelId)
+    public async Task<bool> Retrain(Guid serviceId)
     {
         if (_useMockData)
         {
@@ -58,8 +58,7 @@ public class ForecasterService
         
         var content = new FormUrlEncodedContent(new[]
         {
-            new KeyValuePair<string, string>("serviceId", serviceId.ToString()),
-            new KeyValuePair<string, string>("modelId", modelId.ToString())
+            new KeyValuePair<string, string>("serviceId", serviceId.ToString())
         });
         
         var res = await _client.PostAsync(_addr + "/retrain", content);
