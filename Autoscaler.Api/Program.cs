@@ -37,7 +37,8 @@ builder.Services.AddSingleton<Runner>(provider =>
         apis.GetValue<string>("KUBERNETES") ?? "http://kubernetes",
         apis.GetValue<string>("PROMETHEUS") ?? "http://prometheus",
         provider,
-        true
+        true,
+        false
     )
 );
 

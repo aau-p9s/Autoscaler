@@ -10,19 +10,21 @@ public class ForecasterService
 {
     private readonly string _addr;
     private readonly bool _useMockData;
+    private readonly bool _useForecasterInDevelopmentMode;
     readonly HttpClient _client;
 
 
-    public ForecasterService(string addr, bool useMockData)
+    public ForecasterService(string addr, bool useMockData, bool useForecasterInDevelopmentMode)
     {
         _addr = addr;
         _useMockData = useMockData;
+        _useForecasterInDevelopmentMode = useForecasterInDevelopmentMode;
         _client = new();
     }
 
     public async Task<bool> Forecast(Guid serviceId)
     {
-        if (_useMockData)
+        if (_useMockData && !_useForecasterInDevelopmentMode)
         {
             Console.WriteLine("Using mock Forecaster data...");
             Thread.Sleep(20000);

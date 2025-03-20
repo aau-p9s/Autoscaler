@@ -53,12 +53,14 @@ public class ForecastRepository : IForecastRepository
     public async Task<bool> InsertForecast(ForecastEntity forecast)
     {
         var query =
-            $"INSERT INTO {TableName} (Id, ServiceId, Forecast, HasManualChange) VALUES (@Id, @ServiceId, CAST(@Forecast AS jsonb), @HasManualChange)";
+            $"INSERT INTO {TableName} (Id, ServiceId, CreatedAt, ModelId, Forecast, HasManualChange) VALUES (@Id, @ServiceId, @CreatedAt, @ModelId, CAST(@Forecast AS jsonb), @HasManualChange)";
 
         var parameters = new
         {
             Id = forecast.Id,
             ServiceId = forecast.ServiceId,
+            CreatedAt = forecast.CreatedAt,
+            ModelId = forecast.ModelId,
             Forecast = forecast.Forecast,
             HasManualChange = forecast.HasManualChange
         };
