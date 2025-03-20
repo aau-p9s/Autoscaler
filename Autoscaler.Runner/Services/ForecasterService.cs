@@ -33,7 +33,7 @@ public class ForecasterService
 
   
 
-        var res = await _client.PostAsync(_addr + "/predict/" + serviceId, null);
+        var res = await _client.GetAsync(_addr + "/predict/" + serviceId);
 
         if (!res.IsSuccessStatusCode)
         {

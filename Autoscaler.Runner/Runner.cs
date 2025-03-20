@@ -68,7 +68,7 @@ public class Runner
                 {
                     var serviceId = Guid.NewGuid();
 
-                    if (_developmentMode && !_useForecasterInDevelopmentMode)
+                    if (_developmentMode)
                     {
                         var forecast = await File.ReadAllTextAsync(
                                 "./DevelopmentData/forecast.json");
