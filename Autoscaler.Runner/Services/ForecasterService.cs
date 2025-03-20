@@ -31,12 +31,9 @@ public class ForecasterService
             return true;
         }
 
-        var content = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("serviceId", serviceId.ToString()),
-        });
+  
 
-        var res = await _client.PostAsync(_addr + "/predict", content);
+        var res = await _client.PostAsync(_addr + "/predict/" + serviceId, null);
 
         if (!res.IsSuccessStatusCode)
         {
