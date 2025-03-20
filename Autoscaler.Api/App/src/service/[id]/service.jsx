@@ -139,13 +139,12 @@ const ServicePage = (name) => {
             const json = await response.json();
             setForecast(json);
             const forecastData = JSON.parse(json.forecast); // Parse the forecast string into an array
-
-            if (forecastData && forecastData.length > 0) {
-                const labels = forecastData.map(entry => entry.timestamp); // Extract timestamps for labels
-                const data = forecastData.map(entry => entry.cpu_percentage); // Extract CPU percentages for data
-
+            
+            if (forecastData && forecastData.timestamp.length > 0) {
+                const labels = forecastData.timestamp // Extract timestamps for labels
+                const data = forecastData.cpu_percentage.flat() // Extract CPU percentages for data
                 labels.sort((a, b) => new Date(a) - new Date(b)); // Sort by timestamp
-
+                
                 setChartData({
                     labels,
                     datasets: [

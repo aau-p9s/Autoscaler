@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,11 +26,12 @@ public class Runner
     private readonly List<Thread> _runningThreads;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly bool _developmentMode;
+    private readonly bool _useForecasterInDevelopmentMode;
 
     public Runner(string forecasterAddress, string kubernetesAddress, string prometheusAddress,
-        IServiceProvider serviceProvider, bool developmentMode = false)
+        IServiceProvider serviceProvider, bool developmentMode = false, bool useForecasterInDevelopmentMode = false)
     {
-        _forecaster = new(forecasterAddress, developmentMode);
+        _forecaster = new(forecasterAddress, developmentMode, useForecasterInDevelopmentMode);
         _kubernetes = new(kubernetesAddress, developmentMode);
         _prometheus = new(prometheusAddress, developmentMode);
         _serviceProvider = serviceProvider;
@@ -37,6 +39,7 @@ public class Runner
         _runningThreads = new List<Thread>();
         _cancellationTokenSource = new CancellationTokenSource();
         _developmentMode = developmentMode;
+        _useForecasterInDevelopmentMode = useForecasterInDevelopmentMode;
         Console.WriteLine("Created runner");
     }
 
@@ -65,10 +68,12 @@ public class Runner
                 {
                     var serviceId = Guid.NewGuid();
 
-                    if (_developmentMode)
+                    if (_developmentMode && !_useForecasterInDevelopmentMode)
                     {
+                        var forecast = await File.ReadAllTextAsync(
+                                "./DevelopmentData/forecast.json");
                         await forecastRepository.InsertForecast(new ForecastEntity(Guid.NewGuid(), serviceId,
-                            DateTime.Now, Guid.NewGuid(), "{}", false));
+                            DateTime.Now, Guid.NewGuid(), forecast, false));
                     }
 
                     if (_deployments.All(d => d.Service.Name != deployment))
