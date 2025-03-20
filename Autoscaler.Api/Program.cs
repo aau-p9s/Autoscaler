@@ -13,6 +13,8 @@ var dbAddr = dbSettings.GetValue<string>("ADDR");
 var dbPort = dbSettings.GetValue<int>("PORT");
 var dbName = dbSettings.GetValue<string>("DATABASE");
 var dbUser = dbSettings.GetValue<string>("USER");
+var devMode = autoscalerSettings.GetValue<bool>("DEVELOPMENTMODE");
+var useForecasterInDevelopmentMode = autoscalerSettings.GetValue<bool>("USEFORECASTERINDEVELOPMENTMODE");
 var dbPassword = dbSettings.GetValue<string>("PASSWORD"); // TODO: FIX
 var apis = autoscalerSettings.GetSection("APIS");
 
@@ -37,8 +39,8 @@ builder.Services.AddSingleton<Runner>(provider =>
         apis.GetValue<string>("KUBERNETES") ?? "http://kubernetes",
         apis.GetValue<string>("PROMETHEUS") ?? "http://prometheus",
         provider,
-        true,
-        false
+        devMode,
+        useForecasterInDevelopmentMode
     )
 );
 
