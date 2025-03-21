@@ -27,9 +27,7 @@
         <None Remove="Scripts\0005-ServicesTable.sql"/>
         <EmbeddedResource Include="Scripts\0005-ServicesTable.sql"/>
         <None Remove="Scripts\0006-SeedData.sql" />
-        <EmbeddedResource Include="Scripts\0006-SeedData.sql">
-          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </EmbeddedResource>
+        <EmbeddedResource Include="Scripts\0006-SeedData.sql" />
     </ItemGroup>
 
 
