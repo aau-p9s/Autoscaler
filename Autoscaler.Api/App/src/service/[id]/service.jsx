@@ -19,6 +19,8 @@ const ServicePage = (name) => {
     const [currentScaleValues, setCurrentScaleValues] = useState(null);
     const [scaleUpPercentage, setScaleUpPercentage] = useState('');
     const [scaleDownPercentage, setScaleDownPercentage] = useState('');
+    const [minReplicas, setMinReplicas] = useState('');
+    const [maxReplicas, setMaxReplicas] = useState('');
     const [interval, setInterval] = useState('');
     const [trainInterval, setTrainInterval] = useState('');
     const [scaleError, setScaleError] = useState(null);
@@ -47,6 +49,8 @@ const ServicePage = (name) => {
             setCurrentScaleValues(data);
             setScaleUpPercentage(data.scaleUp || '');
             setScaleDownPercentage(data.scaleDown || '');
+            setMinReplicas(data.minReplicas || '');
+            setMaxReplicas(data.maxReplicas || '');
             setInterval(data.scalePeriod || '');
             setTrainInterval(data.trainInterval || '');
             setOptunaConfig(data.optunaConfig || {})
@@ -64,11 +68,18 @@ const ServicePage = (name) => {
             id: params.id,
             scaleUp: parseFloat(scaleUpPercentage),
             scaleDown: parseFloat(scaleDownPercentage),
+            minReplicas: parseInt(minReplicas, 10),
+            maxReplicas: parseInt(maxReplicas, 10),
             scalePeriod: parseInt(interval, 10),
             trainInterval: parseInt(trainInterval, 10),
-            modelHyperParams: modelHyperParams,
-            optunaConfig: optunaConfig,
+            modelHyperParams: typeof modelHyperParams === 'object' ? JSON.stringify(modelHyperParams) : modelHyperParams,
+            optunaConfig: typeof optunaConfig === 'object' ? JSON.stringify(optunaConfig) : optunaConfig,
         };
+        
+        if(minReplicas > maxReplicas){
+            setScaleError('Min replicas cannot be greater than max replicas');
+            return;
+        }
 
         try {
             const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/settings`, {
@@ -238,9 +249,7 @@ const ServicePage = (name) => {
             console.error('Error:', error);
         }
     };
-
-
-    // Render JSON for Model Settings
+    
     const parseStringifiedJson = (jsonString) => {
         try {
             return typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
@@ -249,8 +258,7 @@ const ServicePage = (name) => {
             return {};
         }
     };
-
-    // Render JSON for Model Settings
+    
     const renderJson = (obj) => {
         const parsedObj = parseStringifiedJson(obj);
         return Object.entries(parsedObj).map(([key, value]) => (
@@ -349,6 +357,8 @@ const ServicePage = (name) => {
                             <h4>Current Settings</h4>
                             <p><strong>Scale Up at:</strong> {currentScaleValues.scaleUp}%</p>
                             <p><strong>Scale Down at:</strong> {currentScaleValues.scaleDown}%</p>
+                            <p><strong>Min Replicas:</strong> {currentScaleValues.minReplicas}</p>
+                            <p><strong>Max Replicas:</strong> {currentScaleValues.maxReplicas}</p>
                             <p><strong>Interval:</strong> {currentScaleValues.scalePeriod} ms</p>
                             <p><strong>Train Interval:</strong> {currentScaleValues.trainInterval} ms</p>
                         </div>
@@ -382,6 +392,26 @@ const ServicePage = (name) => {
                                 className="form-control"
                                 value={scaleDownPercentage}
                                 onChange={(e) => setScaleDownPercentage(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="form-group mb-2">
+                            <label>Min replicas</label>
+                            <input
+                                type="number"
+                                className="form-control"
+                                value={minReplicas}
+                                onChange={(e) => setMinReplicas(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="form-group mb-2">
+                            <label>Max replicas</label>
+                            <input
+                                type="number"
+                                className="form-control"
+                                value={maxReplicas}
+                                onChange={(e) => setMaxReplicas(e.target.value)}
                                 required
                             />
                         </div>

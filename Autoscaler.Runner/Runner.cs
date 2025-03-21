@@ -92,6 +92,8 @@ public class Runner
                             ScalePeriod = 60000,
                             ScaleUp = 80,
                             ScaleDown = 20,
+                            MinReplicas = 1,
+                            MaxReplicas = 10,
                             TrainInterval = 600000,
                             ModelHyperParams = "",
                             OptunaConfig = ""
@@ -182,12 +184,20 @@ public class Runner
                             desiredReplicas =
                                 (int)Math.Ceiling(replicas *
                                                   (nextForecast.Value<double>() / deployment.Settings.ScaleUp));
+                            if(desiredReplicas > deployment.Settings.MaxReplicas)
+                            {
+                                desiredReplicas = deployment.Settings.MaxReplicas;
+                            }
                         }
                         else if (nextForecast.Value<double>() < deployment.Settings.ScaleDown)
                         {
                             desiredReplicas =
                                 (int)Math.Ceiling(replicas *
                                                   (nextForecast.Value<double>() / deployment.Settings.ScaleDown));
+                            if (desiredReplicas < deployment.Settings.MinReplicas)
+                            {
+                                desiredReplicas = deployment.Settings.MinReplicas;
+                            }
                         }
                         else
                         {

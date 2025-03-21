@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS Settings
     ServiceId        UUID NOT NULL UNIQUE,
     ScaleUp          integer     NOT NULL,
     ScaleDown        integer     NOT NULL,
+    MinReplicas      integer     NOT NULL,
+    MaxReplicas      integer     NOT NULL,
     ScalePeriod      integer     NOT NULL,
     TrainInterval    integer     NOT NULL,
     ModelHyperParams jsonb,
