@@ -33,10 +33,10 @@ public class SettingsRepository : ISettingsRepository
 
         var query = $@"
         INSERT INTO {TableName} (
-            Id, ServiceId, ScaleUp, ScaleDown, ScalePeriod, TrainInterval, ModelHyperParams, OptunaConfig
+            Id, ServiceId, ScaleUp, ScaleDown, MinReplicas, MaxReplicas, ScalePeriod, TrainInterval, ModelHyperParams, OptunaConfig
         ) 
         VALUES (
-            @Id, @ServiceId, @ScaleUp, @ScaleDown, @ScalePeriod, @TrainInterval,
+            @Id, @ServiceId, @ScaleUp, @ScaleDown, @MinReplicas, @MaxReplicas, @ScalePeriod, @TrainInterval,
             COALESCE(
                 (SELECT ModelHyperParams FROM {TableName} WHERE ServiceId = @ServiceId),
                 CASE WHEN @ModelHyperParams IS NULL THEN NULL ELSE @ModelHyperParams::jsonb END
@@ -49,6 +49,8 @@ public class SettingsRepository : ISettingsRepository
         ON CONFLICT (ServiceId) DO UPDATE SET
             ScaleUp = @ScaleUp,
             ScaleDown = @ScaleDown,
+            MinReplicas = @MinReplicas,
+            MaxReplicas = @MaxReplicas,
             ScalePeriod = @ScalePeriod,
             TrainInterval = @TrainInterval,
             ModelHyperParams = COALESCE(EXCLUDED.ModelHyperParams, {TableName}.ModelHyperParams),
@@ -60,6 +62,8 @@ public class SettingsRepository : ISettingsRepository
             ServiceId = settings.ServiceId,
             ScaleUp = settings.ScaleUp,
             ScaleDown = settings.ScaleDown,
+            MinReplicas = settings.MinReplicas,
+            MaxReplicas = settings.MaxReplicas,
             ScalePeriod = settings.ScalePeriod,
             TrainInterval = settings.TrainInterval,
             ModelHyperParams = modelHyperParams,

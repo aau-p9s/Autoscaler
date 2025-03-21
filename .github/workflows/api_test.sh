@@ -18,7 +18,7 @@ pass() {
 
 assert() {
     echo "$1" | jq -C
-    if ! [[ "$1" == "$2" ]]; then
+    if ! [[ "$(echo $1 | jq)" == "$(echo $2 | jq)" ]]; then
         error "assertion failed"
     fi
     pass "assertion passed"
@@ -38,7 +38,18 @@ assert "$(cat $TEST_DIR/service.json)" '{"id":"1a2b3c4d-1111-2222-3333-444455556
 echo test get settings
 echo "GET $TARGET/services/$SERVICE_ID/settings"
 curl -f -X "GET" $TARGET/services/$SERVICE_ID/settings > $TEST_DIR/settings.json 2>/dev/null
-assert "$(cat $TEST_DIR/settings.json)" '{"id":"a1b2c3d4-aaaa-bbbb-cccc-ddddeeeeffff","serviceId":"1a2b3c4d-1111-2222-3333-444455556666","scaleUp":5,"scaleDown":2,"scalePeriod":10,"trainInterval":30,"modelHyperParams":"{\"epochs\": 50, \"batch_size\": 32, \"learning_rate\": 0.01}","optunaConfig":"{\"n_trials\": 100, \"direction\": \"maximize\"}"}'
+assert "$(cat $TEST_DIR/settings.json)" '{
+                                           "id": "a1b2c3d4-aaaa-bbbb-cccc-ddddeeeeffff",
+                                           "serviceId": "1a2b3c4d-1111-2222-3333-444455556666",
+                                           "scaleUp": 5,
+                                           "scaleDown": 2,
+                                           "minReplicas": 1,
+                                           "maxReplicas": 10,
+                                           "scalePeriod": 10,
+                                           "trainInterval": 30,
+                                           "modelHyperParams": "{\"epochs\": 50, \"batch_size\": 32, \"learning_rate\": 0.01}",
+                                           "optunaConfig": "{\"n_trials\": 100, \"direction\": \"maximize\"}"
+                                         }'
 
 echo test upsert service
 echo "POST $TARGET/services/$SERVICE_ID"
