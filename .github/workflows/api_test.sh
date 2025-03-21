@@ -18,7 +18,7 @@ pass() {
 
 assert() {
     echo "$1" | jq -C
-    if ! [[ "$1" == "$2" ]]; then
+    if ! [[ "$(echo $1 | jq)" == "$(echo $2 | jq)" ]]; then
         error "assertion failed"
     fi
     pass "assertion passed"
