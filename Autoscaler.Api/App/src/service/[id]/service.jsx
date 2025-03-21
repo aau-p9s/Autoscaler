@@ -76,6 +76,11 @@ const ServicePage = (name) => {
             optunaConfig: typeof optunaConfig === 'object' ? JSON.stringify(optunaConfig) : optunaConfig,
         };
         
+        if(minReplicas < 0 || maxReplicas < 0) {
+            setScaleError('Replicas cannot be negative');
+            return;
+        }
+        
         if(minReplicas > maxReplicas){
             setScaleError('Min replicas cannot be greater than max replicas');
             return;

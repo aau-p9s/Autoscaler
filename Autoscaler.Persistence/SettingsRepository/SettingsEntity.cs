@@ -11,10 +11,7 @@ public class SettingsEntity
     public int MinReplicas { get; set; }
     public int MaxReplicas { get; set; }
     public int ScalePeriod { get; set; }
-
     public int TrainInterval { get; set; }
-
-    //Change the type of Hyperparameters and OptunaConfig to custom objects when we know what they have in them
     public string ModelHyperParams { get; set; }
     public string OptunaConfig { get; set; }
 
