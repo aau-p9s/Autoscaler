@@ -27,6 +27,7 @@ public class Runner
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly bool _developmentMode;
     private readonly bool _useForecasterInDevelopmentMode;
+    private static readonly string[] _collection = new[] {"kubernetes", "prometheus", "autoscaler-deployment"};
 
     public Runner(string forecasterAddress, string kubernetesAddress, string prometheusAddress,
         IServiceProvider serviceProvider, bool developmentMode = false, bool useForecasterInDevelopmentMode = false)
@@ -63,7 +64,7 @@ public class Runner
             if (getServicesFromKubernetes != null)
             {
                 var deployments = ExtractNonSystemDeployments(getServicesFromKubernetes,
-                    new[] { "autoscaler", "mysql", "generator" });
+                    new[] {"autoscaler", "mysql", "generator"});
                 foreach (var deployment in deployments)
                 {
                     var serviceId = Guid.NewGuid();
@@ -71,7 +72,7 @@ public class Runner
                     if (_developmentMode)
                     {
                         var forecast = await File.ReadAllTextAsync(
-                                "./DevelopmentData/forecast.json");
+                            "./DevelopmentData/forecast.json");
                         await forecastRepository.InsertForecast(new ForecastEntity(Guid.NewGuid(), serviceId,
                             DateTime.Now, Guid.NewGuid(), forecast, false));
                     }
@@ -122,13 +123,49 @@ public class Runner
             clock.Start();
             while (!cancellationToken.IsCancellationRequested)
             {
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var settingsRepository = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
+
+                    var settings = await settingsRepository.GetSettingsForServiceAsync(deployment.Service.Id);
+
+                    if (settings.TrainInterval != deployment.Settings.TrainInterval)
+                    {
+                        deployment.Settings.TrainInterval = settings.TrainInterval;
+                    }
+
+                    if (settings.ScaleDown != deployment.Settings.ScaleDown)
+                    {
+                        deployment.Settings.ScaleDown = settings.ScaleDown;
+                    }
+
+                    if (settings.ScaleUp != deployment.Settings.ScaleUp)
+                    {
+                        deployment.Settings.ScaleUp = settings.ScaleUp;
+                    }
+
+                    if (settings.ScalePeriod != deployment.Settings.ScalePeriod)
+                    {
+                        deployment.Settings.ScalePeriod = settings.ScalePeriod;
+                    }
+
+                    if (settings.MaxReplicas != deployment.Settings.MaxReplicas)
+                    {
+                        deployment.Settings.MaxReplicas = settings.MaxReplicas;
+                    }
+
+                    if (settings.MinReplicas != deployment.Settings.MinReplicas)
+                    {
+                        deployment.Settings.MinReplicas = settings.MinReplicas;
+                    }
+                }
+
                 if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
                 {
                     await _forecaster.Retrain(deployment.Service.Id);
                     clock.Restart();
                 }
-
-                var counter = 0;
+                
                 var startTime = DateTime.Now;
                 try
                 {
@@ -164,36 +201,49 @@ public class Runner
                         var replicas = await _kubernetes.GetReplicas(deployment.Service.Name);
 
                         var newestHistorical = historic["data"]?["result"]?[0]?["values"]?.Last;
-                        // TODO: This needs to be match the actual data this is just an example of how to get the next minute in the forecast
-                        var nextForecast =
-                            forecast.GetValue(DateTime.Now.AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ssZ"));
 
-                        if (nextForecast == null || newestHistorical == null)
-                        {
-                            Console.WriteLine("No forecast or historical data available");
+                        var timestamps = forecast["timestamp"]?.ToObject<List<string>>();
+                        var cpuValues = forecast["cpu_percentage"]?.ToObject<List<List<double>>>();
+
+                        if (timestamps == null || cpuValues == null)
+                        { 
+                            Console.WriteLine("Forecast data format is invalid");
                             continue;
                         }
 
+                        var nextTime = DateTime.UtcNow.AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ss.fff");
+
+                        int forecastIndex =
+                            timestamps.FindIndex(t => t.StartsWith(nextTime.Substring(0, 16)));
+
+                        double? nextForecast = null;
+                        if (forecastIndex >= 0 && forecastIndex < cpuValues.Count)
+                        {
+                            nextForecast = cpuValues[forecastIndex][0];
+                        }
+
+                        if (nextForecast == null)
+                        {
+                            await _forecaster.Forecast(deployment.Service.Id);
+                            continue;
+                        }
                         //Kubernetes HPA scaling logic is: desiredReplicas = ceil[currentReplicas * ( currentMetricValue / desiredMetricValue )]
                         // We need to scale based on the forecasted value, so we need to calculate the desiredMetricValue based on the forecasted value.
+                        int desiredReplicas;
 
-                        var desiredReplicas = 0;
-
-                        if (nextForecast.Value<double>() > deployment.Settings.ScaleUp)
+                        if (nextForecast > deployment.Settings.ScaleUp)
                         {
-                            desiredReplicas =
-                                (int)Math.Ceiling(replicas *
-                                                  (nextForecast.Value<double>() / deployment.Settings.ScaleUp));
-                            if(desiredReplicas > deployment.Settings.MaxReplicas)
+                            desiredReplicas = (int)Math.Ceiling(replicas * (nextForecast.Value / deployment.Settings.ScaleUp));
+    
+                            if (desiredReplicas > deployment.Settings.MaxReplicas)
                             {
                                 desiredReplicas = deployment.Settings.MaxReplicas;
                             }
                         }
-                        else if (nextForecast.Value<double>() < deployment.Settings.ScaleDown)
+                        else if (nextForecast < deployment.Settings.ScaleDown)
                         {
-                            desiredReplicas =
-                                (int)Math.Ceiling(replicas *
-                                                  (nextForecast.Value<double>() / deployment.Settings.ScaleDown));
+                            desiredReplicas = (int)Math.Ceiling(replicas * (nextForecast.Value / deployment.Settings.ScaleDown));
+
                             if (desiredReplicas < deployment.Settings.MinReplicas)
                             {
                                 desiredReplicas = deployment.Settings.MinReplicas;
@@ -227,7 +277,7 @@ public class Runner
                     if (true) // TODO: forecast.timestamp > (Datetime.Now - delay)
                     {
                         Console.WriteLine($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
-                        await Task.Delay((int)delay, cancellationToken);
+                        await Task.Delay((int) delay, cancellationToken);
                     }
                 }
                 catch (Exception ex)
@@ -254,18 +304,18 @@ public class Runner
         _cancellationTokenSource.Cancel();
     }
 
-    public static List<string> ExtractNonSystemDeployments(JObject kubeApiResponse, string[] excludePatterns = null)
+    public static List<string> ExtractNonSystemDeployments(JObject kubeApiResponse, string[]? excludePatterns)
     {
         // Initialize result list
         List<string> deploymentNames = new List<string>();
 
         // Use default exclusion patterns if none provided
         HashSet<string> patternsToExclude = new HashSet<string>(
-            excludePatterns ?? new[] { "kubernetes", "prometheus", "autoscaler-deployment" },
+            excludePatterns ?? _collection,
             StringComparer.OrdinalIgnoreCase);
 
         // Get the "items" array which contains all deployments
-        JArray items = (JArray)kubeApiResponse["items"];
+        JArray items = (JArray) kubeApiResponse["items"];
 
         // Check if items exist
         if (items == null)
