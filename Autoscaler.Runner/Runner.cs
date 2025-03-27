@@ -28,6 +28,8 @@ public class Runner
     private readonly bool _developmentMode;
     private readonly bool _useForecasterInDevelopmentMode;
     private static readonly string[] _collection = new[] {"kubernetes", "prometheus", "autoscaler-deployment"};
+    private readonly Dictionary<Guid, List<double>> _forecastErrorHistory = new Dictionary<Guid, List<double>>();
+
 
     public Runner(string forecasterAddress, string kubernetesAddress, string prometheusAddress,
         IServiceProvider serviceProvider, bool developmentMode = false, bool useForecasterInDevelopmentMode = false)
@@ -115,188 +117,221 @@ public class Runner
         }
     }
 
-    private async void DeploymentMonitorLoop(DeploymentEntity deployment, CancellationToken cancellationToken)
+   private async void DeploymentMonitorLoop(DeploymentEntity deployment, CancellationToken cancellationToken)
+{
+    try
     {
-        try
+        var clock = new Stopwatch();
+        clock.Start();
+        while (!cancellationToken.IsCancellationRequested)
         {
-            var clock = new Stopwatch();
-            clock.Start();
-            while (!cancellationToken.IsCancellationRequested)
+            await UpdateSettings(deployment);
+
+            // Retrain periodically based on TrainInterval.
+            if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
             {
+                await _forecaster.Retrain(deployment.Service.Id);
+                clock.Restart();
+            }
+
+            var startTime = DateTime.Now;
+            try
+            {
+                Console.WriteLine($"Checking deployment {deployment.Service.Name}");
+
+                // Create a new scope for each iteration to get fresh repository instances
                 using (var scope = _serviceProvider.CreateScope())
                 {
-                    var settingsRepository = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
+                    var historicRepository = scope.ServiceProvider.GetRequiredService<IHistoricRepository>();
+                    var forecastRepository = scope.ServiceProvider.GetRequiredService<IForecastRepository>();
 
-                    var settings = await settingsRepository.GetSettingsForServiceAsync(deployment.Service.Id);
+                    var data = await _prometheus.QueryRange(
+                        deployment.Service.Id,
+                        deployment.Service.Name,
+                        DateTime.Now.AddHours(-12),
+                        DateTime.Now,
+                        deployment.Settings.ScalePeriod);
+                    await historicRepository.UpsertHistoricDataAsync(data);
 
-                    if (settings.TrainInterval != deployment.Settings.TrainInterval)
+                    var forecastEntity = await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
+                    if (forecastEntity == null)
                     {
-                        deployment.Settings.TrainInterval = settings.TrainInterval;
+                        await _forecaster.Forecast(deployment.Service.Id);
+                        forecastEntity = await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
                     }
 
-                    if (settings.ScaleDown != deployment.Settings.ScaleDown)
+                    var forecast = JObject.Parse(forecastEntity.Forecast);
+                    var historic = JObject.Parse(data.HistoricData);
+
+                    var replicas = await _kubernetes.GetReplicas(deployment.Service.Name);
+
+                    var newestHistorical = historic["data"]?["result"]?[0]?["values"]?.Last;
+                    if (newestHistorical == null)
                     {
-                        deployment.Settings.ScaleDown = settings.ScaleDown;
+                        Console.WriteLine("Unable to parse newest historical data.");
+                        continue;
                     }
 
-                    if (settings.ScaleUp != deployment.Settings.ScaleUp)
+                    double actualCPU;
+                    try
                     {
-                        deployment.Settings.ScaleUp = settings.ScaleUp;
+                        actualCPU = newestHistorical[1].Value<double>();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error parsing historical CPU value: {ex.Message}");
+                        continue;
                     }
 
-                    if (settings.ScalePeriod != deployment.Settings.ScalePeriod)
+                    var timestamps = forecast["timestamp"]?.ToObject<List<string>>();
+                    var cpuValues = forecast["cpu_percentage"]?.ToObject<List<List<double>>>();
+
+                    if (timestamps == null || cpuValues == null)
                     {
-                        deployment.Settings.ScalePeriod = settings.ScalePeriod;
+                        Console.WriteLine("Forecast data format is invalid");
+                        continue;
                     }
 
-                    if (settings.MaxReplicas != deployment.Settings.MaxReplicas)
+                    var nextTime = DateTime.UtcNow.AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ss.fff");
+                    int forecastIndex = timestamps.FindIndex(t => t.StartsWith(nextTime.Substring(0, 16)));
+                    double? nextForecast = null;
+                    if (forecastIndex >= 0 && forecastIndex < cpuValues.Count)
                     {
-                        deployment.Settings.MaxReplicas = settings.MaxReplicas;
+                        nextForecast = cpuValues[forecastIndex][0];
+                    }
+                    if (nextForecast == null)
+                    {
+                        await _forecaster.Forecast(deployment.Service.Id);
+                        continue;
                     }
 
-                    if (settings.MinReplicas != deployment.Settings.MinReplicas)
+                    double forecastError = Math.Abs(nextForecast.Value - actualCPU);
+                    Console.WriteLine($"Actual CPU: {actualCPU}, Forecast: {nextForecast.Value}, Error: {forecastError}");
+
+                    if (!_forecastErrorHistory.ContainsKey(deployment.Service.Id))
                     {
-                        deployment.Settings.MinReplicas = settings.MinReplicas;
+                        _forecastErrorHistory[deployment.Service.Id] = new List<double>();
                     }
+                    var errorHistory = _forecastErrorHistory[deployment.Service.Id];
+                    errorHistory.Add(forecastError);
+
+                    // Maintain a rolling window (e.g., last 100 error measurements)
+                    if (errorHistory.Count > 100)
+                    {
+                        errorHistory.RemoveAt(0);
+                    }
+
+                    double meanError = errorHistory.Average();
+                    double stdError = Math.Sqrt(errorHistory.Average(e => Math.Pow(e - meanError, 2)));
+
+                    // Compute the z-score for the current forecast error.
+                    double zScore = stdError == 0 ? 0 : (forecastError - meanError) / stdError;
+                    Console.WriteLine($"Mean error: {meanError:F2}, Std: {stdError:F2}, z-score: {zScore:F2}");
+
+                    if (Math.Abs(zScore) > 3)
+                    {
+                        Console.WriteLine("Forecast error exceeds threshold, retraining model.");
+                        await _forecaster.Retrain(deployment.Service.Id);
+                        errorHistory.Clear();
+                        clock.Restart();
+                        continue;
+                    }
+
+                    // Kubernetes HPA scaling logic.
+                    int desiredReplicas;
+                    if (nextForecast > deployment.Settings.ScaleUp)
+                    {
+                        desiredReplicas = (int)Math.Ceiling(replicas * (nextForecast.Value / deployment.Settings.ScaleUp));
+                        if (desiredReplicas > deployment.Settings.MaxReplicas)
+                        {
+                            desiredReplicas = deployment.Settings.MaxReplicas;
+                        }
+                    }
+                    else if (nextForecast < deployment.Settings.ScaleDown)
+                    {
+                        desiredReplicas = (int)Math.Ceiling(replicas * (nextForecast.Value / deployment.Settings.ScaleDown));
+                        if (desiredReplicas < deployment.Settings.MinReplicas)
+                        {
+                            desiredReplicas = deployment.Settings.MinReplicas;
+                        }
+                    }
+                    else
+                    {
+                        desiredReplicas = replicas;
+                    }
+
+                    Console.WriteLine($"Updating {deployment.Service.Name} to {desiredReplicas} replicas");
+
+                    // Create the JSON object for scaling.
+                    var jsonObject = new
+                    {
+                        spec = new
+                        {
+                            replicas = desiredReplicas
+                        }
+                    };
+
+                    await _kubernetes.Update(
+                        $"/apis/apps/v1/namespaces/default/deployments/{deployment.Service.Name}/scale",
+                        jsonObject);
                 }
 
-                if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
-                {
-                    await _forecaster.Retrain(deployment.Service.Id);
-                    clock.Restart();
-                }
-                
-                var startTime = DateTime.Now;
-                try
-                {
-                    Console.WriteLine($"Checking deployment {deployment.Service.Name}");
-
-                    // Create a new scope for each iteration to get fresh repository instances
-                    using (var scope = _serviceProvider.CreateScope())
-                    {
-                        var historicRepository = scope.ServiceProvider.GetRequiredService<IHistoricRepository>();
-                        var forecastRepository = scope.ServiceProvider.GetRequiredService<IForecastRepository>();
-
-                        var data = await _prometheus.QueryRange(
-                            deployment.Service.Id,
-                            deployment.Service.Name,
-                            DateTime.Now.AddHours(-12),
-                            DateTime.Now,
-                            deployment.Settings.ScalePeriod);
-                        await historicRepository.UpsertHistoricDataAsync(data);
-
-                        var forecastEntity =
-                            await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
-
-                        if (forecastEntity == null)
-                        {
-                            await _forecaster.Forecast(deployment.Service.Id);
-                            forecastEntity =
-                                await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
-                        }
-
-                        var forecast = JObject.Parse(forecastEntity.Forecast);
-                        var historic = JObject.Parse(data.HistoricData);
-
-                        var replicas = await _kubernetes.GetReplicas(deployment.Service.Name);
-
-                        var newestHistorical = historic["data"]?["result"]?[0]?["values"]?.Last;
-
-                        var timestamps = forecast["timestamp"]?.ToObject<List<string>>();
-                        var cpuValues = forecast["cpu_percentage"]?.ToObject<List<List<double>>>();
-
-                        if (timestamps == null || cpuValues == null)
-                        { 
-                            Console.WriteLine("Forecast data format is invalid");
-                            continue;
-                        }
-
-                        var nextTime = DateTime.UtcNow.AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ss.fff");
-
-                        int forecastIndex =
-                            timestamps.FindIndex(t => t.StartsWith(nextTime.Substring(0, 16)));
-
-                        double? nextForecast = null;
-                        if (forecastIndex >= 0 && forecastIndex < cpuValues.Count)
-                        {
-                            nextForecast = cpuValues[forecastIndex][0];
-                        }
-
-                        if (nextForecast == null)
-                        {
-                            await _forecaster.Forecast(deployment.Service.Id);
-                            continue;
-                        }
-                        //Kubernetes HPA scaling logic is: desiredReplicas = ceil[currentReplicas * ( currentMetricValue / desiredMetricValue )]
-                        // We need to scale based on the forecasted value, so we need to calculate the desiredMetricValue based on the forecasted value.
-                        int desiredReplicas;
-
-                        if (nextForecast > deployment.Settings.ScaleUp)
-                        {
-                            desiredReplicas = (int)Math.Ceiling(replicas * (nextForecast.Value / deployment.Settings.ScaleUp));
-    
-                            if (desiredReplicas > deployment.Settings.MaxReplicas)
-                            {
-                                desiredReplicas = deployment.Settings.MaxReplicas;
-                            }
-                        }
-                        else if (nextForecast < deployment.Settings.ScaleDown)
-                        {
-                            desiredReplicas = (int)Math.Ceiling(replicas * (nextForecast.Value / deployment.Settings.ScaleDown));
-
-                            if (desiredReplicas < deployment.Settings.MinReplicas)
-                            {
-                                desiredReplicas = deployment.Settings.MinReplicas;
-                            }
-                        }
-                        else
-                        {
-                            desiredReplicas = replicas;
-                        }
-
-                        Console.WriteLine($"Updating {deployment.Service.Name} to {replicas} replicas");
-
-                        // Using JsonObject instead of Dictionary
-                        var jsonObject = new
-                        {
-                            spec = new
-                            {
-                                replicas = desiredReplicas
-                            }
-                        };
-
-                        await _kubernetes.Update(
-                            $"/apis/apps/v1/namespaces/default/deployments/{deployment.Service.Name}/scale",
-                            jsonObject);
-                    }
-
-                    // Calculate delay based on the processing time
-                    var processingTime = (DateTime.Now - startTime).TotalMilliseconds;
-                    var delay = Math.Max(0, deployment.Settings.ScalePeriod - processingTime);
-
-                    if (true) // TODO: forecast.timestamp > (Datetime.Now - delay)
-                    {
-                        Console.WriteLine($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
-                        await Task.Delay((int) delay, cancellationToken);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error monitoring {deployment.Service.Name}: {ex.Message}");
-                    // Sleep for a short period before retrying
-                    await Task.Delay(5000, cancellationToken);
-                }
+                // Calculate delay based on processing time.
+                var processingTime = (DateTime.Now - startTime).TotalMilliseconds;
+                var delay = Math.Max(0, deployment.Settings.ScalePeriod - processingTime);
+                Console.WriteLine($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
+                await Task.Delay((int)delay, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error monitoring {deployment.Service.Name}: {ex.Message}");
+                await Task.Delay(5000, cancellationToken);
             }
         }
-        catch (OperationCanceledException)
-        {
-            Console.WriteLine($"Thread {Thread.CurrentThread.Name} was canceled");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Unhandled exception in thread {Thread.CurrentThread.Name}: {ex}");
-        }
     }
+    catch (OperationCanceledException)
+    {
+        Console.WriteLine($"Thread {Thread.CurrentThread.Name} was canceled");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Unhandled exception in thread {Thread.CurrentThread.Name}: {ex}");
+    }
+}
+   private async Task UpdateSettings(DeploymentEntity deployment)
+   {
+       using (var scope = _serviceProvider.CreateScope())
+       {
+           var settingsRepository = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
+           var settings = await settingsRepository.GetSettingsForServiceAsync(deployment.Service.Id);
+
+           if (settings.TrainInterval != deployment.Settings.TrainInterval)
+           {
+               deployment.Settings.TrainInterval = settings.TrainInterval;
+           }
+           if (settings.ScaleDown != deployment.Settings.ScaleDown)
+           {
+               deployment.Settings.ScaleDown = settings.ScaleDown;
+           }
+           if (settings.ScaleUp != deployment.Settings.ScaleUp)
+           {
+               deployment.Settings.ScaleUp = settings.ScaleUp;
+           }
+           if (settings.ScalePeriod != deployment.Settings.ScalePeriod)
+           {
+               deployment.Settings.ScalePeriod = settings.ScalePeriod;
+           }
+           if (settings.MaxReplicas != deployment.Settings.MaxReplicas)
+           {
+               deployment.Settings.MaxReplicas = settings.MaxReplicas;
+           }
+           if (settings.MinReplicas != deployment.Settings.MinReplicas)
+           {
+               deployment.Settings.MinReplicas = settings.MinReplicas;
+           }
+       }
+   }
+
 
     public void Stop()
     {
