@@ -210,9 +210,12 @@ public class Runner
                             Console.WriteLine("Forecast data format is invalid");
                             continue;
                         }
+                        var forecastHorizon = await _kubernetes.GetPodStartupTimePercentileAsync(deployment.Service.Name);
+                        Console.WriteLine($"Forecast horizon for {deployment.Service.Name}: {forecastHorizon.TotalSeconds} seconds");
 
-                        var nextTime = DateTime.UtcNow.AddMinutes(1).ToString("yyyy-MM-ddTHH:mm:ss.fff");
-
+                        // Instead of a fixed 1 minute, use the forecast horizon from pod startup time
+                        var nextTime = DateTime.UtcNow.Add(forecastHorizon).ToString("yyyy-MM-ddTHH:mm:ss.fff");
+                        
                         int forecastIndex =
                             timestamps.FindIndex(t => t.StartsWith(nextTime.Substring(0, 16)));
 
