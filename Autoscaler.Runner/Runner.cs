@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -187,6 +188,7 @@ public class Runner
                             continue;
                         }
 
+
                         var timestamps = forecast["timestamp"]?.ToObject<List<string>>();
                         var cpuValues = forecast["cpu_percentage"]?.ToObject<List<List<double>>>();
 
@@ -200,13 +202,20 @@ public class Runner
                             await _kubernetes.GetPodStartupTimePercentileAsync(deployment.Service.Name);
                         Console.WriteLine(
                             $"Forecast horizon for {deployment.Service.Name}: {forecastHorizon.TotalSeconds} seconds");
-
+                        
                         // Instead of a fixed 1 minute, use the forecast horizon from pod startup time
-                        var nextTime = DateTime.UtcNow.Add(forecastHorizon).ToString("yyyy-MM-ddTHH:mm:ss.fff");
-
-                        int forecastIndex =
-                            timestamps.FindIndex(t => t.StartsWith(nextTime.Substring(0, 16)));
-
+                        var nextTime = DateTime.Now.Add(forecastHorizon).ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture);
+                        Console.WriteLine(nextTime);
+                        int forecastIndex = 0;
+                        for (int i = 0; i < timestamps.Count; i++)
+                        {
+                            if (timestamps[i].Contains(nextTime))
+                            {
+                                forecastIndex = i;
+                                break;
+                            }
+                        }
+                        
                         double? nextForecast = null;
                         if (forecastIndex >= 0 && forecastIndex < cpuValues.Count)
                         {
@@ -218,6 +227,7 @@ public class Runner
                             await _forecaster.Forecast(deployment.Service.Id);
                             continue;
                         }
+                        
 
                         double forecastError = Math.Abs(nextForecast.Value - actualCpu);
                         Console.WriteLine(
@@ -252,12 +262,14 @@ public class Runner
                             clock.Restart();
                             continue;
                         }
+                        Console.WriteLine("got here5");
 
                         if (timestamps.Count == 0 || cpuValues.Count == 0)
                         {
                             Console.WriteLine("Forecast data format is invalid");
                             continue;
                         }
+                        Console.WriteLine("got here6");
 
                         // Kubernetes HPA scaling logic.
                         int desiredReplicas;
