@@ -108,9 +108,11 @@ public class Runner
 
         foreach (var deployment in _deployments)
         {
-            var thread = new Thread(() => DeploymentMonitorLoop(deployment, _cancellationTokenSource.Token));
-            thread.Name = $"Monitor-{deployment.Service.Name}";
-            thread.IsBackground = true;
+            var thread = new Thread(() => DeploymentMonitorLoop(deployment, _cancellationTokenSource.Token))
+            {
+                Name = $"Monitor-{deployment.Service.Name}",
+                IsBackground = true
+            };
             _runningThreads.Add(thread);
             thread.Start();
             Console.WriteLine($"Started monitoring thread for {deployment.Service.Name}");
@@ -323,40 +325,38 @@ public class Runner
 
     private async Task UpdateSettings(DeploymentEntity deployment)
     {
-        using (var scope = _serviceProvider.CreateScope())
+        using var scope = _serviceProvider.CreateScope();
+        var settingsRepository = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
+        var settings = await settingsRepository.GetSettingsForServiceAsync(deployment.Service.Id);
+
+        if (settings.TrainInterval != deployment.Settings.TrainInterval)
         {
-            var settingsRepository = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
-            var settings = await settingsRepository.GetSettingsForServiceAsync(deployment.Service.Id);
+            deployment.Settings.TrainInterval = settings.TrainInterval;
+        }
 
-            if (settings.TrainInterval != deployment.Settings.TrainInterval)
-            {
-                deployment.Settings.TrainInterval = settings.TrainInterval;
-            }
+        if (settings.ScaleDown != deployment.Settings.ScaleDown)
+        {
+            deployment.Settings.ScaleDown = settings.ScaleDown;
+        }
 
-            if (settings.ScaleDown != deployment.Settings.ScaleDown)
-            {
-                deployment.Settings.ScaleDown = settings.ScaleDown;
-            }
+        if (settings.ScaleUp != deployment.Settings.ScaleUp)
+        {
+            deployment.Settings.ScaleUp = settings.ScaleUp;
+        }
 
-            if (settings.ScaleUp != deployment.Settings.ScaleUp)
-            {
-                deployment.Settings.ScaleUp = settings.ScaleUp;
-            }
+        if (settings.ScalePeriod != deployment.Settings.ScalePeriod)
+        {
+            deployment.Settings.ScalePeriod = settings.ScalePeriod;
+        }
 
-            if (settings.ScalePeriod != deployment.Settings.ScalePeriod)
-            {
-                deployment.Settings.ScalePeriod = settings.ScalePeriod;
-            }
+        if (settings.MaxReplicas != deployment.Settings.MaxReplicas)
+        {
+            deployment.Settings.MaxReplicas = settings.MaxReplicas;
+        }
 
-            if (settings.MaxReplicas != deployment.Settings.MaxReplicas)
-            {
-                deployment.Settings.MaxReplicas = settings.MaxReplicas;
-            }
-
-            if (settings.MinReplicas != deployment.Settings.MinReplicas)
-            {
-                deployment.Settings.MinReplicas = settings.MinReplicas;
-            }
+        if (settings.MinReplicas != deployment.Settings.MinReplicas)
+        {
+            deployment.Settings.MinReplicas = settings.MinReplicas;
         }
     }
 
@@ -367,7 +367,7 @@ public class Runner
         _cancellationTokenSource.Cancel();
     }
 
-    public static List<string> ExtractNonSystemDeployments(JObject kubeApiResponse, string[]? excludePatterns)
+    private static List<string> ExtractNonSystemDeployments(JObject kubeApiResponse, string[]? excludePatterns)
     {
         // Initialize result list
         List<string> deploymentNames = new List<string>();
@@ -387,26 +387,14 @@ public class Runner
         }
 
         // Iterate through each deployment
-        foreach (JToken item in items)
-        {
-            string name = item["metadata"]?["name"]?.ToString() ?? throw new InvalidOperationException();
-
-            // Skip if name is null
-            if (string.IsNullOrEmpty(name))
-            {
-                continue;
-            }
-
-            // Check if name contains any of the exclude patterns
-            bool shouldExclude = patternsToExclude.Any(pattern =>
-                name.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0);
-
-            // If it doesn't match any exclusion pattern, add it to our list
-            if (!shouldExclude)
-            {
-                deploymentNames.Add(name);
-            }
-        }
+        deploymentNames.AddRange(from item in items
+            select item["metadata"]?["name"]?.ToString() ?? throw new InvalidOperationException()
+            into name
+            where !string.IsNullOrEmpty(name)
+            let shouldExclude =
+                patternsToExclude.Any(pattern => name.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0)
+            where !shouldExclude
+            select name);
 
         return deploymentNames;
     }
