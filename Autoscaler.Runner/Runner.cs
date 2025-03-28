@@ -190,7 +190,7 @@ public class Runner
 
 
                         var timestamps = forecast["timestamp"]?.ToObject<List<string>>();
-                        var cpuValues = forecast["cpu_percentage"]?.ToObject<List<List<double>>>();
+                        var cpuValues = forecast["value"]?.ToObject<List<List<double>>>();
 
                         if (timestamps == null || cpuValues == null)
                         {
