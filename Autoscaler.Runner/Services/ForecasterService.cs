@@ -31,7 +31,6 @@ public class ForecasterService
             return true;
         }
 
-  
 
         var res = await _client.GetAsync(_addr + "/predict/" + serviceId);
 

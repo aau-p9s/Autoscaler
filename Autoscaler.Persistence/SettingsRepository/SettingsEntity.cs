@@ -20,7 +20,8 @@ public class SettingsEntity
     {
     }
 
-    public SettingsEntity(Guid id, Guid serviceId, int scaleUp, int scaleDown, int minReplicas, int maxReplicas, int scalePeriod, int trainInterval, string modelHyperParams, string optunaConfig)
+    public SettingsEntity(Guid id, Guid serviceId, int scaleUp, int scaleDown, int minReplicas, int maxReplicas,
+        int scalePeriod, int trainInterval, string modelHyperParams, string optunaConfig)
     {
         Id = id;
         ServiceId = serviceId;

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -150,7 +149,7 @@ namespace Autoscaler.Runner.Services
             var endpoint = $"/api/v1/namespaces/default/pods?labelSelector=app%3D{encodedServiceName}";
             return await Get(endpoint);
         }
-        
+
         public async Task<TimeSpan> GetPodStartupTimePercentileAsync(string serviceName, double percentile = 90)
         {
             // Retrieve pod data.
@@ -194,6 +193,7 @@ namespace Autoscaler.Runner.Services
                             }
                         }
                     }
+
                     if (readyTime == null)
                         continue;
                     var startupTime = readyTime.Value - creationTime;
@@ -228,6 +228,7 @@ namespace Autoscaler.Runner.Services
             {
                 return sortedValues[lowerIndex];
             }
+
             double weight = rank - lowerIndex;
             return sortedValues[lowerIndex] * (1 - weight) + sortedValues[upperIndex] * weight;
         }
