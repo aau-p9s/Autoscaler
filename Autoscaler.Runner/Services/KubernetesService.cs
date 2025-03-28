@@ -212,7 +212,7 @@ namespace Autoscaler.Runner.Services
 
             startupTimesSeconds.Sort();
             double percentileValue = CalculatePercentile(startupTimesSeconds, percentile);
-            return TimeSpan.FromSeconds(percentileValue);
+            return TimeSpan.FromSeconds(Math.Ceiling(percentileValue));
         }
 
         private double CalculatePercentile(List<double> sortedValues, double percentile)
