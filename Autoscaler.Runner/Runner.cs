@@ -174,10 +174,10 @@ public class Runner
                             continue;
                         }
 
-                        double actualCPU;
+                        double actualCpu;
                         try
                         {
-                            actualCPU = newestHistorical[1].Value<double>();
+                            actualCpu = (newestHistorical[1] ?? throw new InvalidOperationException()).Value<double>();
                         }
                         catch (Exception ex)
                         {
@@ -217,9 +217,9 @@ public class Runner
                             continue;
                         }
 
-                        double forecastError = Math.Abs(nextForecast.Value - actualCPU);
+                        double forecastError = Math.Abs(nextForecast.Value - actualCpu);
                         Console.WriteLine(
-                            $"Actual CPU: {actualCPU}, Forecast: {nextForecast.Value}, Error: {forecastError}");
+                            $"Actual CPU: {actualCpu}, Forecast: {nextForecast.Value}, Error: {forecastError}");
 
                         if (!_forecastErrorHistory.ContainsKey(deployment.Service.Id))
                         {
@@ -251,7 +251,7 @@ public class Runner
                             continue;
                         }
 
-                        if (timestamps == null || cpuValues == null)
+                        if (timestamps.Count == 0 || cpuValues.Count == 0)
                         {
                             Console.WriteLine("Forecast data format is invalid");
                             continue;
@@ -389,7 +389,7 @@ public class Runner
         // Iterate through each deployment
         foreach (JToken item in items)
         {
-            string name = item["metadata"]?["name"]?.ToString();
+            string name = item["metadata"]?["name"]?.ToString() ?? throw new InvalidOperationException();
 
             // Skip if name is null
             if (string.IsNullOrEmpty(name))
