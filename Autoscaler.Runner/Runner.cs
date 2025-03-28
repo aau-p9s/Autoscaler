@@ -236,6 +236,21 @@ public class Runner
                         clock.Restart();
                         continue;
                     }
+                  
+                        if (timestamps == null || cpuValues == null)
+                        { 
+                            Console.WriteLine("Forecast data format is invalid");
+                            continue;
+                        }
+                        var forecastHorizon = await _kubernetes.GetPodStartupTimePercentileAsync(deployment.Service.Name);
+                        Console.WriteLine($"Forecast horizon for {deployment.Service.Name}: {forecastHorizon.TotalSeconds} seconds");
+
+                        // Instead of a fixed 1 minute, use the forecast horizon from pod startup time
+                        var nextTime = DateTime.UtcNow.Add(forecastHorizon).ToString("yyyy-MM-ddTHH:mm:ss.fff");
+                        
+                        int forecastIndex =
+                            timestamps.FindIndex(t => t.StartsWith(nextTime.Substring(0, 16)));
+
 
                     // Kubernetes HPA scaling logic.
                     int desiredReplicas;
