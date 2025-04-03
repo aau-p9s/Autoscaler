@@ -1,6 +1,6 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {Link, useParams} from 'react-router-dom';
-import {Line} from 'react-chartjs-2';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 import Chart from 'chart.js/auto';
 import dragDataPlugin from 'chartjs-plugin-dragdata';
@@ -11,9 +11,9 @@ Chart.register(dragDataPlugin);
 const ServicePage = (name) => {
     const params = useParams();
 
+    // Service and Autoscaling State
     const [service, setService] = useState([]);
     const [isAutoscalingEnabled, setIsAutoscalingEnabled] = useState(false);
-
 
     // CPU Scaling State
     const [currentScaleValues, setCurrentScaleValues] = useState(null);
@@ -30,7 +30,12 @@ const ServicePage = (name) => {
     const [forecast, setForecast] = useState(null);
     const [chartData, setChartData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    // Enables drag modification
     const [dragEnabled, setDragEnabled] = useState(false);
+    // Toggle between normal modify vs. smart (range) modify
+    const [smartModifyEnabled, setSmartModifyEnabled] = useState(false);
+    // For smart modify, store the first endpoint (index and value)
+    const [firstEndpoint, setFirstEndpoint] = useState(null);
     const chartRef = useRef(null);
 
     // Model Settings State
@@ -38,10 +43,10 @@ const ServicePage = (name) => {
     const [optunaConfig, setOptunaConfig] = useState(null);
     const [modelSettingsError, setModelSettingsError] = useState(null);
 
-    // Fetch Current Scale Values
+    // Fetch current scale values
     const fetchCurrentScaleValues = async () => {
         try {
-            const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/settings`, {method: 'GET'});
+            const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/settings`, { method: 'GET' });
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
@@ -53,17 +58,16 @@ const ServicePage = (name) => {
             setMaxReplicas(data.maxReplicas || '');
             setInterval(data.scalePeriod || '');
             setTrainInterval(data.trainInterval || '');
-            setOptunaConfig(data.optunaConfig || {})
-            setModelHyperParams(data.modelHyperParams || {})
+            setOptunaConfig(data.optunaConfig || {});
+            setModelHyperParams(data.modelHyperParams || {});
         } catch (err) {
             setScaleError('Failed to fetch current values');
         }
     };
 
-    // Handle Scale Settings Submission
+    // Handle scale settings submission
     const handleScaleSubmit = async (e) => {
         e.preventDefault();
-
         const payload = {
             id: params.id,
             scaleUp: parseFloat(scaleUpPercentage),
@@ -75,13 +79,12 @@ const ServicePage = (name) => {
             modelHyperParams: typeof modelHyperParams === 'object' ? JSON.stringify(modelHyperParams) : modelHyperParams,
             optunaConfig: typeof optunaConfig === 'object' ? JSON.stringify(optunaConfig) : optunaConfig,
         };
-        
-        if(minReplicas < 0 || maxReplicas < 0) {
+
+        if (minReplicas < 0 || maxReplicas < 0) {
             setScaleError('Replicas cannot be negative');
             return;
         }
-        
-        if(minReplicas > maxReplicas){
+        if (minReplicas > maxReplicas) {
             setScaleError('Min replicas cannot be greater than max replicas');
             return;
         }
@@ -89,12 +92,9 @@ const ServicePage = (name) => {
         try {
             const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/settings`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
@@ -105,7 +105,8 @@ const ServicePage = (name) => {
             setScaleError('Failed to submit the settings');
         }
     };
-    
+
+    // Autoscaling toggles
     const handleAutoscalingEnabled = async () => {
         const payload = {
             id: params.id,
@@ -115,20 +116,13 @@ const ServicePage = (name) => {
         try {
             const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-            
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
-            if(isAutoscalingEnabled){
-                setSuccess('Autoscaling disabled');
-            } else {
-                setSuccess('Autoscaling enabled');
-            }
+            setSuccess(isAutoscalingEnabled ? 'Autoscaling disabled' : 'Autoscaling enabled');
             setScaleError(null);
             fetchServiceInformation();
         } catch (err) {
@@ -141,26 +135,22 @@ const ServicePage = (name) => {
         await handleAutoscalingEnabled(newStatus);
         setIsAutoscalingEnabled(newStatus);
     };
-    
-    // Fetch Graph Data
+
+    // Fetch graph data from the server
     const fetchGraphData = async () => {
         setIsLoading(true);
-
         try {
-            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/forecast`, {method: 'GET'});
+            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/forecast`, { method: 'GET' });
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
-            
             const json = await response.json();
             setForecast(json);
-            const forecastData = JSON.parse(json.forecast); // Parse the forecast string into an array
-            
+            const forecastData = JSON.parse(json.forecast);
             if (forecastData && forecastData.timestamp.length > 0) {
-                const labels = forecastData.timestamp // Extract timestamps for labels
-                const data = forecastData.cpu_percentage.flat() // Extract CPU percentages for data
-                labels.sort((a, b) => new Date(a) - new Date(b)); // Sort by timestamp
-                
+                const labels = forecastData.timestamp;
+                const data = forecastData.value.flat();
+                labels.sort((a, b) => new Date(a) - new Date(b));
                 setChartData({
                     labels,
                     datasets: [
@@ -173,8 +163,7 @@ const ServicePage = (name) => {
                         },
                     ],
                 });
-            }
-             else {
+            } else {
                 const fallbackData = await generateFallbackData("hour");
                 setChartData(fallbackData);
             }
@@ -187,9 +176,10 @@ const ServicePage = (name) => {
         }
     };
 
+    // Fetch service information
     const fetchServiceInformation = async () => {
         try {
-            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}`, {method: 'GET'});
+            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}`, { method: 'GET' });
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
@@ -201,11 +191,10 @@ const ServicePage = (name) => {
         }
     };
 
-    // Generate Fallback Graph Data
+    // Generate fallback graph data
     const generateFallbackData = async (interval) => {
-        let labels = Array.from({length: 12}, (_, i) => `${i * 5} min`);
+        let labels = Array.from({ length: 12 }, (_, i) => `${i * 5} min`);
         let data = [45, 50, 55, 60, 58, 63, 70, 68, 75, 80, 85, 90];
-
         return {
             labels,
             datasets: [
@@ -220,41 +209,38 @@ const ServicePage = (name) => {
         };
     };
 
-    // Handle Graph Save
+    // Save the modified graph forecast
     const handleGraphSave = async () => {
         try {
+            const forecastPayload = JSON.stringify({
+                columns: ["cpu"],
+                timestamp: chartData.labels,
+                value: chartData.datasets[0].data.map(val => [val])
+            });
             const payload = {
-                id: forecast.id, // Generating a new UUID for the forecast entry
-                serviceId: params.id, // Assuming `params.id` is the ServiceId
-                createdAt: forecast.createdAt, // Current timestamp
-                modelId: forecast.modelId, // Replace with the actual ModelId if needed
-                forecast: JSON.stringify(
-                    chartData.labels.map((label, index) => ({
-                        timestamp: label,
-                        cpu_percentage: chartData.datasets[0].data[index],
-                    }))
-                ),
+                id: forecast.id,
+                serviceId: params.id,
+                createdAt: forecast.createdAt,
+                modelId: forecast.modelId,
+                forecast: forecastPayload,
                 hasManualChange: true,
             };
             const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/forecast`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
-
             setSuccess('Forecast saved successfully');
             await fetchGraphData();
         } catch (error) {
             console.error('Error:', error);
         }
     };
-    
+
+    // Utility to parse and render JSON
     const parseStringifiedJson = (jsonString) => {
         try {
             return typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
@@ -263,7 +249,7 @@ const ServicePage = (name) => {
             return {};
         }
     };
-    
+
     const renderJson = (obj) => {
         const parsedObj = parseStringifiedJson(obj);
         return Object.entries(parsedObj).map(([key, value]) => (
@@ -275,73 +261,104 @@ const ServicePage = (name) => {
 
     useEffect(() => {
         if (scaleError) {
-            const timer = setTimeout(() => {
-                setScaleError(null); // Hide error after 2 seconds
-            }, 2000);
-
-            return () => clearTimeout(timer); // Cleanup on unmount or re-render
+            const timer = setTimeout(() => setScaleError(null), 2000);
+            return () => clearTimeout(timer);
         }
     }, [scaleError]);
 
     useEffect(() => {
         if (success) {
-            const timer = setTimeout(() => {
-                setSuccess(null); // Hide success after 2 seconds
-            }, 2000);
-
-            return () => clearTimeout(timer); // Cleanup on unmount or re-render
+            const timer = setTimeout(() => setSuccess(null), 2000);
+            return () => clearTimeout(timer);
         }
     }, [success]);
 
-    // Initial Data Fetching
+    // Initial data fetching
     useEffect(() => {
         fetchCurrentScaleValues();
         fetchGraphData();
         fetchServiceInformation();
     }, []);
 
-    // Graph Options
+    // Mode toggle handlers:
+    const handleNormalModifyToggle = () => {
+        if (smartModifyEnabled) setSmartModifyEnabled(false);
+        setDragEnabled((prev) => !prev);
+    };
+
+    const handleSmartModifyToggle = () => {
+        if (!dragEnabled) setDragEnabled(true);
+        setSmartModifyEnabled((prev) => !prev);
+        // Clear any stored endpoint when toggling smart mode.
+        setFirstEndpoint(null);
+    };
+
+    // Configure the dragData plugin based on the selected mode.
+    const dragDataConfig = smartModifyEnabled
+        ? {
+            // Smart modify: if a first endpoint is stored, update all points between it and current.
+            onDrag: (e, datasetIndex, index, value) => {
+                if (firstEndpoint !== null) {
+                    const start = Math.min(firstEndpoint.index, index);
+                    const end = Math.max(firstEndpoint.index, index);
+                    const newData = [...chartData.datasets[datasetIndex].data];
+                    for (let i = start; i <= end; i++) {
+                        newData[i] = value;
+                    }
+                    setChartData((prev) => ({
+                        ...prev,
+                        datasets: prev.datasets.map((ds, dsIndex) =>
+                            dsIndex === datasetIndex ? { ...ds, data: newData } : ds
+                        ),
+                    }));
+                } else {
+                    // If no endpoint stored, update the single point.
+                    const newData = [...chartData.datasets[datasetIndex].data];
+                    newData[index] = value;
+                    setChartData((prev) => ({
+                        ...prev,
+                        datasets: prev.datasets.map((ds, dsIndex) =>
+                            dsIndex === datasetIndex ? { ...ds, data: newData } : ds
+                        ),
+                    }));
+                }
+            },
+            onDragEnd: (e, datasetIndex, index, value) => {
+                // On first drag, store the endpoint; on second, clear it.
+                if (firstEndpoint === null) {
+                    setFirstEndpoint({ index, value });
+                } else {
+                    setFirstEndpoint(null);
+                }
+            },
+        }
+        : {
+            // Normal modify: update only the dragged point.
+            onDrag: (e, datasetIndex, index, value) => {
+                const newData = [...chartData.datasets[datasetIndex].data];
+                newData[index] = value;
+                setChartData((prev) => ({
+                    ...prev,
+                    datasets: prev.datasets.map((ds, dsIndex) =>
+                        dsIndex === datasetIndex ? { ...ds, data: newData } : ds
+                    ),
+                }));
+            },
+            onDragEnd: () => {
+                console.log('Drag ended, data saved.');
+            },
+        };
+
     const graphOptions = {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-            x: {
-                title: {
-                    display: true,
-                    text: 'Time',
-                },
-            },
-            y: {
-                title: {
-                    display: true,
-                    text: 'Value',
-                },
-            },
+            x: { title: { display: true, text: 'Time' } },
+            y: { title: { display: true, text: 'Value' } },
         },
         plugins: {
-            dragData: dragEnabled
-                ? {
-                    onDrag: (e, datasetIndex, index, value) => {
-                        const updatedData = [...chartData.datasets[datasetIndex].data];
-                        updatedData[index] = value;
-                        setChartData((prev) => ({
-                            ...prev,
-                            datasets: [
-                                {
-                                    ...prev.datasets[datasetIndex],
-                                    data: updatedData,
-                                },
-                            ],
-                        }));
-                    },
-                    onDragEnd: () => {
-                        console.log('Drag ended, data saved.');
-                    },
-                }
-                : false,
-            legend: {
-                display: true,
-            },
+            dragData: dragEnabled ? dragDataConfig : false,
+            legend: { display: true },
         },
     };
 
@@ -353,7 +370,7 @@ const ServicePage = (name) => {
                 </Link>
             </div>
 
-            <div style={{height: "100vh", width: "100vw"}} className="row">
+            <div style={{ height: "100vh", width: "100vw" }} className="row">
                 {/* Left Sidebar - CPU Scaling */}
                 <div className="col-md-2 sidebar">
                     <h3>Scale Settings</h3>
@@ -371,11 +388,7 @@ const ServicePage = (name) => {
                     <h4>Update Settings</h4>
                     <button
                         onClick={handleAutoscalingChange}
-                        className={` ${
-                            isAutoscalingEnabled
-                                ? "secondary-button" // Secondary button
-                                : "primary-button" // Primary button
-                        }`}
+                        className={isAutoscalingEnabled ? "secondary-button" : "primary-button"}
                     >
                         {isAutoscalingEnabled ? "Disable Autoscaling" : "Enable Autoscaling"}
                     </button>
@@ -452,20 +465,16 @@ const ServicePage = (name) => {
                     {isLoading ? (
                         <div>Loading chart data...</div>
                     ) : (
-                        <div style={{height: '500px'}}>
-                            <Line ref={chartRef} data={chartData} options={graphOptions}/>
+                        <div style={{ height: '500px' }}>
+                            <Line ref={chartRef} data={chartData} options={graphOptions} />
                             <div className="d-flex justify-content-center mt-3">
-                                <button
-                                    onClick={() => setDragEnabled(!dragEnabled)}
-                                    className="btn btn-secondary me-2"
-                                >
-                                    {dragEnabled ? 'Disable Modify' : 'Modify'}
+                                <button onClick={handleNormalModifyToggle} className="btn btn-secondary me-2">
+                                    {dragEnabled && !smartModifyEnabled ? 'Disable Modify' : 'Modify'}
                                 </button>
-                                <button
-                                    onClick={handleGraphSave}
-                                    disabled={!dragEnabled}
-                                    className="primary-button"
-                                >
+                                <button onClick={handleSmartModifyToggle} className="btn btn-secondary me-2">
+                                    {smartModifyEnabled ? 'Disable Smart Modify' : 'Smart Modify'}
+                                </button>
+                                <button onClick={handleGraphSave} disabled={!dragEnabled} className="primary-button">
                                     Save Forecast
                                 </button>
                             </div>
@@ -477,12 +486,10 @@ const ServicePage = (name) => {
                 <div className="col-md-2 sidebar-right">
                     <h3>Model Settings</h3>
                     {modelSettingsError && <div className="response error">{modelSettingsError}</div>}
-
                     <div className="current-values mb-3">
                         <h4>Model Hyper Parameters</h4>
                         {modelHyperParams ? renderJson(modelHyperParams) : <p>Loading...</p>}
                     </div>
-
                     <div className="current-values mb-3">
                         <h4>Optuna Config</h4>
                         {optunaConfig ? renderJson(optunaConfig) : <p>Loading...</p>}
@@ -492,6 +499,5 @@ const ServicePage = (name) => {
         </div>
     );
 };
-
 
 export default ServicePage;
