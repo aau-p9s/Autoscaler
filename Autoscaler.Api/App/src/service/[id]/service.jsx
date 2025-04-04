@@ -29,21 +29,17 @@ const ServicePage = (name) => {
     // Graph State
     const [forecast, setForecast] = useState(null);
     const [chartData, setChartData] = useState(null);
+    const [originalChartData, setOriginalChartData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    // Enables drag modification
     const [dragEnabled, setDragEnabled] = useState(false);
-    // Toggle between normal modify vs. smart (range) modify
     const [smartModifyEnabled, setSmartModifyEnabled] = useState(false);
-    // For smart modify, store the first endpoint (index and value)
+    const [modifyEnabled, setModifyEnabled] = useState(false);
     const [firstEndpoint, setFirstEndpoint] = useState(null);
     const chartRef = useRef(null);
 
-    // Model Settings State
     const [modelHyperParams, setModelHyperParams] = useState(null);
     const [optunaConfig, setOptunaConfig] = useState(null);
     const [modelSettingsError, setModelSettingsError] = useState(null);
-
-    // Fetch current scale values
     const fetchCurrentScaleValues = async () => {
         try {
             const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/settings`, { method: 'GET' });
@@ -64,8 +60,6 @@ const ServicePage = (name) => {
             setScaleError('Failed to fetch current values');
         }
     };
-
-    // Handle scale settings submission
     const handleScaleSubmit = async (e) => {
         e.preventDefault();
         const payload = {
@@ -105,8 +99,6 @@ const ServicePage = (name) => {
             setScaleError('Failed to submit the settings');
         }
     };
-
-    // Autoscaling toggles
     const handleAutoscalingEnabled = async () => {
         const payload = {
             id: params.id,
@@ -135,8 +127,6 @@ const ServicePage = (name) => {
         await handleAutoscalingEnabled(newStatus);
         setIsAutoscalingEnabled(newStatus);
     };
-
-    // Fetch graph data from the server
     const fetchGraphData = async () => {
         setIsLoading(true);
         try {
@@ -147,11 +137,12 @@ const ServicePage = (name) => {
             const json = await response.json();
             setForecast(json);
             const forecastData = JSON.parse(json.forecast);
+            console.log("Forecast Data:", forecastData);
             if (forecastData && forecastData.timestamp.length > 0) {
                 const labels = forecastData.timestamp;
                 const data = forecastData.value.flat();
                 labels.sort((a, b) => new Date(a) - new Date(b));
-                setChartData({
+                const newChartData = {
                     labels,
                     datasets: [
                         {
@@ -162,21 +153,23 @@ const ServicePage = (name) => {
                             borderColor: 'rgb(13,110,253)',
                         },
                     ],
-                });
+                };
+                setChartData(newChartData);
+                setOriginalChartData(newChartData);
             } else {
                 const fallbackData = await generateFallbackData("hour");
                 setChartData(fallbackData);
+                setOriginalChartData(fallbackData);
             }
         } catch (error) {
             console.error("Error fetching data:", error);
             const fallbackData = await generateFallbackData("hour");
             setChartData(fallbackData);
+            setOriginalChartData(fallbackData);
         } finally {
             setIsLoading(false);
         }
     };
-
-    // Fetch service information
     const fetchServiceInformation = async () => {
         try {
             const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}`, { method: 'GET' });
@@ -190,8 +183,6 @@ const ServicePage = (name) => {
             console.error("Error fetching data:", err);
         }
     };
-
-    // Generate fallback graph data
     const generateFallbackData = async (interval) => {
         let labels = Array.from({ length: 12 }, (_, i) => `${i * 5} min`);
         let data = [45, 50, 55, 60, 58, 63, 70, 68, 75, 80, 85, 90];
@@ -208,8 +199,6 @@ const ServicePage = (name) => {
             ],
         };
     };
-
-    // Save the modified graph forecast
     const handleGraphSave = async () => {
         try {
             const forecastPayload = JSON.stringify({
@@ -239,8 +228,12 @@ const ServicePage = (name) => {
             console.error('Error:', error);
         }
     };
-
-    // Utility to parse and render JSON
+    const handleReset = () => {
+        if (originalChartData) {
+            setChartData(originalChartData);
+            setFirstEndpoint(null);
+        }
+    };
     const parseStringifiedJson = (jsonString) => {
         try {
             return typeof jsonString === 'string' ? JSON.parse(jsonString) : jsonString;
@@ -273,36 +266,56 @@ const ServicePage = (name) => {
         }
     }, [success]);
 
-    // Initial data fetching
     useEffect(() => {
         fetchCurrentScaleValues();
         fetchGraphData();
         fetchServiceInformation();
     }, []);
-
-    // Mode toggle handlers:
     const handleNormalModifyToggle = () => {
-        if (smartModifyEnabled) setSmartModifyEnabled(false);
-        setDragEnabled((prev) => !prev);
+
+        if (!modifyEnabled)
+        {
+            setDragEnabled(true);
+            setModifyEnabled(true);
+        }
+        if(smartModifyEnabled)
+        {
+            setSmartModifyEnabled(false);
+        }
+        if(modifyEnabled)
+        {
+            setDragEnabled(false);
+            setModifyEnabled(false);
+        }
     };
 
     const handleSmartModifyToggle = () => {
-        if (!dragEnabled) setDragEnabled(true);
-        setSmartModifyEnabled((prev) => !prev);
-        // Clear any stored endpoint when toggling smart mode.
-        setFirstEndpoint(null);
+        if(!smartModifyEnabled)
+        {
+            setDragEnabled(true);
+            setSmartModifyEnabled(true)
+            setFirstEndpoint(null);
+        }
+        if(modifyEnabled){
+            setModifyEnabled(false);
+        }
+        if(smartModifyEnabled){
+            setDragEnabled(false);
+            setSmartModifyEnabled(false);
+        }
     };
 
-    // Configure the dragData plugin based on the selected mode.
     const dragDataConfig = smartModifyEnabled
         ? {
-            // Smart modify: if a first endpoint is stored, update all points between it and current.
             onDrag: (e, datasetIndex, index, value) => {
                 if (firstEndpoint !== null) {
                     const start = Math.min(firstEndpoint.index, index);
                     const end = Math.max(firstEndpoint.index, index);
                     const newData = [...chartData.datasets[datasetIndex].data];
                     for (let i = start; i <= end; i++) {
+                        if(i=== start){
+                            continue;
+                        }
                         newData[i] = value;
                     }
                     setChartData((prev) => ({
@@ -312,7 +325,7 @@ const ServicePage = (name) => {
                         ),
                     }));
                 } else {
-                    // If no endpoint stored, update the single point.
+                    // If no endpoint stored, update only the dragged point.
                     const newData = [...chartData.datasets[datasetIndex].data];
                     newData[index] = value;
                     setChartData((prev) => ({
@@ -467,16 +480,23 @@ const ServicePage = (name) => {
                     ) : (
                         <div style={{ height: '500px' }}>
                             <Line ref={chartRef} data={chartData} options={graphOptions} />
-                            <div className="d-flex justify-content-center mt-3">
-                                <button onClick={handleNormalModifyToggle} className="btn btn-secondary me-2">
-                                    {dragEnabled && !smartModifyEnabled ? 'Disable Modify' : 'Modify'}
-                                </button>
-                                <button onClick={handleSmartModifyToggle} className="btn btn-secondary me-2">
-                                    {smartModifyEnabled ? 'Disable Smart Modify' : 'Smart Modify'}
-                                </button>
-                                <button onClick={handleGraphSave} disabled={!dragEnabled} className="primary-button">
-                                    Save Forecast
-                                </button>
+                            <div className="d-flex justify-content-between mt-3">
+                                <div className="d-flex">
+                                    <button onClick={handleNormalModifyToggle} className="btn btn-secondary me-2">
+                                        {modifyEnabled ? 'Disable Modify' : 'Modify'}
+                                    </button>
+                                    <button onClick={handleSmartModifyToggle} className="btn btn-secondary me-2">
+                                        {smartModifyEnabled ? 'Disable Smart Modify' : 'Smart Modify'}
+                                    </button>
+                                </div>
+                                <div className="d-flex">
+                                    <button onClick={handleReset} className="btn btn-secondary me-2">
+                                        Reset modifications
+                                    </button>
+                                    <button onClick={handleGraphSave} disabled={!dragEnabled} className="primary-button">
+                                        Save Forecast
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
