@@ -13,7 +13,7 @@ public class PrometheusService
     private readonly bool _useMockData;
     readonly string _addr;
     private readonly HttpClient _client;
-    private string _rate = "5m";
+    private string _rate = "1m";
 
     public PrometheusService(string addr, bool useMockData)
     {
