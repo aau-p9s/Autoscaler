@@ -13,7 +13,7 @@ public class PrometheusService
     private readonly bool _useMockData;
     readonly string _addr;
     private readonly HttpClient _client;
-    private int _rate = 1;
+    private string _rate = "5m";
 
     public PrometheusService(string addr, bool useMockData)
     {
@@ -40,7 +40,7 @@ public class PrometheusService
             { "network", "container_network_receive_bytes_total" }
         }[queryType];
         var queryString =
-            $"(sum(rate({target}{{container=~\"{deployment}\"}})[{_rate}m])/count({target}{{container=~\"{deployment}\"}}))*100";
+            $"sum(rate({target}{{container=\"{deployment}\"}}[{_rate}])) / sum(machine_cpu_cores) * 100";
         Console.WriteLine($"PromQL: {queryString}");
 
         var query =
