@@ -7,7 +7,8 @@ VALUES ('1a2b3c4d-1111-2222-3333-444455556666', 'Image Recognition', true),
        ('3c4d5e6f-1111-2222-3333-444455556666', 'Recommendation System', true);
 
 -- Insert sample data into Settings table
-INSERT INTO Settings (Id, ServiceId, ScaleUp, ScaleDown, MinReplicas, MaxReplicas, ScalePeriod, TrainInterval, ModelHyperParams,
+INSERT INTO Settings (Id, ServiceId, ScaleUp, ScaleDown, MinReplicas, MaxReplicas, ScalePeriod, TrainInterval,
+                      ModelHyperParams,
                       OptunaConfig)
 VALUES ('a1b2c3d4-aaaa-bbbb-cccc-ddddeeeeffff', '1a2b3c4d-1111-2222-3333-444455556666', 5, 2, 1, 10, 10, 30,
         '{"learning_rate": 0.01, "batch_size": 32, "epochs": 50}',
@@ -23,15 +24,18 @@ VALUES ('a1b2c3d4-aaaa-bbbb-cccc-ddddeeeeffff', '1a2b3c4d-1111-2222-3333-4444555
 
 -- Insert sample data into Forecasts table
 INSERT INTO Forecasts (Id, ServiceId, CreatedAt, ModelId, Forecast)
-VALUES ('f1a2b3c4-aaaa-bbbb-cccc-ddddeeeeffff', '1a2b3c4d-1111-2222-3333-444455556666', '2025-03-06 12:00:00', '1a2b3c4d-aaaa-bbbb-cccc-ddddeeeeffff',
+VALUES ('f1a2b3c4-aaaa-bbbb-cccc-ddddeeeeffff', '1a2b3c4d-1111-2222-3333-444455556666', '2025-03-06 12:00:00',
+        '1a2b3c4d-aaaa-bbbb-cccc-ddddeeeeffff',
         '[{"timestamp": "2025-03-06T12:00:00Z", "cpu_percentage": 45.2},
           {"timestamp": "2025-03-06T12:05:00Z", "cpu_percentage": 47.8},
           {"timestamp": "2025-03-06T12:10:00Z", "cpu_percentage": 50.3}]'),
-       ('f2b3c4d5-aaaa-bbbb-cccc-ddddeeeeffff', '2b3c4d5e-1111-2222-3333-444455556666', '2025-03-06 12:00:00', '2b3c4d5e-aaaa-bbbb-cccc-ddddeeeeffff',
+       ('f2b3c4d5-aaaa-bbbb-cccc-ddddeeeeffff', '2b3c4d5e-1111-2222-3333-444455556666', '2025-03-06 12:00:00',
+        '2b3c4d5e-aaaa-bbbb-cccc-ddddeeeeffff',
         '[{"timestamp": "2025-03-06T12:00:00Z", "cpu_percentage": 30.1},
           {"timestamp": "2025-03-06T12:05:00Z", "cpu_percentage": 32.5},
           {"timestamp": "2025-03-06T12:10:00Z", "cpu_percentage": 34.7}]'),
-       ('f3c4d5e6-aaaa-bbbb-cccc-ddddeeeeffff', '3c4d5e6f-1111-2222-3333-444455556666', '2025-03-06 12:00:00', '3c4d5e6f-aaaa-bbbb-cccc-ddddeeeeffff',
+       ('f3c4d5e6-aaaa-bbbb-cccc-ddddeeeeffff', '3c4d5e6f-1111-2222-3333-444455556666', '2025-03-06 12:00:00',
+        '3c4d5e6f-aaaa-bbbb-cccc-ddddeeeeffff',
         '[{"timestamp": "2025-03-06T12:00:00Z", "cpu_percentage": 60.0},
           {"timestamp": "2025-03-06T12:05:00Z", "cpu_percentage": 62.3},
           {"timestamp": "2025-03-06T12:10:00Z", "cpu_percentage": 64.8}]');
