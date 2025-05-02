@@ -42,7 +42,7 @@ const ServicePage = (name) => {
     const [modelSettingsError, setModelSettingsError] = useState(null);
     const fetchCurrentScaleValues = async () => {
         try {
-            const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/settings`, { method: 'GET' });
+            const res = await fetch(`/services/${params.id}/settings`, { method: 'GET' });
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
@@ -84,7 +84,7 @@ const ServicePage = (name) => {
         }
 
         try {
-            const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/settings`, {
+            const res = await fetch(`/services/${params.id}/settings`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -106,7 +106,7 @@ const ServicePage = (name) => {
             autoscalingEnabled: !isAutoscalingEnabled,
         };
         try {
-            const res = await fetch(`http://${window.location.hostname}:8080/services/${params.id}`, {
+            const res = await fetch(`/services/${params.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -130,7 +130,7 @@ const ServicePage = (name) => {
     const fetchGraphData = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/forecast`, { method: 'GET' });
+            const response = await fetch(`/services/${params.id}/forecast`, { method: 'GET' });
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
@@ -172,7 +172,7 @@ const ServicePage = (name) => {
     };
     const fetchServiceInformation = async () => {
         try {
-            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}`, { method: 'GET' });
+            const response = await fetch(`/services/${params.id}`, { method: 'GET' });
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
@@ -214,7 +214,7 @@ const ServicePage = (name) => {
                 forecast: forecastPayload,
                 hasManualChange: true,
             };
-            const response = await fetch(`http://${window.location.hostname}:8080/services/${params.id}/forecast`, {
+            const response = await fetch(`/services/${params.id}/forecast`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

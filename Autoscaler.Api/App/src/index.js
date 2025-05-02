@@ -17,7 +17,7 @@ const ServicesGrid = () => {
     useEffect(() => {
         const fetchServices = async () => {
             try {
-                const response = await fetch(`http://${window.location.hostname}:8080/services`, {method: 'GET'});
+                const response = await fetch(`/services`, {method: 'GET'});
                 if (!response.ok) {
                     throw new Error('Failed to fetch services');
                 }
