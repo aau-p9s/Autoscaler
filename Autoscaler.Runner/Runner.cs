@@ -63,7 +63,7 @@ public class Runner
             }
 
 
-            var getServicesFromKubernetes = await _kubernetes.Get("/api/v1/services");
+            var getServicesFromKubernetes = await _kubernetes.Get("/apis/apps/v1/services");
             if (getServicesFromKubernetes != null)
             {
                 var deployments = ExtractNonSystemDeployments(getServicesFromKubernetes,
