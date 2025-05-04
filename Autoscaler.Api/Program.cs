@@ -41,8 +41,8 @@ builder.Services.AddSingleton<Runner>(provider =>
         apis.GetValue<string>("PROMETHEUS") ?? "http://prometheus",
         provider,
         devMode,
-        useForecasterInDevelopmentMode,
-		debugLogging
+        useForecasterInDevelopmentMode, 
+        debugLogging
     )
 );
 
