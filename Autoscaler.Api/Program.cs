@@ -17,6 +17,7 @@ var devMode = autoscalerSettings.GetValue<bool>("DEVELOPMENTMODE");
 var useForecasterInDevelopmentMode = autoscalerSettings.GetValue<bool>("USEFORECASTERINDEVELOPMENTMODE");
 var dbPassword = dbSettings.GetValue<string>("PASSWORD"); // TODO: FIX
 var apis = autoscalerSettings.GetSection("APIS");
+var debugLogging = autoscalerSettings.GetValue<bool>("DEBUG_LOGGING");
 
 Console.WriteLine("Settings set by env vars:");
 Console.WriteLine($@"
@@ -40,7 +41,8 @@ builder.Services.AddSingleton<Runner>(provider =>
         apis.GetValue<string>("PROMETHEUS") ?? "http://prometheus",
         provider,
         devMode,
-        useForecasterInDevelopmentMode
+        useForecasterInDevelopmentMode,
+		debugLogging
     )
 );
 

@@ -28,22 +28,24 @@ public class Runner
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly bool _developmentMode;
     private readonly bool _useForecasterInDevelopmentMode;
+	private readonly bool _debugLogging;
     private static readonly string[] _collection = new[] { "kubernetes", "prometheus", "autoscaler-deployment" };
     private readonly Dictionary<Guid, List<double>> _forecastErrorHistory = new Dictionary<Guid, List<double>>();
 
 
     public Runner(string forecasterAddress, string kubernetesAddress, string prometheusAddress,
-        IServiceProvider serviceProvider, bool developmentMode = false, bool useForecasterInDevelopmentMode = false)
+        IServiceProvider serviceProvider, bool developmentMode = false, bool useForecasterInDevelopmentMode = false, bool debugLogging)
     {
-        _forecaster = new(forecasterAddress, developmentMode, useForecasterInDevelopmentMode);
-        _kubernetes = new(kubernetesAddress, developmentMode);
-        _prometheus = new(prometheusAddress, developmentMode);
+        _forecaster = new(forecasterAddress, developmentMode, useForecasterInDevelopmentMode, debugLogging);
+        _kubernetes = new(kubernetesAddress, developmentMode, debugLogging);
+        _prometheus = new(prometheusAddress, developmentMode, debugLogging);
         _serviceProvider = serviceProvider;
         _deployments = new List<DeploymentEntity>();
         _runningThreads = new List<Thread>();
         _cancellationTokenSource = new CancellationTokenSource();
         _developmentMode = developmentMode;
         _useForecasterInDevelopmentMode = useForecasterInDevelopmentMode;
+        _debugLogging = debugLogging;
         Console.WriteLine("Created runner");
     }
 
@@ -63,7 +65,8 @@ public class Runner
             }
 
 
-            var getServicesFromKubernetes = await _kubernetes.Get("/api/v1/services");
+            var getServicesFromKubernetes = await _kubernetes.Get("/apis/apps/v1/services");
+            if (_debugLogging) Console.WriteLine(getServicesFromKubernetes);
             if (getServicesFromKubernetes != null)
             {
                 var deployments = ExtractNonSystemDeployments(getServicesFromKubernetes,

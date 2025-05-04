@@ -17,10 +17,13 @@ namespace Autoscaler.Runner.Services
         readonly string _addr;
         private readonly bool _useMockData;
 
-        public KubernetesService(string addr, bool useMockData)
+        private readonly bool _debugLogging;
+
+        public KubernetesService(string addr, bool useMockData, bool debugLogging)
         {
             _addr = addr;
             _useMockData = useMockData;
+            _debugLogging = debugLogging;
             HttpClientHandler handler = new()
             {
                 ClientCertificateOptions = ClientCertificateOption.Manual,
@@ -75,6 +78,7 @@ namespace Autoscaler.Runner.Services
                 var kubeRes =
                     await File.ReadAllTextAsync(
                         "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
+                if (_debugLogging) Console.WriteLine(kubeRes);
                 return JObject.Parse(kubeRes);
             }
 
@@ -111,6 +115,7 @@ namespace Autoscaler.Runner.Services
                 var kubeRes =
                     await File.ReadAllTextAsync(
                         "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
+                if (_debugLogging) Console.WriteLine(kubeRes);
                 var dummyJson = JObject.Parse(kubeRes);
                 if (dummyJson == null)
                     return 0;
@@ -141,6 +146,7 @@ namespace Autoscaler.Runner.Services
             {
                 Console.WriteLine("Using mock Kubernetes pod data...");
                 var podsJson = await File.ReadAllTextAsync("./DevelopmentData/containers.json");
+                if (_debugLogging) Console.WriteLine(podsJson);
                 return JObject.Parse(podsJson);
             }
 
@@ -154,6 +160,7 @@ namespace Autoscaler.Runner.Services
         {
             // Retrieve pod data.
             JObject? podsJson = await GetPodsAsync(serviceName);
+            if (_debugLogging) Console.WriteLine(podsJson);
             if (podsJson == null)
             {
                 return TimeSpan.FromMinutes(1);
