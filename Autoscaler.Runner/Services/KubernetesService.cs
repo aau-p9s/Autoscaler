@@ -72,6 +72,7 @@ namespace Autoscaler.Runner.Services
 
         public async Task<JObject?> Get(string endpoint)
         {
+            if (_debugLogging) Console.WriteLine($"Kubernetes endpoint: {endpoint}");
             if (_useMockData)
             {
                 Console.WriteLine("Using mock Kubernetes data...");
