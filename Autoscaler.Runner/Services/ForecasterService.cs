@@ -11,14 +11,16 @@ public class ForecasterService
     private readonly string _addr;
     private readonly bool _useMockData;
     private readonly bool _useForecasterInDevelopmentMode;
+	private readonly bool _debugLogging;
     readonly HttpClient _client;
 
 
-    public ForecasterService(string addr, bool useMockData, bool useForecasterInDevelopmentMode)
+    public ForecasterService(string addr, bool useMockData, bool useForecasterInDevelopmentMode, bool debugLogging)
     {
         _addr = addr;
         _useMockData = useMockData;
         _useForecasterInDevelopmentMode = useForecasterInDevelopmentMode;
+		_debugLogging = debugLogging;
         _client = new();
     }
 
@@ -33,6 +35,7 @@ public class ForecasterService
 
 
         var res = await _client.GetAsync(_addr + "/predict/" + serviceId);
+        if (_debugLogging) Console.WriteLine(await res.Content.ReadAsStringAsync());
 
         if (!res.IsSuccessStatusCode)
         {
