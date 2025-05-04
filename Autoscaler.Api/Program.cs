@@ -27,6 +27,7 @@ Console.WriteLine($@"
     AUTOSCALER.PGSQL.PORT:      {dbPort}
     AUTOSCALER.PGSQL.DATABASE:  {dbName}
     AUTOSCALER.PGSQL.USER:      {dbUser}
+    AUTOSCALER.DEBUG_LOGGING:   {debugLogging}
     AUTOSCALER.APIS.FORECASTER: {apis.GetValue<string>("FORECASTER")}
     AUTOSCALER.APIS.KUBERNETES: {apis.GetValue<string>("KUBERNETES")}
     AUTOSCALER.APIS.PROMETHEUS: {apis.GetValue<string>("PROMETHEUS")}
