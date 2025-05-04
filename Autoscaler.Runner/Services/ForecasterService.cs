@@ -35,7 +35,7 @@ public class ForecasterService
 
 
         var res = await _client.GetAsync(_addr + "/predict/" + serviceId);
-        if (_debugLogging) Console.WriteLine(res);
+        if (_debugLogging) Console.WriteLine(await res.Content.ReadAsStringAsync());
 
         if (!res.IsSuccessStatusCode)
         {
@@ -61,7 +61,6 @@ public class ForecasterService
         });
 
         var res = await _client.PostAsync(_addr + "/train", content);
-        if (_debugLogging) Console.WriteLine(res);
 
         if (!res.IsSuccessStatusCode)
         {

@@ -78,7 +78,6 @@ namespace Autoscaler.Runner.Services
                 var kubeRes =
                     await File.ReadAllTextAsync(
                         "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
-                if (_debugLogging) Console.WriteLine(kubeRes);
                 return JObject.Parse(kubeRes);
             }
 
@@ -115,7 +114,6 @@ namespace Autoscaler.Runner.Services
                 var kubeRes =
                     await File.ReadAllTextAsync(
                         "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
-                if (_debugLogging) Console.WriteLine(kubeRes);
                 var dummyJson = JObject.Parse(kubeRes);
                 if (dummyJson == null)
                     return 0;
@@ -129,6 +127,7 @@ namespace Autoscaler.Runner.Services
             }
 
             var json = await Get($"/apis/apps/v1/namespaces/default/deployments/{deploymentName}/scale");
+            if (_debugLogging) Console.WriteLine(json);
             if (json == null)
                 return 0;
             var spec = json["spec"];

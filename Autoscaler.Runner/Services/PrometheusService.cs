@@ -14,12 +14,14 @@ public class PrometheusService
     readonly string _addr;
     private readonly HttpClient _client;
     private string _rate = "1m";
+    private readonly bool _debugLogging;
 
-    public PrometheusService(string addr, bool useMockData)
+    public PrometheusService(string addr, bool useMockData, bool debugLogging)
     {
         _addr = addr;
         _client = new();
         _useMockData = useMockData;
+        _debugLogging = debugLogging;
     }
 
     public async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start, DateTime end,
@@ -57,6 +59,7 @@ public class PrometheusService
             HandleException(e);
             return new HistoricEntity();
         }
+        if(_debugLogging) Console.WriteLine(response);
 
         var jsonString = await response.Content.ReadAsStringAsync();
 

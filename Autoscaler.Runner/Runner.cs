@@ -34,7 +34,7 @@ public class Runner
 
 
     public Runner(string forecasterAddress, string kubernetesAddress, string prometheusAddress,
-        IServiceProvider serviceProvider, bool developmentMode = false, bool useForecasterInDevelopmentMode = false, bool debugLogging)
+        IServiceProvider serviceProvider, bool developmentMode = false, bool useForecasterInDevelopmentMode = false, bool debugLogging = false)
     {
         _forecaster = new(forecasterAddress, developmentMode, useForecasterInDevelopmentMode, debugLogging);
         _kubernetes = new(kubernetesAddress, developmentMode, debugLogging);
