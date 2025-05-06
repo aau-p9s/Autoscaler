@@ -65,7 +65,7 @@ public class Runner
             }
 
 
-            var getServicesFromKubernetes = await _kubernetes.Get("/apis/apps/v1/services");
+            var getServicesFromKubernetes = await _kubernetes.Get("/apis/apps/v1/deployments");
             if (_debugLogging) Console.WriteLine(getServicesFromKubernetes);
             if (getServicesFromKubernetes != null)
             {

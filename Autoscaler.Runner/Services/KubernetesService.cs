@@ -72,6 +72,7 @@ namespace Autoscaler.Runner.Services
 
         public async Task<JObject?> Get(string endpoint)
         {
+            if (_debugLogging) Console.WriteLine($"Kubernetes endpoint: {endpoint}");
             if (_useMockData)
             {
                 Console.WriteLine("Using mock Kubernetes data...");
@@ -103,7 +104,11 @@ namespace Autoscaler.Runner.Services
                 return null;
             }
 
-            return await response.Content.ReadFromJsonAsync<JObject>();
+            var responseString = await response.Content.ReadAsStringAsync();
+            
+            if (_debugLogging) Console.WriteLine($"Kubernetes response raw: {responseString}");
+
+            return JObject.Parse(responseString);
         }
 
         public async Task<int> GetReplicas(string deploymentName)
