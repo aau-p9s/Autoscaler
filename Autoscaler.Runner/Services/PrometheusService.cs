@@ -4,7 +4,9 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
+using Autoscaler.Config;
 using Autoscaler.Persistence.HistoricRepository;
+using Microsoft.Extensions.Logging;
 
 namespace Autoscaler.Runner.Services;
 
@@ -14,14 +16,14 @@ public class PrometheusService
     readonly string _addr;
     private readonly HttpClient _client;
     private string _rate = "1m";
-    private readonly bool _debugLogging;
+    private readonly ILogger logger;
 
-    public PrometheusService(string addr, bool useMockData, bool debugLogging)
+    public PrometheusService(AppSettings appSettings, ILogger logger)
     {
-        _addr = addr;
+        _addr = appSettings.Autoscaler.Apis.Prometheus;
         _client = new();
-        _useMockData = useMockData;
-        _debugLogging = debugLogging;
+        _useMockData = appSettings.Autoscaler.DevelopmentMode;
+        this.logger = logger;
     }
 
     public async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start, DateTime end,
@@ -30,7 +32,7 @@ public class PrometheusService
         var queryType = "cpu";
         if (_useMockData)
         {
-            Console.WriteLine("Using mock Prometheus data...");
+            logger.LogInformation("Using mock Prometheus data...");
             var promTrace = await File.ReadAllTextAsync("./DevelopmentData/prometheus_trace.json");
             return new HistoricEntity(Guid.NewGuid(), serviceId, DateTime.Now, promTrace);
         }
@@ -43,7 +45,7 @@ public class PrometheusService
         }[queryType];
         var queryString =
             $"sum(rate({target}{{container=\"{deployment}\"}}[{_rate}])) / sum(machine_cpu_cores) * 100";
-        Console.WriteLine($"PromQL: {queryString}");
+        logger.LogDebug($"PromQL: {queryString}");
 
         var query =
             $"query={EncodeQuery(queryString)}&start={ToRFC3339(start)}&end={ToRFC3339(end)}&step={period / 1000}s";
@@ -55,13 +57,13 @@ public class PrometheusService
         }
         catch (Exception e)
         {
-            Console.WriteLine("Prometheus seems to be down");
+            logger.LogError("Prometheus seems to be down");
             HandleException(e);
             return new HistoricEntity();
         }
-        if(_debugLogging) Console.WriteLine(response);
 
         var jsonString = await response.Content.ReadAsStringAsync();
+        logger.LogDebug($"Prometheus response: {jsonString}");
 
         return new HistoricEntity(Guid.NewGuid(), serviceId, DateTime.Now, jsonString);
     }
@@ -76,10 +78,10 @@ public class PrometheusService
         return date.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fffK");
     }
 
-    static void HandleException(Exception e)
+    void HandleException(Exception e)
     {
         // TODO: Move to an interface
-        Console.WriteLine(e.Message);
+        logger.LogError(e.Message);
         if (e.InnerException != null)
             HandleException(e.InnerException);
     }
