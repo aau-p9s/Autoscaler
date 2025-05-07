@@ -51,9 +51,6 @@ public class Runner
         _runningThreads = new List<Thread>();
         _cancellationTokenSource = new CancellationTokenSource();
         _developmentMode = appSettings.Autoscaler.DevelopmentMode;
-        logger.LogDebug("TESTER");
-        logger.LogInformation(appSettings.Logging.LogLevel.Autoscaler);
-        Environment.Exit(0);
     }
 
     public async Task MainLoop()
