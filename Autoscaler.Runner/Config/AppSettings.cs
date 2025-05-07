@@ -17,6 +17,7 @@ public class LogLevel
     public required string Default { get; set; }
     public required string Microsoft { get; set; }
     public required string MicrosoftHostingLifetime { get; set; }
+    public required string Autoscaler { get; set; }
 }
 
 public class Autoscaler

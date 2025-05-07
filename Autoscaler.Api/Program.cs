@@ -8,6 +8,7 @@ using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner;
 using Autoscaler.Runner.Services;
 using Microsoft.OpenApi.Models;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
@@ -34,9 +35,11 @@ builder.Services.ConfigurePersistencePostGreSqlConnection(
     $"Server={appSettings.Autoscaler.Pgsql.Addr};Port={appSettings.Autoscaler.Pgsql.Port};Database={appSettings.Autoscaler.Pgsql.Database};Uid={appSettings.Autoscaler.Pgsql.User};Password={appSettings.Autoscaler.Pgsql.Password}");
 
 // Configure Project Services
-builder.Services.AddSingleton<AppSettings>(provider => appSettings);
-ILoggerFactory factory = LoggerFactory.Create(builder1 => builder1.AddConsole());
-builder.Services.AddSingleton<ILogger>(provider => factory.CreateLogger("Autoscaler"));
+builder.Services.AddSingleton(appSettings);
+Enum.TryParse(appSettings.Logging.LogLevel.Autoscaler, out LogLevel logLevel);
+var factory = LoggerFactory.Create(builder1 => builder1.SetMinimumLevel(logLevel).AddConsole());
+var logger = factory.CreateLogger("Autoscaler");
+builder.Services.AddSingleton(logger);
 
 builder.Services.AddSingleton<KubernetesService>();
 builder.Services.AddSingleton<PrometheusService>();

@@ -33,8 +33,6 @@ public class Runner
     private readonly List<Thread> _runningThreads;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly bool _developmentMode;
-    private readonly bool _useForecasterInDevelopmentMode;
-	private readonly bool _debugLogging;
     private static readonly string[] _collection = new[] { "kubernetes", "prometheus", "autoscaler-deployment" };
     private readonly Dictionary<Guid, List<double>> _forecastErrorHistory = new Dictionary<Guid, List<double>>();
 
@@ -53,7 +51,9 @@ public class Runner
         _runningThreads = new List<Thread>();
         _cancellationTokenSource = new CancellationTokenSource();
         _developmentMode = appSettings.Autoscaler.DevelopmentMode;
-        _useForecasterInDevelopmentMode = appSettings.Autoscaler.UseForecasterInDevelopmentMode;
+        logger.LogDebug("TESTER");
+        logger.LogInformation(appSettings.Logging.LogLevel.Autoscaler);
+        Environment.Exit(0);
     }
 
     public async Task MainLoop()
@@ -67,9 +67,9 @@ public class Runner
 
 
         var getServicesFromKubernetes = await _kubernetes.Get("/apis/apps/v1/deployments");
-        if (_debugLogging) Console.WriteLine(getServicesFromKubernetes);
         if (getServicesFromKubernetes != null)
         {
+            logger.LogDebug(getServicesFromKubernetes.ToString());
             var deployments = ExtractNonSystemDeployments(getServicesFromKubernetes,
                 new[] { "autoscaler", "mysql", "generator" });
             foreach (var deployment in deployments)
