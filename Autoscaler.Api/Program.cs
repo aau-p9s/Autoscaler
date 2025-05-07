@@ -49,7 +49,7 @@ builder.Services.AddScoped<IServicesRepository, ServicesRepository>();
 builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
 builder.Services.AddScoped<IForecastRepository, ForecastRepository>();
 builder.Services.AddScoped<IHistoricRepository, HistoricRepository>();
-builder.Services.AddScoped<Runner>();
+builder.Services.AddSingleton<Runner>();
 
 // Add services to the container.
 builder.Services.AddControllers();
