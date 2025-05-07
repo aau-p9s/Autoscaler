@@ -34,22 +34,21 @@ Console.WriteLine($@"
 builder.Services.ConfigurePersistencePostGreSqlConnection(
     $"Server={appSettings.Autoscaler.Pgsql.Addr};Port={appSettings.Autoscaler.Pgsql.Port};Database={appSettings.Autoscaler.Pgsql.Database};Uid={appSettings.Autoscaler.Pgsql.User};Password={appSettings.Autoscaler.Pgsql.Password}");
 
-// Configure Project Services
-builder.Services.AddSingleton(appSettings);
+// Configure Logger
 Enum.TryParse(appSettings.Logging.LogLevel.Autoscaler, out LogLevel logLevel);
 var factory = LoggerFactory.Create(builder1 => builder1.SetMinimumLevel(logLevel).AddConsole());
 var logger = factory.CreateLogger("Autoscaler");
-builder.Services.AddSingleton(logger);
 
+// Configure Project Services
+builder.Services.AddSingleton(appSettings);
+builder.Services.AddSingleton(logger);
 builder.Services.AddSingleton<KubernetesService>();
 builder.Services.AddSingleton<PrometheusService>();
 builder.Services.AddSingleton<ForecasterService>();
-
 builder.Services.AddScoped<IServicesRepository, ServicesRepository>();
 builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
 builder.Services.AddScoped<IForecastRepository, ForecastRepository>();
 builder.Services.AddScoped<IHistoricRepository, HistoricRepository>();
-
 builder.Services.AddScoped<Runner>();
 
 // Add services to the container.
