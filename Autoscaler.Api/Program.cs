@@ -1,51 +1,55 @@
+using Autoscaler.Config;
 using Autoscaler.Persistence.Extensions;
+using Autoscaler.Persistence.ForecastRepository;
+using Autoscaler.Persistence.HistoricRepository;
+using Autoscaler.Persistence.ScaleSettingsRepository;
+using Autoscaler.Persistence.ServicesRepository;
+using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner;
+using Autoscaler.Runner.Services;
 using Microsoft.OpenApi.Models;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
-var autoscalerSettings = builder.Configuration.GetSection("AUTOSCALER");
-var port = autoscalerSettings.GetValue<int>("PORT");
-var host = autoscalerSettings.GetValue<string>("HOST");
-var dbSettings = autoscalerSettings.GetSection("PGSQL");
-var dbAddr = dbSettings.GetValue<string>("ADDR");
-var dbPort = dbSettings.GetValue<int>("PORT");
-var dbName = dbSettings.GetValue<string>("DATABASE");
-var dbUser = dbSettings.GetValue<string>("USER");
-var devMode = autoscalerSettings.GetValue<bool>("DEVELOPMENTMODE");
-var useForecasterInDevelopmentMode = autoscalerSettings.GetValue<bool>("USEFORECASTERINDEVELOPMENTMODE");
-var dbPassword = dbSettings.GetValue<string>("PASSWORD"); // TODO: FIX
-var apis = autoscalerSettings.GetSection("APIS");
-var debugLogging = autoscalerSettings.GetValue<bool>("DEBUG_LOGGING");
+
+var appSettings = builder.Configuration.Get<AppSettings>();
+
 
 Console.WriteLine("Settings set by env vars:");
 Console.WriteLine($@"
-    AUTOSCALER.PORT:            {port}
-    AUTOSCALER.HOST:            {host}
-    AUTOSCALER.PGSQL.ADDR:      {dbAddr}
-    AUTOSCALER.PGSQL.PORT:      {dbPort}
-    AUTOSCALER.PGSQL.DATABASE:  {dbName}
-    AUTOSCALER.PGSQL.USER:      {dbUser}
-    AUTOSCALER.DEBUG_LOGGING:   {debugLogging}
-    AUTOSCALER.APIS.FORECASTER: {apis.GetValue<string>("FORECASTER")}
-    AUTOSCALER.APIS.KUBERNETES: {apis.GetValue<string>("KUBERNETES")}
-    AUTOSCALER.APIS.PROMETHEUS: {apis.GetValue<string>("PROMETHEUS")}
+    AUTOSCALER.PORT:            {appSettings.Autoscaler.Port}
+    AUTOSCALER.HOST:            {appSettings.Autoscaler.Host}
+    AUTOSCALER.PGSQL.ADDR:      {appSettings.Autoscaler.Pgsql.Addr}
+    AUTOSCALER.PGSQL.PORT:      {appSettings.Autoscaler.Pgsql.Port}
+    AUTOSCALER.PGSQL.DATABASE:  {appSettings.Autoscaler.Pgsql.Database}
+    AUTOSCALER.PGSQL.USER:      {appSettings.Autoscaler.Pgsql.User}
+    AUTOSCALER.APIS.FORECASTER: {appSettings.Autoscaler.Apis.Forecaster}
+    AUTOSCALER.APIS.KUBERNETES: {appSettings.Autoscaler.Apis.Kubernetes}
+    AUTOSCALER.APIS.PROMETHEUS: {appSettings.Autoscaler.Apis.Prometheus}
 ");
 
+// Configure Postgres
 builder.Services.ConfigurePersistencePostGreSqlConnection(
-    $"Server={dbAddr};Port={dbPort};Database={dbName};Uid={dbUser};Password={dbPassword}");
-builder.Services.AddSingleton<Runner>(provider =>
-    new Runner(
-        apis.GetValue<string>("FORECASTER") ?? "http://forecaster",
-        apis.GetValue<string>("KUBERNETES") ?? "http://kubernetes",
-        apis.GetValue<string>("PROMETHEUS") ?? "http://prometheus",
-        provider,
-        devMode,
-        useForecasterInDevelopmentMode, 
-        debugLogging
-    )
-);
+    $"Server={appSettings.Autoscaler.Pgsql.Addr};Port={appSettings.Autoscaler.Pgsql.Port};Database={appSettings.Autoscaler.Pgsql.Database};Uid={appSettings.Autoscaler.Pgsql.User};Password={appSettings.Autoscaler.Pgsql.Password}");
+
+// Configure Logger
+Enum.TryParse(appSettings.Logging.LogLevel.Autoscaler, out LogLevel logLevel);
+var factory = LoggerFactory.Create(builder1 => builder1.SetMinimumLevel(logLevel).AddConsole());
+var logger = factory.CreateLogger("Autoscaler");
+
+// Configure Project Services
+builder.Services.AddSingleton(appSettings);
+builder.Services.AddSingleton(logger);
+builder.Services.AddSingleton<KubernetesService>();
+builder.Services.AddSingleton<PrometheusService>();
+builder.Services.AddSingleton<ForecasterService>();
+builder.Services.AddScoped<IServicesRepository, ServicesRepository>();
+builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
+builder.Services.AddScoped<IForecastRepository, ForecastRepository>();
+builder.Services.AddScoped<IHistoricRepository, HistoricRepository>();
+builder.Services.AddScoped<Runner>();
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -68,7 +72,8 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
-builder.WebHost.UseUrls($"{host}:{port}");
+builder.WebHost.UseUrls($"{appSettings.Autoscaler.Host}:{appSettings.Autoscaler.Port}");
+
 var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

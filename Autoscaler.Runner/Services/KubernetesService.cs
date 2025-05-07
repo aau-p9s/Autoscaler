@@ -5,6 +5,8 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Autoscaler.Config;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -16,14 +18,13 @@ namespace Autoscaler.Runner.Services
         readonly Tuple<string, string>? _authHeader;
         readonly string _addr;
         private readonly bool _useMockData;
+        private readonly ILogger logger;
 
-        private readonly bool _debugLogging;
-
-        public KubernetesService(string addr, bool useMockData, bool debugLogging)
+        public KubernetesService(AppSettings appSettings, ILogger logger)
         {
-            _addr = addr;
-            _useMockData = useMockData;
-            _debugLogging = debugLogging;
+            _addr = appSettings.Autoscaler.Apis.Kubernetes;
+            _useMockData = appSettings.Autoscaler.DevelopmentMode;
+            this.logger = logger;
             HttpClientHandler handler = new()
             {
                 ClientCertificateOptions = ClientCertificateOption.Manual,
@@ -45,7 +46,7 @@ namespace Autoscaler.Runner.Services
         {
             if (_useMockData)
             {
-                Console.WriteLine("Using mock Kubernetes data...");
+                logger.LogWarning("Using mock Kubernetes data...");
                 return;
             }
 
@@ -64,18 +65,18 @@ namespace Autoscaler.Runner.Services
                 await _client.SendAsync(request);
             }
             catch (HttpRequestException e)
-            {
-                Console.WriteLine("Kubernetes seems to be down");
+            { 
+                logger.LogError("Kubernetes seems to be down");
                 HandleException(e);
             }
         }
 
         public async Task<JObject?> Get(string endpoint)
-        {
-            if (_debugLogging) Console.WriteLine($"Kubernetes endpoint: {endpoint}");
+        { 
+            logger.LogDebug($"Kubernetes endpoint: {endpoint}");
             if (_useMockData)
             {
-                Console.WriteLine("Using mock Kubernetes data...");
+                logger.LogInformation("Using mock Kubernetes data...");
                 var kubeRes =
                     await File.ReadAllTextAsync(
                         "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
@@ -106,7 +107,7 @@ namespace Autoscaler.Runner.Services
 
             var responseString = await response.Content.ReadAsStringAsync();
             
-            if (_debugLogging) Console.WriteLine($"Kubernetes response raw: {responseString}");
+            logger.LogDebug($"Kubernetes response raw: {responseString}");
 
             return JObject.Parse(responseString);
         }
@@ -115,7 +116,7 @@ namespace Autoscaler.Runner.Services
         {
             if (_useMockData)
             {
-                Console.WriteLine("Using mock Kubernetes data...");
+                logger.LogInformation("Using mock Kubernetes data...");
                 var kubeRes =
                     await File.ReadAllTextAsync(
                         "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
@@ -132,7 +133,7 @@ namespace Autoscaler.Runner.Services
             }
 
             var json = await Get($"/apis/apps/v1/namespaces/default/deployments/{deploymentName}/scale");
-            if (_debugLogging) Console.WriteLine(json);
+            logger.LogDebug($"Json response: {json}");
             if (json == null)
                 return 0;
             var spec = json["spec"];
@@ -150,7 +151,6 @@ namespace Autoscaler.Runner.Services
             {
                 Console.WriteLine("Using mock Kubernetes pod data...");
                 var podsJson = await File.ReadAllTextAsync("./DevelopmentData/containers.json");
-                if (_debugLogging) Console.WriteLine(podsJson);
                 return JObject.Parse(podsJson);
             }
 
@@ -164,7 +164,7 @@ namespace Autoscaler.Runner.Services
         {
             // Retrieve pod data.
             JObject? podsJson = await GetPodsAsync(serviceName);
-            if (_debugLogging) Console.WriteLine(podsJson);
+            logger.LogDebug($"pods json: {podsJson}");
             if (podsJson == null)
             {
                 return TimeSpan.FromMinutes(1);
@@ -212,7 +212,7 @@ namespace Autoscaler.Runner.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing pod: {ex.Message}");
+                    logger.LogError($"Error processing pod: {ex.Message}");
                 }
             }
 
@@ -244,9 +244,9 @@ namespace Autoscaler.Runner.Services
             return sortedValues[lowerIndex] * (1 - weight) + sortedValues[upperIndex] * weight;
         }
 
-        static void HandleException(Exception e)
+        void HandleException(Exception e)
         {
-            Console.WriteLine(e.Message);
+            logger.LogError(e.Message);
             if (e.InnerException != null)
                 HandleException(e.InnerException);
         }
