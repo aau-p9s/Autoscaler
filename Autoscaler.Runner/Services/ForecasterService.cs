@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Autoscaler.Config;
+using Autoscaler.Persistence.ForecastRepository;
 using Microsoft.Extensions.Logging;
 
 namespace Autoscaler.Runner.Services;
@@ -13,21 +14,11 @@ public class ForecasterService(
     ILogger logger)
 {
     private string Addr => appSettings.Autoscaler.Apis.Forecaster;
-    private bool UseMockData => appSettings.Autoscaler.DevelopmentMode;
-    private bool UseForecasterInDevelopmentMode => appSettings.Autoscaler.UseForecasterInDevelopmentMode;
     private HttpClient Client => new();
-    private ILogger Logger => logger;
+    protected ILogger Logger => logger;
 
-    public async Task<bool> Forecast(Guid serviceId)
+    public virtual async Task<bool> Forecast(Guid serviceId, IForecastRepository _) // Repository is needed for mock
     {
-        if (UseMockData && !UseForecasterInDevelopmentMode)
-        {
-            Logger.LogWarning("Using mock Forecaster data...");
-            Thread.Sleep(20000);
-            return true;
-        }
-
-
         var res = await Client.GetAsync(Addr + "/predict/" + serviceId);
         Logger.LogDebug($"Forecaster forecast response: {await res.Content.ReadAsStringAsync()}");
 
@@ -40,15 +31,8 @@ public class ForecasterService(
         return true;
     }
 
-    public async Task<bool> Retrain(Guid serviceId)
+    public virtual async  Task<bool> Retrain(Guid serviceId)
     {
-        if (UseMockData)
-        {
-            Logger.LogWarning("Using mock Forecaster data...");
-            Thread.Sleep(100000);
-            return true;
-        }
-
         var content = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("serviceId", serviceId.ToString())

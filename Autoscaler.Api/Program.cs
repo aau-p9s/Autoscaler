@@ -14,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
 
-var appSettings = builder.Configuration.Get<AppSettings>();
+var appSettings = builder.Configuration.Get<AppSettings>() ?? throw new ArgumentNullException(nameof(builder), "What? appsettings is null??");
 
 
 Console.WriteLine("Settings set by env vars:");
@@ -42,14 +42,27 @@ var logger = factory.CreateLogger("Autoscaler");
 // Configure Project Services
 builder.Services.AddSingleton(appSettings);
 builder.Services.AddSingleton(logger);
-builder.Services.AddSingleton<KubernetesService>();
-builder.Services.AddSingleton<PrometheusService>();
-builder.Services.AddSingleton<ForecasterService>();
+if (appSettings.Autoscaler.DevelopmentMode)
+{
+    builder.Services.AddSingleton<KubernetesService, MockKubernetesService>();
+    builder.Services.AddSingleton<PrometheusService, MockPrometheusService>();
+    builder.Services.AddSingleton<ForecasterService, MockForecasterService>();
+}
+else
+{
+    builder.Services.AddSingleton<KubernetesService>();
+    builder.Services.AddSingleton<PrometheusService>();
+    builder.Services.AddSingleton<ForecasterService>();
+}
+
 builder.Services.AddScoped<IServicesRepository, ServicesRepository>();
 builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
 builder.Services.AddScoped<IForecastRepository, ForecastRepository>();
 builder.Services.AddScoped<IHistoricRepository, HistoricRepository>();
-builder.Services.AddSingleton<Runner>();
+builder.Services.AddScoped<Runner>();
+
+var runner = builder.Services.BuildServiceProvider().GetService<Runner>() ?? throw new NullReferenceException();
+await runner.MainLoop();
 
 // Add services to the container.
 builder.Services.AddControllers();

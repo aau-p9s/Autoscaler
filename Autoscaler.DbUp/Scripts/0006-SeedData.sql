@@ -26,18 +26,12 @@ VALUES ('a1b2c3d4-aaaa-bbbb-cccc-ddddeeeeffff', '1a2b3c4d-1111-2222-3333-4444555
 INSERT INTO Forecasts (Id, ServiceId, CreatedAt, ModelId, Forecast)
 VALUES ('f1a2b3c4-aaaa-bbbb-cccc-ddddeeeeffff', '1a2b3c4d-1111-2222-3333-444455556666', '2025-03-06 12:00:00',
         '1a2b3c4d-aaaa-bbbb-cccc-ddddeeeeffff',
-        '[{"timestamp": "2025-03-06T12:00:00Z", "cpu_percentage": 45.2},
-          {"timestamp": "2025-03-06T12:05:00Z", "cpu_percentage": 47.8},
-          {"timestamp": "2025-03-06T12:10:00Z", "cpu_percentage": 50.3}]'),
+        '{"columns": ["CPU"], "timestamp":["2025-03-28T13:30:00.00", "2025-03-28T13:31:00.00", "2025-03-28T13:32:00.00"], "value":[[0.38], [0.39], [0.40]]}'),
        ('f2b3c4d5-aaaa-bbbb-cccc-ddddeeeeffff', '2b3c4d5e-1111-2222-3333-444455556666', '2025-03-06 12:00:00',
         '2b3c4d5e-aaaa-bbbb-cccc-ddddeeeeffff',
-        '[{"timestamp": "2025-03-06T12:00:00Z", "cpu_percentage": 30.1},
-          {"timestamp": "2025-03-06T12:05:00Z", "cpu_percentage": 32.5},
-          {"timestamp": "2025-03-06T12:10:00Z", "cpu_percentage": 34.7}]'),
+        '{"columns": ["CPU"], "timestamp":["2025-03-28T13:30:00.00", "2025-03-28T13:31:00.00", "2025-03-28T13:32:00.00"], "value":[[0.50], [0.55], [0.60]]}'),
        ('f3c4d5e6-aaaa-bbbb-cccc-ddddeeeeffff', '3c4d5e6f-1111-2222-3333-444455556666', '2025-03-06 12:00:00',
         '3c4d5e6f-aaaa-bbbb-cccc-ddddeeeeffff',
-        '[{"timestamp": "2025-03-06T12:00:00Z", "cpu_percentage": 60.0},
-          {"timestamp": "2025-03-06T12:05:00Z", "cpu_percentage": 62.3},
-          {"timestamp": "2025-03-06T12:10:00Z", "cpu_percentage": 64.8}]');
+        '{"columns": ["CPU"], "timestamp":["2025-03-28T13:30:00.00", "2025-03-28T13:31:00.00", "2025-03-28T13:32:00.00"], "value":[[0.50], [0.55], [0.60]]}');
 
 COMMIT;

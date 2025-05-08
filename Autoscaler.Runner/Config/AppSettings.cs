@@ -4,7 +4,7 @@ public class AppSettings
 {
     public required Logging Logging { get; set; }
     public required string AllowedHosts { get; set; }
-    public Autoscaler Autoscaler { get; set; }
+    public required Autoscaler Autoscaler { get; set; }
 }
 
 public class Logging

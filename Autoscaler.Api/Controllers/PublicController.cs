@@ -23,7 +23,7 @@ public class PublicController(
     private static readonly object LockObject = new();
 
     [HttpGet("start")]
-    public async Task<IActionResult> StartAutoscaler()
+    public IActionResult StartAutoscaler()
     {
         lock (LockObject)
         {
@@ -35,7 +35,11 @@ public class PublicController(
             // Start the MainLoop in a background task
             _ = Task.Run(async () =>
             {
-                _isMainLoopRunning = true;
+                lock (LockObject)
+                {
+                    _isMainLoopRunning = true;
+                }
+
                 try
                 {
                     await Runner.MainLoop();
@@ -47,6 +51,7 @@ public class PublicController(
                 }
                 finally
                 {
+                    logger.LogInformation("Finished starting autoscaler");
                     _isMainLoopRunning = false;
                 }
             });

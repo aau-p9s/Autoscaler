@@ -18,18 +18,13 @@ public class PrometheusService(
     private string Addr => appSettings.Autoscaler.Apis.Prometheus;
     private HttpClient Client => new();
     private const string Rate = "1m";
-    private ILogger Logger => logger;
+    protected ILogger Logger => logger;
 
-    public async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start, DateTime end,
+    public virtual async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start, DateTime end,
         int period)
     {
         var queryType = "cpu";
-        if (UseMockData)
-        {
-            Logger.LogInformation("Using mock Prometheus data...");
-            var promTrace = await File.ReadAllTextAsync("./DevelopmentData/prometheus_trace.json");
-            return new HistoricEntity(Guid.NewGuid(), serviceId, DateTime.Now, promTrace);
-        }
+
 
         var target = new Dictionary<string, string>()
         {

@@ -10,7 +10,6 @@ using Autoscaler.Persistence.HistoricRepository;
 using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner.Entities;
 using Autoscaler.Runner.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
@@ -20,27 +19,29 @@ public class Monitor(
     DeploymentEntity deployment,
     CancellationToken cancellationToken,
     ILogger logger,
-    IServiceProvider provider,
     ForecasterService forecaster,
     PrometheusService prometheus,
-    KubernetesService kubernetes)
+    KubernetesService kubernetes,
+    IHistoricRepository historicRepository,
+    IForecastRepository forecastRepository,
+    ISettingsRepository settingsRepository)
 {
-    private Thread Thread => new(Run)
-    {
-        Name = "$Monitor-{deployment.Service.Name",
-        IsBackground = true
-    };
+    private Thread Thread => new(async () => await Run());
     private ForecasterService Forecaster => forecaster;
     private PrometheusService Prometheus => prometheus;
     private KubernetesService Kubernetes => kubernetes;
     private ILogger Logger => logger;
-    private IServiceProvider ServiceProvider => provider;
     private static Dictionary<Guid, List<double>> ForecastErrorHistory => new();
     private DeploymentEntity Deployment => deployment;
     private CancellationToken CancellationToken => cancellationToken;
+    private IHistoricRepository HistoricRepository => historicRepository;
+    private IForecastRepository ForecastRepository => forecastRepository;
+    private ISettingsRepository SettingsRepository => settingsRepository;
+    
 
-    private async void Run()
+    private async Task Run()
     {
+        logger.LogInformation("Started monitoring loop...");
         try
         {
             var clock = new Stopwatch();
@@ -61,70 +62,65 @@ public class Monitor(
                 {
                     Logger.LogInformation($"Checking deployment {Deployment.Service.Name}");
 
-                    // Create a new scope for each iteration to get fresh repository instances
-                    using (var scope = ServiceProvider.CreateScope())
+                    var forecastEntity =
+                        await ForecastRepository.GetForecastsByServiceIdAsync(Deployment.Service.Id);
+                    if (forecastEntity == null)
                     {
-                        var historicRepository = scope.ServiceProvider.GetRequiredService<IHistoricRepository>();
-                        var forecastRepository = scope.ServiceProvider.GetRequiredService<IForecastRepository>();
-
-                        var forecastEntity =
-                            await forecastRepository.GetForecastsByServiceIdAsync(Deployment.Service.Id);
-                        if (forecastEntity == null)
-                        {
-                            await Forecaster.Forecast(Deployment.Service.Id);
-                            forecastEntity =
-                                await forecastRepository.GetForecastsByServiceIdAsync(Deployment.Service.Id);
-                        }
-
-                        var forecast = JObject.Parse(forecastEntity.Forecast);
-                        var replicas = await Kubernetes.GetReplicas(Deployment.Service.Name);
-                        var actualCpu = await GetCpuUsage(historicRepository);
-                        var timestamps = forecast["timestamp"]?.ToObject<List<string>>() ??
-                                         throw new ArgumentNullException(nameof(forecast),
-                                             "Failed to get timestamps from forecast");
-                        var cpuValues = forecast["value"]?.ToObject<List<List<double>>>() ??
-                                        throw new ArgumentNullException(nameof(forecast),
-                                            "Failed to get value forecast");
-
-                        var forecastHorizon =
-                            await Kubernetes.GetPodStartupTimePercentileAsync(Deployment.Service.Name);
-                        Logger.LogInformation(
-                            $"Forecast horizon for {Deployment.Service.Name}: {forecastHorizon.TotalSeconds} seconds");
-
-                        // Instead of a fixed 1 minute, use the forecast horizon from pod startup time
-                        var nextTime = DateTime.Now.Add(forecastHorizon)
-                            .ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture);
-                        Logger.LogInformation(nextTime);
-                        var forecastIndex = timestamps.FindIndex(timestamp => timestamp.Contains(nextTime));
-
-                        if (forecastIndex < 0 || forecastIndex >= cpuValues.Count)
-                        {
-                            await Forecaster.Forecast(Deployment.Service.Id);
-                            continue;
-                        }
-
-                        var nextForecast = cpuValues[forecastIndex][0];
-                        var zScore = GetZScore(nextForecast, actualCpu);
-
-                        if (Math.Abs(zScore) > 3)
-                        {
-                            Logger.LogInformation("Forecast error exceeds threshold, retraining model.");
-                            await Forecaster.Retrain(Deployment.Service.Id);
-                            clock.Restart();
-                            continue;
-                        }
-
-                        Logger.LogDebug("Not retraining model, continuing");
-
-                        if (timestamps.Count == 0 || cpuValues.Count == 0)
-                        {
-                            Logger.LogError("Forecast data format is invalid");
-                            continue;
-                        }
-
-                        // Kubernetes HPA scaling logic.
-                        await SetReplicas(nextForecast, replicas);
+                        await Forecaster.Forecast(Deployment.Service.Id, ForecastRepository);
+                        forecastEntity =
+                            await ForecastRepository.GetForecastsByServiceIdAsync(Deployment.Service.Id) ?? throw new ArgumentNullException(nameof(ForecastRepository), "Error, there's probably no forecasts in the database");
                     }
+                    
+                    Logger.LogDebug(forecastEntity.Forecast);
+
+                    var forecast = JObject.Parse(forecastEntity.Forecast);
+                    var replicas = await Kubernetes.GetReplicas(Deployment.Service.Name);
+                    var actualCpu = await GetCpuUsage(HistoricRepository);
+                    var timestamps = forecast["timestamp"]?.ToObject<List<string>>() ??
+                                     throw new ArgumentNullException(nameof(forecast),
+                                         "Failed to get timestamps from forecast");
+                    var cpuValues = forecast["value"]?.ToObject<List<List<double>>>() ??
+                                    throw new ArgumentNullException(nameof(forecast),
+                                        "Failed to get value forecast");
+
+                    var forecastHorizon =
+                        await Kubernetes.GetPodStartupTimePercentileAsync(Deployment.Service.Name);
+                    Logger.LogInformation(
+                        $"Forecast horizon for {Deployment.Service.Name}: {forecastHorizon.TotalSeconds} seconds");
+
+                    // Instead of a fixed 1 minute, use the forecast horizon from pod startup time
+                    var nextTime = DateTime.Now.Add(forecastHorizon)
+                        .ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture);
+                    Logger.LogInformation(nextTime);
+                    var forecastIndex = timestamps.FindIndex(timestamp => timestamp.Contains(nextTime));
+
+                    if (forecastIndex < 0 || forecastIndex >= cpuValues.Count)
+                    {
+                        await Forecaster.Forecast(Deployment.Service.Id, ForecastRepository);
+                        continue;
+                    }
+
+                    var nextForecast = cpuValues[forecastIndex][0];
+                    var zScore = GetZScore(nextForecast, actualCpu);
+
+                    if (Math.Abs(zScore) > 3)
+                    {
+                        Logger.LogInformation("Forecast error exceeds threshold, retraining model.");
+                        await Forecaster.Retrain(Deployment.Service.Id);
+                        clock.Restart();
+                        continue;
+                    }
+
+                    Logger.LogDebug("Not retraining model, continuing");
+
+                    if (timestamps.Count == 0 || cpuValues.Count == 0)
+                    {
+                        Logger.LogError("Forecast data format is invalid");
+                        continue;
+                    }
+
+                    // Kubernetes HPA scaling logic.
+                    await SetReplicas(nextForecast, replicas);
 
                     // Calculate delay based on processing time.
                     var processingTime = (DateTime.Now - startTime).TotalMilliseconds;
@@ -147,7 +143,7 @@ public class Monitor(
         catch (ArgumentNullException ex)
         {
             Logger.LogError($"something was null somewhere where it shouldn't be null, restarting monitor: {ex}");
-            Run();
+            await Run();
         }
         catch (Exception ex)
         {
@@ -157,14 +153,13 @@ public class Monitor(
 
     public void Start()
     {
+        Logger.LogDebug("Starting Monitor");
         Thread.Start();
     }
 
     private async Task UpdateSettings()
     {
-        using var scope = ServiceProvider.CreateScope();
-        var settingsRepository = scope.ServiceProvider.GetRequiredService<ISettingsRepository>(); 
-        var settings = await settingsRepository.GetSettingsForServiceAsync(deployment.Service.Id);
+        var settings = await SettingsRepository.GetSettingsForServiceAsync(deployment.Service.Id);
 
         if (settings.TrainInterval != deployment.Settings.TrainInterval)
         {

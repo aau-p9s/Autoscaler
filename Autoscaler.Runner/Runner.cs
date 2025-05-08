@@ -6,13 +6,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autoscaler.Config;
 using Autoscaler.Persistence.ForecastRepository;
+using Autoscaler.Persistence.HistoricRepository;
 using Autoscaler.Persistence.ServicesRepository;
 using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner.Entities;
 using Autoscaler.Runner.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 namespace Autoscaler.Runner;
 
@@ -22,119 +21,83 @@ public class Runner(
     ForecasterService forecaster,
     PrometheusService prometheus,
     KubernetesService kubernetes,
-    IServiceProvider serviceProvider)
+    IServicesRepository servicesRepository,
+    ISettingsRepository settingsRepository,
+    IForecastRepository forecastRepository,
+    IHistoricRepository historicRepository)
 {
     private ILogger Logger => logger;
-    private List<DeploymentEntity> Deployments => new();
+    private List<DeploymentEntity> _deployments = new();
     private ForecasterService Forecaster => forecaster;
     private PrometheusService Prometheus => prometheus;
     private KubernetesService Kubernetes => kubernetes;
-    private List<Monitor> Monitors => new();
+    private static List<Monitor> Monitors => new();
     private CancellationTokenSource CancellationTokenSource => new();
-    private bool DevelopmentMode => appSettings.Autoscaler.DevelopmentMode;
-    private static string[] Collection => new[] { "kubernetes", "prometheus", "autoscaler-deployment" };
-    private IServiceProvider _serviceProvider => serviceProvider;
+    private ISettingsRepository SettingsRepository => settingsRepository;
+    private IForecastRepository ForecastRepository => forecastRepository;
+    private IHistoricRepository HistoricRepository => historicRepository;
 
     public async Task MainLoop()
     {
-        using (var scope = _serviceProvider.CreateScope())
+        var services = await servicesRepository.GetAllServicesAsync();
+        
+        foreach (var service in services)
         {
-            var servicesRepository = scope.ServiceProvider.GetRequiredService<IServicesRepository>();
-            var settingsRepository = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
-            var forecastRepository = scope.ServiceProvider.GetRequiredService<IForecastRepository>();
-
-            var services = await servicesRepository.GetAllServicesAsync();
-            foreach (var service in services)
-            {
-                var settings = await settingsRepository.GetSettingsForServiceAsync(service.Id);
-                Deployments.Add(new DeploymentEntity(service, settings));
-            }
-
-
-            var getServicesFromKubernetes = await Kubernetes.Get("/apis/apps/v1/deployments");
-            if (getServicesFromKubernetes != null)
-            {
-                Logger.LogDebug(getServicesFromKubernetes.ToString());
-                var deployments = ExtractNonSystemDeployments(getServicesFromKubernetes,
-                    new[] { "autoscaler", "mysql", "generator" });
-                foreach (var deployment in deployments)
-                {
-                    var serviceId = Guid.NewGuid();
-
-                    if (DevelopmentMode)
-                    {
-                        var forecast = await File.ReadAllTextAsync(
-                            "./DevelopmentData/forecast.json");
-                        await forecastRepository.InsertForecast(new ForecastEntity(Guid.NewGuid(), serviceId,
-                            DateTime.Now, Guid.NewGuid(), forecast, false));
-                    }
-
-                    if (Deployments.All(d => d.Service.Name != deployment))
-                    {
-                        await servicesRepository.UpsertServiceAsync(new ServiceEntity
-                        {
-                            Id = serviceId,
-                            Name = deployment,
-                            AutoscalingEnabled = false
-                        });
-
-                        await settingsRepository.UpsertSettingsAsync(new SettingsEntity
-                        {
-                            Id = Guid.NewGuid(),
-                            ServiceId = serviceId,
-                            ScalePeriod = 60000,
-                            ScaleUp = 80,
-                            ScaleDown = 20,
-                            MinReplicas = 1,
-                            MaxReplicas = 10,
-                            TrainInterval = 600000,
-                            ModelHyperParams = "",
-                            OptunaConfig = ""
-                        });
-                    }
-                }
-            }
+            var settings = await SettingsRepository.GetSettingsForServiceAsync(service.Id);
+            _deployments.Add(new(service, settings));
         }
 
-        foreach (var deployment in Deployments)
+        var deployments = await GetDeployments();
+        foreach (var deployment in deployments.Where(deployment => _deployments.All(d => d.Service.Name != deployment)))
         {
-            var monitor = new Monitor(deployment, CancellationTokenSource.Token, Logger, _serviceProvider, Forecaster, Prometheus, Kubernetes);
-
+            await AddService(deployment);
+        }
+        
+        foreach (var deployment in _deployments)
+        {
+            var monitor = new Monitor(deployment, CancellationTokenSource.Token, Logger, Forecaster, Prometheus, Kubernetes, HistoricRepository, ForecastRepository, SettingsRepository);
             Monitors.Add(monitor);
             monitor.Start();
             Logger.LogInformation($"Started monitoring thread for {deployment.Service.Name}");
         }
     }
 
-    private static List<string> ExtractNonSystemDeployments(JObject kubeApiResponse, string[]? excludePatterns)
+    private async Task<List<string>> GetDeployments()
     {
-        // Initialize result list
-        List<string> deploymentNames = new List<string>();
-
-        // Use default exclusion patterns if none provided
-        HashSet<string> patternsToExclude = new HashSet<string>(
-            excludePatterns ?? Collection,
-            StringComparer.OrdinalIgnoreCase);
-
-        // Get the "items" array which contains all deployments
-        JArray items = (JArray)kubeApiResponse["items"];
-
-        // Check if items exist
-        if (items == null)
+        var result = new List<string>();
+        var response = await Kubernetes.Get("/apis/apps/v1/deployments") ?? throw new ArgumentNullException(nameof(Kubernetes), "Kubernetes response is null");
+        var items = response["items"] ?? throw new ArgumentNullException(nameof(response), "Response from kubernetes was null");
+        
+        foreach (var item in items)
         {
-            return deploymentNames;
+            var metadata = item["metadata"] ?? throw new ArgumentNullException(nameof(item), "Item did not have metadata");
+            var name = metadata["name"] ?? throw new ArgumentNullException(nameof(metadata), "Metadata did not have a name");
+            result.Add(name.ToString());
         }
+        return result;
+    }
 
-        // Iterate through each deployment
-        deploymentNames.AddRange(from item in items
-            select item["metadata"]?["name"]?.ToString() ?? throw new InvalidOperationException()
-            into name
-            where !string.IsNullOrEmpty(name)
-            let shouldExclude =
-                patternsToExclude.Any(pattern => name.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0)
-            where !shouldExclude
-            select name);
-
-        return deploymentNames;
+    private async Task AddService(string service)
+    {
+        var id = Guid.NewGuid();
+        await servicesRepository.UpsertServiceAsync(new ServiceEntity
+        {
+            Id = id,
+            Name = service,
+            AutoscalingEnabled = false
+        });
+        await settingsRepository.UpsertSettingsAsync(new SettingsEntity
+        {
+            Id = Guid.NewGuid(),
+            ServiceId = id,
+            ScalePeriod = 60000,
+            ScaleUp = 80,
+            ScaleDown = 20,
+            MinReplicas = 1,
+            MaxReplicas = 10,
+            TrainInterval = 600000,
+            ModelHyperParams = "",
+            OptunaConfig = ""
+        });
     }
 }

@@ -26,16 +26,10 @@ namespace Autoscaler.Runner.Services
         }");
         private string Addr => appSettings.Autoscaler.Apis.Kubernetes;
         private bool UseMockData => appSettings.Autoscaler.DevelopmentMode;
-        private ILogger Logger => logger;
+        protected ILogger Logger => logger;
 
-        public async Task Update(string endpoint, object body)
+        public virtual async Task Update(string endpoint, object body)
         {
-            if (UseMockData)
-            {
-                Logger.LogWarning("Using mock Kubernetes data...");
-                return;
-            }
-
             try
             {
                 var request = new HttpRequestMessage
@@ -57,39 +51,17 @@ namespace Autoscaler.Runner.Services
             }
         }
 
-        public async Task<JObject?> Get(string endpoint)
+        public virtual async Task<JObject?> Get(string endpoint)
         { 
             Logger.LogDebug($"Kubernetes endpoint: {endpoint}");
-            if (UseMockData)
-            {
-                Logger.LogInformation("Using mock Kubernetes data...");
-                var kubeRes =
-                    await File.ReadAllTextAsync(
-                        "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
-                return JObject.Parse(kubeRes);
-            }
 
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
                 RequestUri = new Uri(Addr + endpoint)
             };
-            if (AuthHeader != null)
-            {
-                request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
-            }
 
-            HttpResponseMessage response;
-            try
-            {
-                response = await Client.SendAsync(request);
-            }
-            catch (HttpRequestException e)
-            {
-                Logger.LogError("Kubernetes seems to be down");
-                HandleException(e);
-                return null;
-            }
+            var response = await Client.SendAsync(request);
 
             var responseString = await response.Content.ReadAsStringAsync();
             
@@ -98,26 +70,8 @@ namespace Autoscaler.Runner.Services
             return JObject.Parse(responseString);
         }
 
-        public async Task<int> GetReplicas(string deploymentName)
+        public virtual async Task<int> GetReplicas(string deploymentName)
         {
-            if (UseMockData)
-            {
-                Logger.LogInformation("Using mock Kubernetes data...");
-                var kubeRes =
-                    await File.ReadAllTextAsync(
-                        "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
-                var dummyJson = JObject.Parse(kubeRes);
-                if (dummyJson == null)
-                    return 0;
-                var dummySpec = dummyJson["spec"];
-                if (dummySpec == null)
-                    return 0;
-                var dummyReplicas = dummySpec["replicas"];
-                if (dummyReplicas == null)
-                    return 0;
-                return (int)dummyReplicas;
-            }
-
             var json = await Get($"/apis/apps/v1/namespaces/default/deployments/{deploymentName}/scale");
             Logger.LogDebug($"Json response: {json}");
             if (json == null)
@@ -131,15 +85,8 @@ namespace Autoscaler.Runner.Services
             return (int)replicas;
         }
 
-        private async Task<JObject?> GetPodsAsync(string serviceName)
+        protected virtual async Task<JObject?> GetPodsAsync(string serviceName)
         {
-            if (UseMockData)
-            {
-                Logger.LogWarning("Using mock Kubernetes pod data...");
-                var podsJson = await File.ReadAllTextAsync("./DevelopmentData/containers.json");
-                return JObject.Parse(podsJson);
-            }
-
             // Assuming pods are labeled with "app" equal to the service name.
             string encodedServiceName = Uri.EscapeDataString(serviceName);
             var endpoint = $"/api/v1/namespaces/default/pods?labelSelector=app%3D{encodedServiceName}";
@@ -215,12 +162,12 @@ namespace Autoscaler.Runner.Services
         private double CalculatePercentile(List<double> sortedValues, double percentile)
         {
             // percentile is between 0 and 100.
-            int n = sortedValues.Count;
+            var n = sortedValues.Count;
             if (n == 0)
                 return 0;
-            double rank = (percentile / 100.0) * (n - 1);
-            int lowerIndex = (int)Math.Floor(rank);
-            int upperIndex = (int)Math.Ceiling(rank);
+            var rank = (percentile / 100.0) * (n - 1);
+            var lowerIndex = (int)Math.Floor(rank);
+            var upperIndex = (int)Math.Ceiling(rank);
             if (lowerIndex == upperIndex)
             {
                 return sortedValues[lowerIndex];
