@@ -16,7 +16,6 @@ using Microsoft.Extensions.Logging;
 namespace Autoscaler.Runner;
 
 public class Runner(
-    AppSettings appSettings,
     ILogger logger,
     ForecasterService forecaster,
     PrometheusService prometheus,
@@ -26,16 +25,9 @@ public class Runner(
     IForecastRepository forecastRepository,
     IHistoricRepository historicRepository)
 {
-    private ILogger Logger => logger;
     private List<DeploymentEntity> _deployments = new();
-    private ForecasterService Forecaster => forecaster;
-    private PrometheusService Prometheus => prometheus;
-    private KubernetesService Kubernetes => kubernetes;
     private static List<Monitor> Monitors => new();
     private CancellationTokenSource CancellationTokenSource => new();
-    private ISettingsRepository SettingsRepository => settingsRepository;
-    private IForecastRepository ForecastRepository => forecastRepository;
-    private IHistoricRepository HistoricRepository => historicRepository;
 
     public async Task MainLoop()
     {
@@ -43,7 +35,7 @@ public class Runner(
         
         foreach (var service in services)
         {
-            var settings = await SettingsRepository.GetSettingsForServiceAsync(service.Id);
+            var settings = await settingsRepository.GetSettingsForServiceAsync(service.Id);
             _deployments.Add(new(service, settings));
         }
 
@@ -55,17 +47,17 @@ public class Runner(
         
         foreach (var deployment in _deployments)
         {
-            var monitor = new Monitor(deployment, CancellationTokenSource.Token, Logger, Forecaster, Prometheus, Kubernetes, HistoricRepository, ForecastRepository, SettingsRepository);
+            var monitor = new Monitor(deployment, CancellationTokenSource.Token, logger, forecaster, prometheus, kubernetes, historicRepository, forecastRepository, settingsRepository);
             Monitors.Add(monitor);
             monitor.Start();
-            Logger.LogInformation($"Started monitoring thread for {deployment.Service.Name}");
+            logger.LogInformation($"Started monitoring thread for {deployment.Service.Name}");
         }
     }
 
     private async Task<List<string>> GetDeployments()
     {
         var result = new List<string>();
-        var response = await Kubernetes.Get("/apis/apps/v1/deployments") ?? throw new ArgumentNullException(nameof(Kubernetes), "Kubernetes response is null");
+        var response = await kubernetes.Get("/apis/apps/v1/deployments") ?? throw new ArgumentNullException(nameof(kubernetes), "Kubernetes response is null");
         var items = response["items"] ?? throw new ArgumentNullException(nameof(response), "Response from kubernetes was null");
         
         foreach (var item in items)
