@@ -30,7 +30,7 @@ public class Runner
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly bool _developmentMode;
     private static readonly string[] _collection = new[] { "kubernetes", "prometheus", "autoscaler-deployment" };
-    private readonly Dictionary<Guid, List<double>> _forecastErrorHistory = new Dictionary<Guid, List<double>>();
+    private readonly Dictionary<Guid, List<double>> _forecastErrorHistory = new();
     private readonly IServiceProvider _serviceProvider;
 
 
@@ -185,6 +185,7 @@ public class Runner
                         catch (Exception ex)
                         {
                             logger.LogError($"Error parsing historical CPU value: {ex.Message}");
+                            logger.LogDebug(ex.StackTrace);
                             continue;
                         }
 
@@ -318,12 +319,13 @@ public class Runner
                     // Calculate delay based on processing time.
                     var processingTime = (DateTime.Now - startTime).TotalMilliseconds;
                     var delay = Math.Max(0, deployment.Settings.ScalePeriod - processingTime);
-                    Console.WriteLine($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
+                    logger.LogDebug($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
                     await Task.Delay((int)delay, cancellationToken);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error monitoring {deployment.Service.Name}: {ex.Message}");
+                    logger.LogError($"Error monitoring {deployment.Service.Name}: {ex.Message}");
+                    logger.LogDebug(ex.StackTrace);
                     await Task.Delay(5000, cancellationToken);
                 }
             }

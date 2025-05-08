@@ -247,6 +247,7 @@ namespace Autoscaler.Runner.Services
         void HandleException(Exception e)
         {
             logger.LogError(e.Message);
+            logger.LogDebug(e.StackTrace);
             if (e.InnerException != null)
                 HandleException(e.InnerException);
         }

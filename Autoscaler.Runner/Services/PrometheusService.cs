@@ -49,7 +49,6 @@ public class PrometheusService
 
         var query =
             $"query={EncodeQuery(queryString)}&start={ToRFC3339(start)}&end={ToRFC3339(end)}&step={period / 1000}s";
-        var result = new HistoricEntity();
         HttpResponseMessage response;
         try
         {
@@ -82,6 +81,7 @@ public class PrometheusService
     {
         // TODO: Move to an interface
         logger.LogError(e.Message);
+        logger.LogDebug(e.StackTrace);
         if (e.InnerException != null)
             HandleException(e.InnerException);
     }
