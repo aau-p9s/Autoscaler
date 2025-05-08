@@ -16,6 +16,7 @@
         dotnetCorePackages.dotnet_8.runtime
         roslyn-ls
         python312
+        postgresql
       ];
     };
   };

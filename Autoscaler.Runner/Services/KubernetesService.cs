@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Autoscaler.Config;
 using Microsoft.Extensions.Logging;
@@ -12,41 +12,27 @@ using Newtonsoft.Json.Linq;
 
 namespace Autoscaler.Runner.Services
 {
-    public class KubernetesService
+    public class KubernetesService (
+        AppSettings appSettings,
+        ILogger logger)
     {
-        readonly HttpClient _client;
-        readonly Tuple<string, string>? _authHeader;
-        readonly string _addr;
-        private readonly bool _useMockData;
-        private readonly ILogger logger;
-
-        public KubernetesService(AppSettings appSettings, ILogger logger)
+        private HttpClient Client => new(new HttpClientHandler()
         {
-            _addr = appSettings.Autoscaler.Apis.Kubernetes;
-            _useMockData = appSettings.Autoscaler.DevelopmentMode;
-            this.logger = logger;
-            HttpClientHandler handler = new()
-            {
-                ClientCertificateOptions = ClientCertificateOption.Manual,
-                ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-            };
-            _client = new(handler);
-            if (File.Exists("/var/run/secrets/kubernetes.io/serviceaccount/token"))
-            {
-                StreamReader stream = new("/var/run/secrets/kubernetes.io/serviceaccount/token");
-                _authHeader = new("Authorization", $"Bearer {stream.ReadToEnd()}");
-            }
-            else
-            {
-                _authHeader = null;
-            }
-        }
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (_,_,_,_) => true
+        }); 
+        private Tuple<string, string> AuthHeader => new("Authorization", $"Bearer {
+            new StreamReader("/var/run/secrets/kubernetes.io/serviceaccount/token").ReadToEnd()
+        }");
+        private string Addr => appSettings.Autoscaler.Apis.Kubernetes;
+        private bool UseMockData => appSettings.Autoscaler.DevelopmentMode;
+        private ILogger Logger => logger;
 
         public async Task Update(string endpoint, object body)
         {
-            if (_useMockData)
+            if (UseMockData)
             {
-                logger.LogWarning("Using mock Kubernetes data...");
+                Logger.LogWarning("Using mock Kubernetes data...");
                 return;
             }
 
@@ -55,28 +41,28 @@ namespace Autoscaler.Runner.Services
                 var request = new HttpRequestMessage
                 {
                     Method = HttpMethod.Patch,
-                    RequestUri = new Uri(_addr + endpoint),
+                    RequestUri = new Uri(Addr + endpoint),
                     Content = new StringContent(JsonConvert.SerializeObject(body),
                         new MediaTypeHeaderValue("application/merge-patch+json"))
                 };
 
-                if (_authHeader != null)
-                    request.Headers.Add(_authHeader.Item1, _authHeader.Item2);
-                await _client.SendAsync(request);
+                if (AuthHeader != null)
+                    request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
+                await Client.SendAsync(request);
             }
             catch (HttpRequestException e)
             { 
-                logger.LogError("Kubernetes seems to be down");
+                Logger.LogError("Kubernetes seems to be down");
                 HandleException(e);
             }
         }
 
         public async Task<JObject?> Get(string endpoint)
         { 
-            logger.LogDebug($"Kubernetes endpoint: {endpoint}");
-            if (_useMockData)
+            Logger.LogDebug($"Kubernetes endpoint: {endpoint}");
+            if (UseMockData)
             {
-                logger.LogInformation("Using mock Kubernetes data...");
+                Logger.LogInformation("Using mock Kubernetes data...");
                 var kubeRes =
                     await File.ReadAllTextAsync(
                         "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
@@ -86,37 +72,37 @@ namespace Autoscaler.Runner.Services
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(_addr + endpoint)
+                RequestUri = new Uri(Addr + endpoint)
             };
-            if (_authHeader != null)
+            if (AuthHeader != null)
             {
-                request.Headers.Add(_authHeader.Item1, _authHeader.Item2);
+                request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
             }
 
             HttpResponseMessage response;
             try
             {
-                response = await _client.SendAsync(request);
+                response = await Client.SendAsync(request);
             }
             catch (HttpRequestException e)
             {
-                Console.WriteLine("Kubernetes seems to be down");
+                Logger.LogError("Kubernetes seems to be down");
                 HandleException(e);
                 return null;
             }
 
             var responseString = await response.Content.ReadAsStringAsync();
             
-            logger.LogDebug($"Kubernetes response raw: {responseString}");
+            Logger.LogDebug($"Kubernetes response raw: {responseString}");
 
             return JObject.Parse(responseString);
         }
 
         public async Task<int> GetReplicas(string deploymentName)
         {
-            if (_useMockData)
+            if (UseMockData)
             {
-                logger.LogInformation("Using mock Kubernetes data...");
+                Logger.LogInformation("Using mock Kubernetes data...");
                 var kubeRes =
                     await File.ReadAllTextAsync(
                         "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
@@ -133,7 +119,7 @@ namespace Autoscaler.Runner.Services
             }
 
             var json = await Get($"/apis/apps/v1/namespaces/default/deployments/{deploymentName}/scale");
-            logger.LogDebug($"Json response: {json}");
+            Logger.LogDebug($"Json response: {json}");
             if (json == null)
                 return 0;
             var spec = json["spec"];
@@ -147,9 +133,9 @@ namespace Autoscaler.Runner.Services
 
         private async Task<JObject?> GetPodsAsync(string serviceName)
         {
-            if (_useMockData)
+            if (UseMockData)
             {
-                Console.WriteLine("Using mock Kubernetes pod data...");
+                Logger.LogWarning("Using mock Kubernetes pod data...");
                 var podsJson = await File.ReadAllTextAsync("./DevelopmentData/containers.json");
                 return JObject.Parse(podsJson);
             }
@@ -164,7 +150,7 @@ namespace Autoscaler.Runner.Services
         {
             // Retrieve pod data.
             JObject? podsJson = await GetPodsAsync(serviceName);
-            logger.LogDebug($"pods json: {podsJson}");
+            Logger.LogDebug($"pods json: {podsJson}");
             if (podsJson == null)
             {
                 return TimeSpan.FromMinutes(1);
@@ -212,7 +198,7 @@ namespace Autoscaler.Runner.Services
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError($"Error processing pod: {ex.Message}");
+                    Logger.LogError($"Error processing pod: {ex.Message}");
                 }
             }
 
@@ -246,8 +232,8 @@ namespace Autoscaler.Runner.Services
 
         void HandleException(Exception e)
         {
-            logger.LogError(e.Message);
-            logger.LogDebug(e.StackTrace);
+            Logger.LogError(e.Message);
+            Logger.LogDebug(e.StackTrace);
             if (e.InnerException != null)
                 HandleException(e.InnerException);
         }

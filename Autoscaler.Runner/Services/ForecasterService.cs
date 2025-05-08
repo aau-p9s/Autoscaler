@@ -8,40 +8,32 @@ using Microsoft.Extensions.Logging;
 
 namespace Autoscaler.Runner.Services;
 
-public class ForecasterService
+public class ForecasterService(
+    AppSettings appSettings,
+    ILogger logger)
 {
-    private readonly string addr;
-    private readonly bool useMockData;
-    private readonly bool useForecasterInDevelopmentMode;
-    readonly HttpClient _client;
-    private readonly ILogger logger;
-
-
-    public ForecasterService(AppSettings appSettings, ILogger logger)
-    {
-        addr = appSettings.Autoscaler.Apis.Forecaster;
-        useMockData = appSettings.Autoscaler.DevelopmentMode;
-        useForecasterInDevelopmentMode = appSettings.Autoscaler.UseForecasterInDevelopmentMode;
-        _client = new();
-        this.logger = logger;
-    }
+    private string Addr => appSettings.Autoscaler.Apis.Forecaster;
+    private bool UseMockData => appSettings.Autoscaler.DevelopmentMode;
+    private bool UseForecasterInDevelopmentMode => appSettings.Autoscaler.UseForecasterInDevelopmentMode;
+    private HttpClient Client => new();
+    private ILogger Logger => logger;
 
     public async Task<bool> Forecast(Guid serviceId)
     {
-        if (useMockData && !useForecasterInDevelopmentMode)
+        if (UseMockData && !UseForecasterInDevelopmentMode)
         {
-            logger.LogWarning("Using mock Forecaster data...");
+            Logger.LogWarning("Using mock Forecaster data...");
             Thread.Sleep(20000);
             return true;
         }
 
 
-        var res = await _client.GetAsync(addr + "/predict/" + serviceId);
-        logger.LogDebug($"Forecaster forecast response: {await res.Content.ReadAsStringAsync()}");
+        var res = await Client.GetAsync(Addr + "/predict/" + serviceId);
+        Logger.LogDebug($"Forecaster forecast response: {await res.Content.ReadAsStringAsync()}");
 
         if (!res.IsSuccessStatusCode)
         {
-            logger.LogError("Failed to forecast the data");
+            Logger.LogError("Failed to forecast the data");
             return false;
         }
 
@@ -50,9 +42,9 @@ public class ForecasterService
 
     public async Task<bool> Retrain(Guid serviceId)
     {
-        if (useMockData)
+        if (UseMockData)
         {
-            logger.LogWarning("Using mock Forecaster data...");
+            Logger.LogWarning("Using mock Forecaster data...");
             Thread.Sleep(100000);
             return true;
         }
@@ -62,11 +54,11 @@ public class ForecasterService
             new KeyValuePair<string, string>("serviceId", serviceId.ToString())
         });
 
-        var res = await _client.PostAsync(addr + "/train", content);
+        var res = await Client.PostAsync(Addr + "/train", content);
 
         if (!res.IsSuccessStatusCode)
         {
-            logger.LogError("Failed to retrain the model");
+            Logger.LogError("Failed to retrain the model");
             return false;
         }
 
