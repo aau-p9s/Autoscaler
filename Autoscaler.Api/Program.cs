@@ -92,7 +92,7 @@ var app = builder.Build();
 // Start runner
 if (appSettings.Autoscaler.StartRunner)
 {
-    var runner = app.Services.GetService<Runner>() ?? throw new NullReferenceException();
+    var runner = app.Services.CreateScope().ServiceProvider.GetService<Runner>() ?? throw new NullReferenceException();
     await runner.MainLoop();
 }
 

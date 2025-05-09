@@ -38,6 +38,12 @@ public class Monitor(
             clock.Start();
             while (!cancellationToken.IsCancellationRequested)
             {
+                if (!deployment.Service.AutoscalingEnabled)
+                {
+                    logger.LogDebug("Autoscaling is disabled, waiting...");
+                    Thread.Sleep(deployment.Settings.ScalePeriod);
+                    continue;
+                }
                 await UpdateSettings();
 
                 // Retrain periodically based on TrainInterval.
