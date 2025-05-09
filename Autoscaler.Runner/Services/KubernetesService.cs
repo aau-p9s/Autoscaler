@@ -58,6 +58,7 @@ namespace Autoscaler.Runner.Services
                 Method = HttpMethod.Get,
                 RequestUri = new Uri(AppSettings.Autoscaler.Apis.Kubernetes + endpoint)
             };
+            request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
 
             var response = await Client.SendAsync(request);
 
