@@ -17,6 +17,7 @@ services:
         restart: always
         environment:
             AUTOSCALER__PGSQL__ADDR: db
+            AUTOSCALER__STARTRUNNER: false
         
         ports:
             - "8080:8080"

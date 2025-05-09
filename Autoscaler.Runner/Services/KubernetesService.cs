@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Autoscaler.Config;
 using Microsoft.Extensions.Logging;
@@ -12,128 +12,66 @@ using Newtonsoft.Json.Linq;
 
 namespace Autoscaler.Runner.Services
 {
-    public class KubernetesService
+    public class KubernetesService (
+        AppSettings appSettings,
+        ILogger logger)
     {
-        readonly HttpClient _client;
-        readonly Tuple<string, string>? _authHeader;
-        readonly string _addr;
-        private readonly bool _useMockData;
-        private readonly ILogger logger;
-
-        public KubernetesService(AppSettings appSettings, ILogger logger)
+        private HttpClient Client => new(new HttpClientHandler()
         {
-            _addr = appSettings.Autoscaler.Apis.Kubernetes;
-            _useMockData = appSettings.Autoscaler.DevelopmentMode;
-            this.logger = logger;
-            HttpClientHandler handler = new()
-            {
-                ClientCertificateOptions = ClientCertificateOption.Manual,
-                ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-            };
-            _client = new(handler);
-            if (File.Exists("/var/run/secrets/kubernetes.io/serviceaccount/token"))
-            {
-                StreamReader stream = new("/var/run/secrets/kubernetes.io/serviceaccount/token");
-                _authHeader = new("Authorization", $"Bearer {stream.ReadToEnd()}");
-            }
-            else
-            {
-                _authHeader = null;
-            }
-        }
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (_,_,_,_) => true
+        }); 
+        private Tuple<string, string> AuthHeader => new("Authorization", $"Bearer {
+            new StreamReader("/var/run/secrets/kubernetes.io/serviceaccount/token").ReadToEnd()
+        }");
+        protected ILogger Logger => logger;
+        protected AppSettings AppSettings => appSettings;
 
-        public async Task Update(string endpoint, object body)
+        public virtual async Task Update(string endpoint, object body)
         {
-            if (_useMockData)
-            {
-                logger.LogWarning("Using mock Kubernetes data...");
-                return;
-            }
-
             try
             {
                 var request = new HttpRequestMessage
                 {
                     Method = HttpMethod.Patch,
-                    RequestUri = new Uri(_addr + endpoint),
+                    RequestUri = new Uri(AppSettings.Autoscaler.Apis.Kubernetes + endpoint),
                     Content = new StringContent(JsonConvert.SerializeObject(body),
                         new MediaTypeHeaderValue("application/merge-patch+json"))
                 };
 
-                if (_authHeader != null)
-                    request.Headers.Add(_authHeader.Item1, _authHeader.Item2);
-                await _client.SendAsync(request);
+                request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
+                await Client.SendAsync(request);
             }
             catch (HttpRequestException e)
             { 
-                logger.LogError("Kubernetes seems to be down");
-                HandleException(e);
+                Logger.LogError("Kubernetes seems to be down");
+                Utils.HandleException(e, Logger);
             }
         }
 
-        public async Task<JObject?> Get(string endpoint)
+        public virtual async Task<JObject?> Get(string endpoint)
         { 
-            logger.LogDebug($"Kubernetes endpoint: {endpoint}");
-            if (_useMockData)
-            {
-                logger.LogInformation("Using mock Kubernetes data...");
-                var kubeRes =
-                    await File.ReadAllTextAsync(
-                        "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
-                return JObject.Parse(kubeRes);
-            }
+            Logger.LogDebug($"Kubernetes endpoint: {endpoint}");
 
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(_addr + endpoint)
+                RequestUri = new Uri(AppSettings.Autoscaler.Apis.Kubernetes + endpoint)
             };
-            if (_authHeader != null)
-            {
-                request.Headers.Add(_authHeader.Item1, _authHeader.Item2);
-            }
 
-            HttpResponseMessage response;
-            try
-            {
-                response = await _client.SendAsync(request);
-            }
-            catch (HttpRequestException e)
-            {
-                Console.WriteLine("Kubernetes seems to be down");
-                HandleException(e);
-                return null;
-            }
+            var response = await Client.SendAsync(request);
 
             var responseString = await response.Content.ReadAsStringAsync();
             
-            logger.LogDebug($"Kubernetes response raw: {responseString}");
+            Logger.LogDebug($"Kubernetes response raw: {responseString}");
 
             return JObject.Parse(responseString);
         }
 
-        public async Task<int> GetReplicas(string deploymentName)
+        public virtual async Task<int> GetReplicas(string deploymentName)
         {
-            if (_useMockData)
-            {
-                logger.LogInformation("Using mock Kubernetes data...");
-                var kubeRes =
-                    await File.ReadAllTextAsync(
-                        "./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments.json");
-                var dummyJson = JObject.Parse(kubeRes);
-                if (dummyJson == null)
-                    return 0;
-                var dummySpec = dummyJson["spec"];
-                if (dummySpec == null)
-                    return 0;
-                var dummyReplicas = dummySpec["replicas"];
-                if (dummyReplicas == null)
-                    return 0;
-                return (int)dummyReplicas;
-            }
-
             var json = await Get($"/apis/apps/v1/namespaces/default/deployments/{deploymentName}/scale");
-            logger.LogDebug($"Json response: {json}");
+            Logger.LogDebug($"Json response: {json}");
             if (json == null)
                 return 0;
             var spec = json["spec"];
@@ -145,15 +83,8 @@ namespace Autoscaler.Runner.Services
             return (int)replicas;
         }
 
-        private async Task<JObject?> GetPodsAsync(string serviceName)
+        protected virtual async Task<JObject?> GetPodsAsync(string serviceName)
         {
-            if (_useMockData)
-            {
-                Console.WriteLine("Using mock Kubernetes pod data...");
-                var podsJson = await File.ReadAllTextAsync("./DevelopmentData/containers.json");
-                return JObject.Parse(podsJson);
-            }
-
             // Assuming pods are labeled with "app" equal to the service name.
             string encodedServiceName = Uri.EscapeDataString(serviceName);
             var endpoint = $"/api/v1/namespaces/default/pods?labelSelector=app%3D{encodedServiceName}";
@@ -164,7 +95,7 @@ namespace Autoscaler.Runner.Services
         {
             // Retrieve pod data.
             JObject? podsJson = await GetPodsAsync(serviceName);
-            logger.LogDebug($"pods json: {podsJson}");
+            Logger.LogDebug($"pods json: {podsJson}");
             if (podsJson == null)
             {
                 return TimeSpan.FromMinutes(1);
@@ -212,7 +143,7 @@ namespace Autoscaler.Runner.Services
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError($"Error processing pod: {ex.Message}");
+                    Logger.LogError($"Error processing pod: {ex.Message}");
                 }
             }
 
@@ -229,12 +160,12 @@ namespace Autoscaler.Runner.Services
         private double CalculatePercentile(List<double> sortedValues, double percentile)
         {
             // percentile is between 0 and 100.
-            int n = sortedValues.Count;
+            var n = sortedValues.Count;
             if (n == 0)
                 return 0;
-            double rank = (percentile / 100.0) * (n - 1);
-            int lowerIndex = (int)Math.Floor(rank);
-            int upperIndex = (int)Math.Ceiling(rank);
+            var rank = (percentile / 100.0) * (n - 1);
+            var lowerIndex = (int)Math.Floor(rank);
+            var upperIndex = (int)Math.Ceiling(rank);
             if (lowerIndex == upperIndex)
             {
                 return sortedValues[lowerIndex];
@@ -242,14 +173,6 @@ namespace Autoscaler.Runner.Services
 
             double weight = rank - lowerIndex;
             return sortedValues[lowerIndex] * (1 - weight) + sortedValues[upperIndex] * weight;
-        }
-
-        void HandleException(Exception e)
-        {
-            logger.LogError(e.Message);
-            logger.LogDebug(e.StackTrace);
-            if (e.InnerException != null)
-                HandleException(e.InnerException);
         }
     }
 }

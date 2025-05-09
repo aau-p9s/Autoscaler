@@ -4,7 +4,7 @@ public class AppSettings
 {
     public required Logging Logging { get; set; }
     public required string AllowedHosts { get; set; }
-    public Autoscaler Autoscaler { get; set; }
+    public required Autoscaler Autoscaler { get; set; }
 }
 
 public class Logging
@@ -27,6 +27,7 @@ public class Autoscaler
     public required Apis Apis { get; set; }
     public required bool UseForecasterInDevelopmentMode { get; set; }
     public required bool DevelopmentMode { get; set; }
+    public required bool StartRunner { get; set; }
     public required Pgsql Pgsql { get; set; }
 }
 

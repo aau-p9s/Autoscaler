@@ -7,31 +7,25 @@ namespace Autoscaler.Controllers;
 
 [ApiController]
 [Route("services")]
-public class PublicController : ControllerBase
+public class PublicController(
+    IServicesRepository servicesRepository,
+    ISettingsRepository settingsRepository,
+    IForecastRepository forecastRepository,
+    Runner.Runner runner,
+    ILogger logger) : ControllerBase
 {
-    private readonly IServicesRepository _servicesRepository;
-    private readonly ISettingsRepository _settingsRepository;
-    private readonly IForecastRepository _forecastRepository;
-    private readonly Runner.Runner _runner;
-    private static bool _isMainLoopRunning = false;
-    private static readonly object _lockObject = new object();
-
-    public PublicController(
-        ISettingsRepository settingsRepository,
-        IServicesRepository servicesRepository,
-        IForecastRepository forecastRepository,
-        Runner.Runner runner)
-    {
-        _settingsRepository = settingsRepository;
-        _servicesRepository = servicesRepository;
-        _forecastRepository = forecastRepository;
-        _runner = runner;
-    }
+    private IServicesRepository ServicesRepository => servicesRepository;
+    private ISettingsRepository SettingsRepository => settingsRepository;
+    private IForecastRepository ForecastRepository => forecastRepository;
+    private Runner.Runner Runner => runner;
+    private static bool _isMainLoopRunning;
+    private ILogger Logger => logger;
+    private static readonly object LockObject = new();
 
     [HttpGet("start")]
-    public async Task<IActionResult> StartAutoscaler()
+    public IActionResult StartAutoscaler()
     {
-        lock (_lockObject)
+        lock (LockObject)
         {
             if (_isMainLoopRunning)
             {
@@ -41,18 +35,23 @@ public class PublicController : ControllerBase
             // Start the MainLoop in a background task
             _ = Task.Run(async () =>
             {
-                _isMainLoopRunning = true;
+                lock (LockObject)
+                {
+                    _isMainLoopRunning = true;
+                }
+
                 try
                 {
-                    await _runner.MainLoop();
+                    await Runner.MainLoop();
                 }
                 catch (Exception ex)
                 {
                     // Log the exception
-                    Console.WriteLine($"Error in MainLoop: {ex}");
+                    Logger.LogError($"Error in MainLoop: {ex}");
                 }
                 finally
                 {
+                    logger.LogInformation("Finished starting autoscaler");
                     _isMainLoopRunning = false;
                 }
             });
@@ -64,21 +63,21 @@ public class PublicController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetServices()
     {
-        var services = await _servicesRepository.GetAllServicesAsync();
+        var services = await ServicesRepository.GetAllServicesAsync();
         return Ok(services);
     }
 
     [HttpGet("{serviceId}")]
     public async Task<IActionResult> GetServiceById([FromRoute] Guid serviceId)
     {
-        var service = await _servicesRepository.GetServiceByIdAsync(serviceId);
+        var service = await ServicesRepository.GetServiceByIdAsync(serviceId);
         return Ok(service);
     }
 
     [HttpGet("{serviceId}/settings")]
     public async Task<IActionResult> GetSettingsForServiceById([FromRoute] Guid serviceId)
     {
-        var settings = await _settingsRepository.GetSettingsForServiceAsync(serviceId);
+        var settings = await SettingsRepository.GetSettingsForServiceAsync(serviceId);
         return Ok(settings);
     }
 
@@ -87,7 +86,7 @@ public class PublicController : ControllerBase
         [FromBody] SettingsEntity settings)
     {
         settings.ServiceId = serviceId;
-        var result = await _settingsRepository.UpsertSettingsAsync(settings);
+        var result = await SettingsRepository.UpsertSettingsAsync(settings);
         return Ok(result);
     }
 
@@ -95,14 +94,14 @@ public class PublicController : ControllerBase
     public async Task<IActionResult> UpsertServiceById([FromRoute] Guid serviceId, [FromBody] ServiceEntity service)
     {
         service.Id = serviceId;
-        var result = await _servicesRepository.UpsertServiceAsync(service);
+        var result = await ServicesRepository.UpsertServiceAsync(service);
         return Ok(result);
     }
 
     [HttpGet("{serviceId}/forecast")]
     public async Task<IActionResult> GetForecastForServiceById([FromRoute] Guid serviceId)
     {
-        var forecast = await _forecastRepository.GetForecastsByServiceIdAsync(serviceId);
+        var forecast = await ForecastRepository.GetForecastsByServiceIdAsync(serviceId);
         return Ok(forecast);
     }
 
@@ -111,7 +110,7 @@ public class PublicController : ControllerBase
         [FromBody] ForecastEntity forecast)
     {
         forecast.ServiceId = serviceId;
-        var result = await _forecastRepository.UpdateForecastAsync(forecast);
+        var result = await ForecastRepository.UpdateForecastAsync(forecast);
         return Ok(result);
     }
 }
