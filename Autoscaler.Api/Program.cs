@@ -62,11 +62,7 @@ builder.Services.AddScoped<IForecastRepository, ForecastRepository>();
 builder.Services.AddScoped<IHistoricRepository, HistoricRepository>();
 builder.Services.AddScoped<Runner>();
 
-if (appSettings.Autoscaler.StartRunner)
-{
-    var runner = builder.Services.BuildServiceProvider().GetService<Runner>() ?? throw new NullReferenceException();
-    await runner.MainLoop();
-}
+
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -92,6 +88,14 @@ builder.Services.AddCors(options =>
 builder.WebHost.UseUrls($"{appSettings.Autoscaler.Host}:{appSettings.Autoscaler.Port}");
 
 var app = builder.Build();
+
+// Start runner
+if (appSettings.Autoscaler.StartRunner)
+{
+    var runner = app.Services.GetService<Runner>() ?? throw new NullReferenceException();
+    await runner.MainLoop();
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
