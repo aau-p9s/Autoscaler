@@ -64,7 +64,14 @@ assert "$(cat $TEST_DIR/settings_upsert.json)" "true"
 echo test get forecast
 echo "GET $TARGET/services/$SERVICE_ID/forecast"
 curl -f -X "GET" $TARGET/services/$SERVICE_ID/forecast > $TEST_DIR/forecast.json 2>/dev/null
-assert "$(cat $TEST_DIR/forecast.json)" '{"id":"f1a2b3c4-aaaa-bbbb-cccc-ddddeeeeffff","serviceId":"1a2b3c4d-1111-2222-3333-444455556666","createdAt":"2025-03-06T12:00:00","modelId":"1a2b3c4d-aaaa-bbbb-cccc-ddddeeeeffff","forecast":"[{\"timestamp\": \"2025-03-06T12:00:00Z\", \"cpu_percentage\": 45.2}, {\"timestamp\": \"2025-03-06T12:05:00Z\", \"cpu_percentage\": 47.8}, {\"timestamp\": \"2025-03-06T12:10:00Z\", \"cpu_percentage\": 50.3}]","hasManualChange":false}'
+assert "$(cat $TEST_DIR/forecast.json)" '{
+                                          "id": "f1a2b3c4-aaaa-bbbb-cccc-ddddeeeeffff",
+                                          "serviceId": "1a2b3c4d-1111-2222-3333-444455556666",
+                                          "createdAt": "2025-03-06T12:00:00",
+                                          "modelId": "1a2b3c4d-aaaa-bbbb-cccc-ddddeeeeffff",
+                                          "forecast": "{\"value\": [[0.38], [0.39], [0.40]], \"columns\": [\"CPU\"], \"timestamp\": [\"2025-03-28T13:30:00.00\", \"2025-03-28T13:31:00.00\", \"2025-03-28T13:32:00.00\"]}",
+                                          "hasManualChange": false
+                                        }'
 
 echo test upsert forecast
 echo "POST $TARGET/services/$SERVICE_ID/forecast"
