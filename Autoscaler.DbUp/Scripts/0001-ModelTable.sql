@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS Models
     Name      varchar(40) NOT NULL,
     ServiceId UUID        NOT NULL,
     Bin       bytea       NOT NULL,
-    Scaler    varchar(30), 
     Ckpt      bytea,
     TrainedAt timestamp   NOT NULL
 );
