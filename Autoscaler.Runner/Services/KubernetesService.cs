@@ -24,9 +24,8 @@ namespace Autoscaler.Runner.Services
         private Tuple<string, string> AuthHeader => new("Authorization", $"Bearer {
             new StreamReader("/var/run/secrets/kubernetes.io/serviceaccount/token").ReadToEnd()
         }");
-        private string Addr => appSettings.Autoscaler.Apis.Kubernetes;
-        private bool UseMockData => appSettings.Autoscaler.DevelopmentMode;
         protected ILogger Logger => logger;
+        protected AppSettings AppSettings => appSettings;
 
         public virtual async Task Update(string endpoint, object body)
         {
@@ -35,19 +34,18 @@ namespace Autoscaler.Runner.Services
                 var request = new HttpRequestMessage
                 {
                     Method = HttpMethod.Patch,
-                    RequestUri = new Uri(Addr + endpoint),
+                    RequestUri = new Uri(AppSettings.Autoscaler.Apis.Kubernetes + endpoint),
                     Content = new StringContent(JsonConvert.SerializeObject(body),
                         new MediaTypeHeaderValue("application/merge-patch+json"))
                 };
 
-                if (AuthHeader != null)
-                    request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
+                request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
                 await Client.SendAsync(request);
             }
             catch (HttpRequestException e)
             { 
                 Logger.LogError("Kubernetes seems to be down");
-                HandleException(e);
+                Utils.HandleException(e, Logger);
             }
         }
 
@@ -58,7 +56,7 @@ namespace Autoscaler.Runner.Services
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(Addr + endpoint)
+                RequestUri = new Uri(AppSettings.Autoscaler.Apis.Kubernetes + endpoint)
             };
 
             var response = await Client.SendAsync(request);
@@ -175,14 +173,6 @@ namespace Autoscaler.Runner.Services
 
             double weight = rank - lowerIndex;
             return sortedValues[lowerIndex] * (1 - weight) + sortedValues[upperIndex] * weight;
-        }
-
-        void HandleException(Exception e)
-        {
-            Logger.LogError(e.Message);
-            Logger.LogDebug(e.StackTrace);
-            if (e.InnerException != null)
-                HandleException(e.InnerException);
         }
     }
 }

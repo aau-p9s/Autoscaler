@@ -13,13 +13,13 @@ public class ForecasterService(
     AppSettings appSettings,
     ILogger logger)
 {
-    private string Addr => appSettings.Autoscaler.Apis.Forecaster;
+    protected AppSettings AppSettings => appSettings;
     private HttpClient Client => new();
     protected ILogger Logger => logger;
 
-    public virtual async Task<bool> Forecast(Guid serviceId, IForecastRepository _) // Repository is needed for mock
+    public virtual async Task<bool> Forecast(Guid serviceId)
     {
-        var res = await Client.GetAsync(Addr + "/predict/" + serviceId);
+        var res = await Client.GetAsync(AppSettings.Autoscaler.Apis.Forecaster + "/predict/" + serviceId);
         Logger.LogDebug($"Forecaster forecast response: {await res.Content.ReadAsStringAsync()}");
 
         if (!res.IsSuccessStatusCode)
@@ -38,7 +38,7 @@ public class ForecasterService(
             new KeyValuePair<string, string>("serviceId", serviceId.ToString())
         });
 
-        var res = await Client.PostAsync(Addr + "/train", content);
+        var res = await Client.PostAsync(AppSettings.Autoscaler.Apis.Forecaster + "/train", content);
 
         if (!res.IsSuccessStatusCode)
         {

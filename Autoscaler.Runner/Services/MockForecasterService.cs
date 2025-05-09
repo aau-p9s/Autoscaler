@@ -9,22 +9,23 @@ using Microsoft.Extensions.Logging;
 
 namespace Autoscaler.Runner.Services;
 
-public class MockForecasterService(AppSettings appSettings, ILogger logger) : ForecasterService(appSettings, logger)
+public class MockForecasterService(AppSettings appSettings, ILogger logger, IForecastRepository forecastRepository) : ForecasterService(appSettings, logger)
 {
-    private bool UseForecasterInDevelopmentMode => appSettings.Autoscaler.UseForecasterInDevelopmentMode;
-    public override async Task<bool> Forecast(Guid serviceId, IForecastRepository repository)
+    private IForecastRepository ForecastRepository => forecastRepository;
+    private bool UseForecasterInDevelopmentMode => AppSettings.Autoscaler.UseForecasterInDevelopmentMode;
+    public override async Task<bool> Forecast(Guid serviceId)
     {
         if (UseForecasterInDevelopmentMode)
         {
 
-            return await base.Forecast(serviceId, repository);
+            return await base.Forecast(serviceId);
         }
         Logger.LogWarning("Running Mock Forecaster");
         Thread.Sleep(2000);
        
         var forecast = await File.ReadAllTextAsync(
             "./DevelopmentData/forecast.json");
-        await repository.InsertForecast(new ForecastEntity(Guid.NewGuid(), serviceId,
+        await ForecastRepository.InsertForecast(new ForecastEntity(Guid.NewGuid(), serviceId,
             DateTime.Now, Guid.NewGuid(), forecast, false)); 
         
         return true;

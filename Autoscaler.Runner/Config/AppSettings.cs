@@ -27,6 +27,7 @@ public class Autoscaler
     public required Apis Apis { get; set; }
     public required bool UseForecasterInDevelopmentMode { get; set; }
     public required bool DevelopmentMode { get; set; }
+    public required bool StartRunner { get; set; }
     public required Pgsql Pgsql { get; set; }
 }
 

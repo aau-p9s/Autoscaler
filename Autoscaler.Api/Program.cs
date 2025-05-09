@@ -44,9 +44,10 @@ builder.Services.AddSingleton(appSettings);
 builder.Services.AddSingleton(logger);
 if (appSettings.Autoscaler.DevelopmentMode)
 {
-    builder.Services.AddSingleton<KubernetesService, MockKubernetesService>();
-    builder.Services.AddSingleton<PrometheusService, MockPrometheusService>();
-    builder.Services.AddSingleton<ForecasterService, MockForecasterService>();
+    // These have to be scoped for mock data
+    builder.Services.AddScoped<KubernetesService, MockKubernetesService>();
+    builder.Services.AddScoped<PrometheusService, MockPrometheusService>();
+    builder.Services.AddScoped<ForecasterService, MockForecasterService>();
 }
 else
 {
@@ -61,8 +62,11 @@ builder.Services.AddScoped<IForecastRepository, ForecastRepository>();
 builder.Services.AddScoped<IHistoricRepository, HistoricRepository>();
 builder.Services.AddScoped<Runner>();
 
-var runner = builder.Services.BuildServiceProvider().GetService<Runner>() ?? throw new NullReferenceException();
-await runner.MainLoop();
+if (appSettings.Autoscaler.StartRunner)
+{
+    var runner = builder.Services.BuildServiceProvider().GetService<Runner>() ?? throw new NullReferenceException();
+    await runner.MainLoop();
+}
 
 // Add services to the container.
 builder.Services.AddControllers();

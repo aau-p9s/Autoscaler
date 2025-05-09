@@ -56,7 +56,7 @@ public class Monitor(
                         await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
                     if (forecastEntity == null)
                     {
-                        await forecaster.Forecast(deployment.Service.Id, forecastRepository);
+                        await forecaster.Forecast(deployment.Service.Id);
                         forecastEntity =
                             await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id) ?? throw new ArgumentNullException(nameof(ForecastRepository), "Error, there's probably no forecasts in the database");
                     }
@@ -86,7 +86,7 @@ public class Monitor(
 
                     if (forecastIndex < 0 || forecastIndex >= cpuValues.Count)
                     {
-                        await forecaster.Forecast(deployment.Service.Id, forecastRepository);
+                        await forecaster.Forecast(deployment.Service.Id);
                         continue;
                     }
 

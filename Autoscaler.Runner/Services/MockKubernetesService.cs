@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Autoscaler.Config;
@@ -28,12 +29,20 @@ public class MockKubernetesService(AppSettings appSettings, ILogger logger) : Ku
         var kubeRes =
             await File.ReadAllTextAsync(
                 $"./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments_workload-api-deployment_scale.json");
-        var dummyJson = JObject.Parse(kubeRes);
-        var dummySpec = dummyJson["spec"];
-        var dummyReplicas = dummySpec?["replicas"];
-        if (dummyReplicas == null)
+        try
+        {
+            var dummyJson = JObject.Parse(kubeRes);
+            var dummySpec = dummyJson["spec"] ??
+                            throw new ArgumentNullException(nameof(dummyJson), "Error, mock data is invalid");
+            var dummyReplicas = dummySpec["replicas"] ??
+                                throw new ArgumentNullException(nameof(dummySpec), "Error, mock data spec is invalid");
+            return (int)dummyReplicas;
+        }
+        catch (ArgumentNullException e)
+        {
+            Utils.HandleException(e, Logger);
             return 0;
-        return (int)dummyReplicas;
+        }
     }
 
     protected override async Task<JObject?> GetPodsAsync(string serviceName)
