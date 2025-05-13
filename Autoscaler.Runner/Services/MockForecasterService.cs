@@ -13,12 +13,12 @@ public class MockForecasterService(AppSettings appSettings, ILogger logger, IFor
 {
     private IForecastRepository ForecastRepository => forecastRepository;
     private bool UseForecasterInDevelopmentMode => AppSettings.Autoscaler.UseForecasterInDevelopmentMode;
-    public override async Task<bool> Forecast(Guid serviceId)
+    public override async Task<bool> Forecast(Guid serviceId, int forecastHorizon)
     {
         if (UseForecasterInDevelopmentMode)
         {
 
-            return await base.Forecast(serviceId);
+            return await base.Forecast(serviceId, forecastHorizon);
         }
         Logger.LogWarning("Running Mock Forecaster");
         Thread.Sleep(2000);
@@ -32,7 +32,7 @@ public class MockForecasterService(AppSettings appSettings, ILogger logger, IFor
 
     }
 
-    public async override Task<bool> Retrain(Guid serviceId)
+    public async override Task<bool> Retrain(Guid serviceId, int forecastHorizon)
     {
        Logger.LogWarning("Running Mock Retrainer");
        Thread.Sleep(100000);

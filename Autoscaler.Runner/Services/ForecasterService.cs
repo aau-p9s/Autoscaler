@@ -17,9 +17,9 @@ public class ForecasterService(
     private HttpClient Client => new();
     protected ILogger Logger => logger;
 
-    public virtual async Task<bool> Forecast(Guid serviceId)
+    public virtual async Task<bool> Forecast(Guid serviceId, int forecastHorizon)
     {
-        var res = await Client.GetAsync(AppSettings.Autoscaler.Apis.Forecaster + "/predict/" + serviceId);
+        var res = await Client.GetAsync($"{AppSettings.Autoscaler.Apis.Forecaster}/predict/{serviceId}/{forecastHorizon}");
         Logger.LogDebug($"Forecaster forecast response: {await res.Content.ReadAsStringAsync()}");
 
         if (!res.IsSuccessStatusCode)
@@ -31,14 +31,9 @@ public class ForecasterService(
         return true;
     }
 
-    public virtual async  Task<bool> Retrain(Guid serviceId)
+    public virtual async  Task<bool> Retrain(Guid serviceId, int forecastHorizon)
     {
-        var content = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("serviceId", serviceId.ToString())
-        });
-
-        var res = await Client.PostAsync(AppSettings.Autoscaler.Apis.Forecaster + "/train", content);
+        var res = await Client.PostAsync($"{AppSettings.Autoscaler.Apis.Forecaster}/train/{serviceId}/{forecastHorizon}", new StringContent(""));
 
         if (!res.IsSuccessStatusCode)
         {

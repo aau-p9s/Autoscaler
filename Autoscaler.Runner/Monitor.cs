@@ -49,7 +49,7 @@ public class Monitor(
                 // Retrain periodically based on TrainInterval.
                 if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
                 {
-                    await forecaster.Retrain(deployment.Service.Id);
+                    await forecaster.Retrain(deployment.Service.Id, deployment.Settings.ScalePeriod);
                     clock.Restart();
                 }
 
@@ -62,7 +62,7 @@ public class Monitor(
                         await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
                     if (forecastEntity == null)
                     {
-                        await forecaster.Forecast(deployment.Service.Id);
+                        await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod);
                         forecastEntity =
                             await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id) ?? throw new ArgumentNullException(nameof(ForecastRepository), "Error, there's probably no forecasts in the database");
                     }
@@ -92,7 +92,7 @@ public class Monitor(
 
                     if (forecastIndex < 0 || forecastIndex >= cpuValues.Count)
                     {
-                        await forecaster.Forecast(deployment.Service.Id);
+                        await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod);
                         continue;
                     }
 
@@ -102,7 +102,7 @@ public class Monitor(
                     if (Math.Abs(zScore) > 3)
                     {
                         logger.LogInformation("Forecast error exceeds threshold, retraining model.");
-                        await forecaster.Retrain(deployment.Service.Id);
+                        await forecaster.Retrain(deployment.Service.Id, deployment.Settings.ScalePeriod);
                         clock.Restart();
                         continue;
                     }
