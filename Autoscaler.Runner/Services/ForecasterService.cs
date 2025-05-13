@@ -31,14 +31,9 @@ public class ForecasterService(
         return true;
     }
 
-    public virtual async  Task<bool> Retrain(Guid serviceId)
+    public virtual async  Task<bool> Retrain(Guid serviceId, int forecastHorizon)
     {
-        var content = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("serviceId", serviceId.ToString())
-        });
-
-        var res = await Client.PostAsync($"{AppSettings.Autoscaler.Apis.Forecaster}/train", content);
+        var res = await Client.PostAsync($"{AppSettings.Autoscaler.Apis.Forecaster}/train/{serviceId}/{forecastHorizon}", new StringContent(""));
 
         if (!res.IsSuccessStatusCode)
         {

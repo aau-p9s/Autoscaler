@@ -32,7 +32,7 @@ public class MockForecasterService(AppSettings appSettings, ILogger logger, IFor
 
     }
 
-    public async override Task<bool> Retrain(Guid serviceId)
+    public async override Task<bool> Retrain(Guid serviceId, int forecastHorizon)
     {
        Logger.LogWarning("Running Mock Retrainer");
        Thread.Sleep(100000);

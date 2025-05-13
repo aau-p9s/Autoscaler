@@ -49,7 +49,7 @@ public class Monitor(
                 // Retrain periodically based on TrainInterval.
                 if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
                 {
-                    await forecaster.Retrain(deployment.Service.Id);
+                    await forecaster.Retrain(deployment.Service.Id, deployment.Settings.ScalePeriod);
                     clock.Restart();
                 }
 
@@ -102,7 +102,7 @@ public class Monitor(
                     if (Math.Abs(zScore) > 3)
                     {
                         logger.LogInformation("Forecast error exceeds threshold, retraining model.");
-                        await forecaster.Retrain(deployment.Service.Id);
+                        await forecaster.Retrain(deployment.Service.Id, deployment.Settings.ScalePeriod);
                         clock.Restart();
                         continue;
                     }
