@@ -72,10 +72,10 @@ public class Monitor(
                     var forecast = JObject.Parse(forecastEntity.Forecast);
                     var replicas = await kubernetes.GetReplicas(deployment.Service.Name);
                     var actualCpu = await GetCpuUsage(historicRepository);
-                    var timestamps = forecast["timestamp"]?.ToObject<List<string>>() ??
+                    var timestamps = forecast["index"]?.ToObject<List<string>>() ??
                                      throw new ArgumentNullException(nameof(forecast),
                                          "Failed to get timestamps from forecast");
-                    var cpuValues = forecast["value"]?.ToObject<List<List<double>>>() ??
+                    var cpuValues = forecast["data"]?.ToObject<List<List<double>>>() ??
                                     throw new ArgumentNullException(nameof(forecast),
                                         "Failed to get value forecast");
 
