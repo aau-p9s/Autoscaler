@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Autoscaler.Config;
 using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.HistoricRepository;
+using Autoscaler.Persistence.ModelRepository;
 using Autoscaler.Persistence.ServicesRepository;
 using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner.Entities;
@@ -23,7 +24,8 @@ public class Runner(
     IServicesRepository servicesRepository,
     ISettingsRepository settingsRepository,
     IForecastRepository forecastRepository,
-    IHistoricRepository historicRepository)
+    IHistoricRepository historicRepository,
+    IModelRepository modelsRepository)
 {
     private List<DeploymentEntity> _deployments = new();
     private static List<Monitor> Monitors => new();
@@ -104,5 +106,6 @@ public class Runner(
             ModelHyperParams = "",
             OptunaConfig = ""
         });
+        await modelsRepository.InsertModelsForServiceAsync(id);
     }
 }

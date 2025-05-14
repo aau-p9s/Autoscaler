@@ -3,6 +3,7 @@ using Autoscaler.Persistence.BaselineModelRepository;
 using Autoscaler.Persistence.Extensions;
 using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.HistoricRepository;
+using Autoscaler.Persistence.ModelRepository;
 using Autoscaler.Persistence.ScaleSettingsRepository;
 using Autoscaler.Persistence.ServicesRepository;
 using Autoscaler.Persistence.SettingsRepository;
@@ -61,6 +62,7 @@ builder.Services.AddScoped<IServicesRepository, ServicesRepository>();
 builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
 builder.Services.AddScoped<IForecastRepository, ForecastRepository>();
 builder.Services.AddScoped<IHistoricRepository, HistoricRepository>();
+builder.Services.AddScoped<IModelRepository, ModelRepository>();
 builder.Services.AddScoped<Runner>();
 builder.Services.AddScoped<IBaselineModelRepository, BaselineModelRepository>();
 

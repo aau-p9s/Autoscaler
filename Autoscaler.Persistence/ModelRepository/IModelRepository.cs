@@ -7,4 +7,5 @@ namespace Autoscaler.Persistence.ModelRepository;
 public interface IModelRepository
 {
     public Task<IEnumerable<ModelEntity>> GetModelsForServiceAsync(Guid serviceId);
+    public Task<bool> InsertModelsForServiceAsync(Guid serviceId);
 }
