@@ -1,0 +1,20 @@
+{
+    "number": 16,
+    "value": 0.08208506928033658,
+    "params": {
+        "input_chunk_length": 331,
+        "output_chunk_length": 6,
+        "dropout": 0.15038793444885318,
+        "hidden_size": 22,
+        "num_attention_heads": 3,
+        "full_attention": true,
+        "feed_forward": "GatedResidualNetwork",
+        "hidden_continuous_size": 43,
+        "add_relative_index": true,
+        "trend_mode": "LayerNorm",
+        "use_static_covariates": false,
+        "likelihood": null
+    },
+    "trials": 29,
+    "failed_trials": 0
+}

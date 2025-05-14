@@ -1,0 +1,16 @@
+{
+    "number": 12,
+    "value": 0.0946469292079721,
+    "params": {
+        "hidden_fc_sizes": null,
+        "input_chunk_length": 27,
+        "output_chunk_length": 17,
+        "model": "RNN",
+        "hidden_dim": 12,
+        "dropout": 0.18099015760357795,
+        "n_rnn_layers": 1,
+        "activation": "GELU"
+    },
+    "trials": 25,
+    "failed_trials": 0
+}

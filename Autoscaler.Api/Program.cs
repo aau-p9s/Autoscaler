@@ -1,4 +1,5 @@
 using Autoscaler.Config;
+using Autoscaler.Persistence.BaselineModelRepository;
 using Autoscaler.Persistence.Extensions;
 using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.HistoricRepository;
@@ -61,7 +62,7 @@ builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
 builder.Services.AddScoped<IForecastRepository, ForecastRepository>();
 builder.Services.AddScoped<IHistoricRepository, HistoricRepository>();
 builder.Services.AddScoped<Runner>();
-
+builder.Services.AddScoped<IBaselineModelRepository, BaselineModelRepository>();
 
 
 // Add services to the container.
@@ -89,6 +90,11 @@ builder.WebHost.UseUrls($"{appSettings.Autoscaler.Host}:{appSettings.Autoscaler.
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var repo = scope.ServiceProvider.GetRequiredService<IBaselineModelRepository>();
+    await repo.InsertAllBaselineModels("./BaselineModels");
+}
 // Start runner
 if (appSettings.Autoscaler.StartRunner)
 {

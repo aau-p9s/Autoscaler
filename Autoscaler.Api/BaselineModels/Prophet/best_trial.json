@@ -1,0 +1,13 @@
+{
+    "number": 7,
+    "value": 0.08513592597817252,
+    "params": {
+        "add_seasonalities": "default",
+        "country_holidays": null,
+        "cap": 121.74416412589214,
+        "floor": 45.658458041887066,
+        "add_encoders": "month"
+    },
+    "trials": 20,
+    "failed_trials": 0
+}

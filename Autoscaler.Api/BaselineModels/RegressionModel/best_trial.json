@@ -1,0 +1,16 @@
+{
+    "number": 3,
+    "value": 0.09936275459887053,
+    "params": {
+        "output_chunk_length": 19,
+        "model": "GRU",
+        "lags": -1,
+        "lags_past_covariates": -1,
+        "lags_future_covariates": 3,
+        "multi_models": false,
+        "use_static_covariates": true,
+        "add_encoders": "month"
+    },
+    "trials": 16,
+    "failed_trials": 0
+}
