@@ -1,0 +1,17 @@
+{
+    "number": 22,
+    "value": 0.083557182217959,
+    "params": {
+        "input_chunk_length": 157,
+        "output_chunk_length": 19,
+        "dropout": 0.07968011019443777,
+        "activation": "GELU",
+        "num_blocks": 1,
+        "num_layers": 1,
+        "generic_architecture": true,
+        "expansion_coefficient_dim": 38,
+        "num_stacks": 2
+    },
+    "trials": 35,
+    "failed_trials": 0
+}

@@ -1,0 +1,16 @@
+{
+    "number": 1,
+    "value": 0.0951944362808945,
+    "params": {
+        "input_chunk_length": 37,
+        "output_chunk_length": 7,
+        "dropout": 0.4707782743408333,
+        "num_layers": 3,
+        "num_filters": 88,
+        "weight_norm": true,
+        "dilation_base": 2,
+        "kernel_size": 7
+    },
+    "trials": 14,
+    "failed_trials": 0
+}

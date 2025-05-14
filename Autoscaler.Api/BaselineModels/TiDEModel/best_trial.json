@@ -1,0 +1,22 @@
+{
+    "number": 12,
+    "value": 0.08366674328139537,
+    "params": {
+        "input_chunk_length": 217,
+        "output_chunk_length": 1,
+        "dropout": 0.49987847815649966,
+        "num_encoder_layers": 10,
+        "num_decoder_layers": 6,
+        "decoder_output_dim": 3,
+        "temporal_width_past": 73,
+        "temporal_width_future": 73,
+        "temporal_hidden_size_past": 70,
+        "temporal_hidden_size_future": 61,
+        "temporal_decoder_hidden": 6,
+        "use_layer_norm": false,
+        "hidden_size": 56,
+        "use_static_covariates": false
+    },
+    "trials": 25,
+    "failed_trials": 0
+}

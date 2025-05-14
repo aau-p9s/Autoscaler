@@ -1,0 +1,13 @@
+{
+    "number": 3,
+    "value": 0.094505787786389,
+    "params": {
+        "use_damped_trend": false,
+        "use_trend": true,
+        "use_box_cox": false,
+        "seasonal_periods": 24,
+        "use_arma_errors": null
+    },
+    "trials": 16,
+    "failed_trials": 0
+}

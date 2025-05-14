@@ -1,0 +1,10 @@
+{
+    "number": 29,
+    "value": 0.14170649058094054,
+    "params": {
+        "input_chunk_length": 311,
+        "output_chunk_length": 24
+    },
+    "trials": 42,
+    "failed_trials": 0
+}

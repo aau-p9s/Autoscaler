@@ -24,6 +24,8 @@ assert() {
     pass "assertion passed"
 }
 
+sleep 20
+
 echo test get services
 echo "GET $TARGET/services"
 curl -f -X "GET" $TARGET/services > $TEST_DIR/services.json 2>/dev/null

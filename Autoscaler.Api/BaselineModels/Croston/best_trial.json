@@ -1,0 +1,11 @@
+{
+    "number": 2,
+    "value": 0.11123807419471818,
+    "params": {
+        "version": "tsb",
+        "alpha_d": 0.17987581227494798,
+        "alpha_p": 0.19142924554085589
+    },
+    "trials": 15,
+    "failed_trials": 0
+}

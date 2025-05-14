@@ -1,0 +1,14 @@
+{
+    "number": 26,
+    "value": 0.09270956768507134,
+    "params": {
+        "input_chunk_length": 53,
+        "model": "GRU",
+        "hidden_dim": 52,
+        "dropout": 0.3896433234191291,
+        "n_rnn_layers": 1,
+        "training_length": 1445
+    },
+    "trials": 39,
+    "failed_trials": 0
+}

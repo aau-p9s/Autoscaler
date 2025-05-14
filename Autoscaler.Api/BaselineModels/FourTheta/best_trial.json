@@ -1,0 +1,13 @@
+{
+    "number": 18,
+    "value": 0.0951842011601119,
+    "params": {
+        "model_mode": "additive",
+        "season_mode": "additive",
+        "theta": 1,
+        "normalization": true,
+        "trend_mode": "linear"
+    },
+    "trials": 31,
+    "failed_trials": 0
+}
