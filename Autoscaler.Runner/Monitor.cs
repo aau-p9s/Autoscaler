@@ -270,7 +270,7 @@ public class Monitor(
             deployment.Service.Name,
             DateTime.Now.AddHours(-12),
             DateTime.Now,
-            60000);
+            deployment.Settings.ScalePeriod);
         await repository.UpsertHistoricDataAsync(data);
         
         var historic = JObject.Parse(data.HistoricData);

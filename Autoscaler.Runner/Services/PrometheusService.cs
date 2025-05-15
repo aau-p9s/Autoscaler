@@ -15,7 +15,7 @@ public class PrometheusService(
 {
     private AppSettings AppSettings => appSettings;
     private HttpClient Client => new();
-    private const string Rate = "1m";
+    private const string Rate = "5m";
     protected ILogger Logger => logger;
 
     public virtual async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start, DateTime end,
