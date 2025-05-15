@@ -88,11 +88,15 @@ public class Monitor(
                     var nextTime = DateTime.Now.Add(forecastHorizon)
                         .ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture);
                     logger.LogInformation(nextTime);
-                    var forecastIndex = timestamps.FindIndex(timestamp => timestamp.Contains(nextTime));
+                    var formattedTimestamps = timestamps.Select(item => DateTime.Parse(item).ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture)).ToList();
+                    var forecastIndex = formattedTimestamps.FindIndex(timestamp => timestamp.Contains(nextTime));
 
                     if (forecastIndex < 0 || forecastIndex >= cpuValues.Count)
                     {
                         await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod);
+                    }
+                    if (forecastIndex < 0)
+                    {
                         continue;
                     }
 
@@ -266,7 +270,7 @@ public class Monitor(
             deployment.Service.Name,
             DateTime.Now.AddHours(-12),
             DateTime.Now,
-            deployment.Settings.ScalePeriod);
+            60000);
         await repository.UpsertHistoricDataAsync(data);
         
         var historic = JObject.Parse(data.HistoricData);
