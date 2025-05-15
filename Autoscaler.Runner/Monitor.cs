@@ -225,8 +225,10 @@ public class Monitor(
     { 
         logger.LogDebug("Setting replica count");
         int desiredReplicas;
+        logger.LogDebug($"Next forecast value: {nextForecast} scaleup: {deployment.Settings.ScaleUp}");
         if (nextForecast > deployment.Settings.ScaleUp)
         {
+            logger.LogDebug("Scaling up...");
             desiredReplicas =
                 (int)Math.Ceiling(currentReplicas * (nextForecast / deployment.Settings.ScaleUp));
             if (desiredReplicas > deployment.Settings.MaxReplicas)
@@ -236,6 +238,7 @@ public class Monitor(
         }
         else if (nextForecast < deployment.Settings.ScaleDown)
         {
+            logger.LogDebug("Scaling down...");
             desiredReplicas =
                 (int)Math.Ceiling(currentReplicas * (nextForecast / deployment.Settings.ScaleDown));
             if (desiredReplicas < deployment.Settings.MinReplicas)
