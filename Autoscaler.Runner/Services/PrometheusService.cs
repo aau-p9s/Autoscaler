@@ -31,7 +31,7 @@ public class PrometheusService(
             { "network", "container_network_receive_bytes_total" }
         }[queryType];
         var queryString =
-            $"sum(rate({target}{{container=\"{deployment}\"}}[{Rate}])) / avg(machine_cpu_cores) * count({target}{{container=\"{deployment}\"}}) * 100";
+            $"sum(rate({target}{{container=\"{deployment}\"}}[{Rate}])) / (avg(machine_cpu_cores) * count({target}{{container=\"{deployment}\"}})) * 100";
         Logger.LogDebug($"PromQL: {queryString}");
 
         var query =
