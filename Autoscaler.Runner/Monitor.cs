@@ -120,7 +120,7 @@ public class Monitor(
                     }
 
                     // Kubernetes HPA scaling logic.
-                    await SetReplicas(nextForecast, replicas);
+                    await SetReplicas(nextForecast*100, replicas);
 
                     // Calculate delay based on processing time.
                     var processingTime = (DateTime.Now - startTime).TotalMilliseconds;
