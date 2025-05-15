@@ -29,6 +29,7 @@ namespace Autoscaler.Runner.Services
 
         public virtual async Task Update(string endpoint, object body)
         {
+            Logger.LogDebug($"Kubernetes endpoint: {endpoint}");
             try
             {
                 var request = new HttpRequestMessage
@@ -40,7 +41,10 @@ namespace Autoscaler.Runner.Services
                 };
 
                 request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
-                await Client.SendAsync(request);
+                var response = await Client.SendAsync(request);
+                var responseString = await response.Content.ReadAsStringAsync();
+                
+                Logger.LogDebug($"Kubernetes response raw: {responseString}");
             }
             catch (HttpRequestException e)
             { 
