@@ -101,7 +101,7 @@ public class Monitor(
                     }
 
                     var nextForecast = cpuValues[forecastIndex][0];
-                    var zScore = GetZScore(nextForecast, actualCpu);
+                    var zScore = GetZScore(nextForecast*100, actualCpu);
 
                     if (Math.Abs(zScore) > 3)
                     {
@@ -197,11 +197,12 @@ public class Monitor(
         var forecastError = Math.Abs(nextForecast - actualCpu);
         logger.LogInformation($"Actual CPU: {actualCpu}, Forecast: {nextForecast}, Error: {forecastError}");
 
-        if (!ForecastErrorHistory.ContainsKey(deployment.Service.Id))
+        if (!ForecastErrorHistory.TryGetValue(deployment.Service.Id, out var value))
         {
-            ForecastErrorHistory[deployment.Service.Id] = new List<double>();
+            value = new();
+            ForecastErrorHistory[deployment.Service.Id] = new();
         }
-        var errorHistory = ForecastErrorHistory[deployment.Service.Id];
+        var errorHistory = value;
         errorHistory.Add(forecastError);
 
         // Maintain a rolling window (e.g., last 100 error measurements)
