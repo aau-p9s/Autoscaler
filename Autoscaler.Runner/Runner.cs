@@ -102,9 +102,7 @@ public class Runner(
             ScaleDown = 20,
             MinReplicas = 1,
             MaxReplicas = 10,
-            TrainInterval = 600000,
-            ModelHyperParams = "",
-            OptunaConfig = ""
+            TrainInterval = 600000
         });
         await modelsRepository.InsertModelsForServiceAsync(id);
     }

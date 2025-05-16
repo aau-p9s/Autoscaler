@@ -101,17 +101,7 @@ public class Monitor(
                     }
 
                     var nextForecast = cpuValues[forecastIndex][0];
-                    var (meanError, stdError, zScore) = GetZScore(nextForecast*100, actualCpu);
-
-                    if (Math.Abs(zScore) > 3)
-                    {
-                        logger.LogInformation("Forecast error exceeds threshold, retraining model.");
-                        await forecaster.Retrain(deployment.Service.Id, deployment.Settings.ScalePeriod);
-                        clock.Restart();
-                        continue;
-                    }
-
-                    logger.LogDebug("Not retraining model, continuing");
+                    var (meanError, stdError) = GetError(nextForecast*100, actualCpu);
 
                     if (timestamps.Count == 0 || cpuValues.Count == 0)
                     {
@@ -200,7 +190,7 @@ public class Monitor(
         }
     }
 
-    private Tuple<double, double, double> GetZScore(double nextForecast, double actualCpu)
+    private Tuple<double, double> GetError(double nextForecast, double actualCpu)
     {
         var forecastError = Math.Abs(nextForecast - actualCpu);
         logger.LogInformation($"Actual CPU: {actualCpu}, Forecast: {nextForecast}, Error: {forecastError}");
@@ -223,10 +213,9 @@ public class Monitor(
         var stdError = Math.Sqrt(errorHistory.Average(e => Math.Pow(e - meanError, 2)));
 
         // Compute the z-score for the current forecast error.
-        var zScore = stdError == 0 ? 0 : (forecastError - meanError) / stdError;
-        logger.LogInformation($"Mean error: {meanError:F2}, Std: {stdError:F2}, z-score: {zScore:F2}");
+        logger.LogInformation($"Mean error: {meanError:F2}, Std: {stdError:F2}");
 
-        return new (meanError, stdError, zScore);
+        return new (meanError, stdError);
     }
 
     private async Task SetReplicas(double nextForecast, int currentReplicas)

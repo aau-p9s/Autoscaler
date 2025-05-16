@@ -12,8 +12,6 @@ public class SettingsEntity
     public int MaxReplicas { get; set; }
     public int ScalePeriod { get; set; }
     public int TrainInterval { get; set; }
-    public string ModelHyperParams { get; set; }
-    public string OptunaConfig { get; set; }
 
     //Empty constructor for Dapper
     public SettingsEntity()
@@ -21,7 +19,7 @@ public class SettingsEntity
     }
 
     public SettingsEntity(Guid id, Guid serviceId, int scaleUp, int scaleDown, int minReplicas, int maxReplicas,
-        int scalePeriod, int trainInterval, string modelHyperParams, string optunaConfig)
+        int scalePeriod, int trainInterval)
     {
         Id = id;
         ServiceId = serviceId;
@@ -31,7 +29,5 @@ public class SettingsEntity
         MaxReplicas = maxReplicas;
         ScalePeriod = scalePeriod;
         TrainInterval = trainInterval;
-        ModelHyperParams = modelHyperParams;
-        OptunaConfig = optunaConfig;
     }
 }
