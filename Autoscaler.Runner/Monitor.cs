@@ -101,7 +101,7 @@ public class Monitor(
                     }
 
                     var nextForecast = cpuValues[forecastIndex][0];
-                    var zScore = GetZScore(nextForecast*100, actualCpu);
+                    var (meanError, stdError, zScore) = GetZScore(nextForecast*100, actualCpu);
 
                     if (Math.Abs(zScore) > 3)
                     {
@@ -120,7 +120,15 @@ public class Monitor(
                     }
 
                     // Kubernetes HPA scaling logic.
-                    await SetReplicas(nextForecast*100, replicas);
+                    if (meanError > 20)
+                    {
+                        logger.LogWarning("Warning, forecast is too far off real cpu usage, falling back to real usage");
+                        await SetReplicas(actualCpu, replicas);
+                    }
+                    else
+                    {
+                        await SetReplicas(nextForecast * 100, replicas);
+                    }
 
                     // Calculate delay based on processing time.
                     var processingTime = (DateTime.Now - startTime).TotalMilliseconds;
@@ -192,7 +200,7 @@ public class Monitor(
         }
     }
 
-    private double GetZScore(double nextForecast, double actualCpu)
+    private Tuple<double, double, double> GetZScore(double nextForecast, double actualCpu)
     {
         var forecastError = Math.Abs(nextForecast - actualCpu);
         logger.LogInformation($"Actual CPU: {actualCpu}, Forecast: {nextForecast}, Error: {forecastError}");
@@ -218,7 +226,7 @@ public class Monitor(
         var zScore = stdError == 0 ? 0 : (forecastError - meanError) / stdError;
         logger.LogInformation($"Mean error: {meanError:F2}, Std: {stdError:F2}, z-score: {zScore:F2}");
 
-        return zScore;
+        return new (meanError, stdError, zScore);
     }
 
     private async Task SetReplicas(double nextForecast, int currentReplicas)
