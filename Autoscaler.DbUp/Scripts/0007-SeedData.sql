@@ -8,9 +8,9 @@ VALUES ('1a2b3c4d-1111-2222-3333-444455556666', 'Image Recognition', true),
 
 -- Insert sample data into Settings table
 INSERT INTO Settings (Id, ServiceId, ScaleUp, ScaleDown, MinReplicas, MaxReplicas, ScalePeriod, TrainInterval)
-VALUES ('a1b2c3d4-aaaa-bbbb-cccc-ddddeeeeffff', '1a2b3c4d-1111-2222-3333-444455556666', 5, 2, 1, 10, 10, 30)
+VALUES ('a1b2c3d4-aaaa-bbbb-cccc-ddddeeeeffff', '1a2b3c4d-1111-2222-3333-444455556666', 5, 2, 1, 10, 10, 30),
 
-       ('b2c3d4e5-aaaa-bbbb-cccc-ddddeeeeffff', '2b3c4d5e-1111-2222-3333-444455556666', 3, 1, 1, 10, 15, 45)
+       ('b2c3d4e5-aaaa-bbbb-cccc-ddddeeeeffff', '2b3c4d5e-1111-2222-3333-444455556666', 3, 1, 1, 10, 15, 45),
 
        ('c3d4e5f6-aaaa-bbbb-cccc-ddddeeeeffff', '3c4d5e6f-1111-2222-3333-444455556666', 10, 5, 1, 10, 20, 60)
 
