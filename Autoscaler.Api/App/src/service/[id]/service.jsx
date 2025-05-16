@@ -501,20 +501,6 @@ const ServicePage = (name) => {
                         </div>
                     )}
                 </div>
-
-                {/* Right Sidebar - Model Settings */}
-                <div className="col-md-2 sidebar-right">
-                    <h3>Model Settings</h3>
-                    {modelSettingsError && <div className="response error">{modelSettingsError}</div>}
-                    <div className="current-values mb-3">
-                        <h4>Model Hyper Parameters</h4>
-                        {modelHyperParams ? renderJson(modelHyperParams) : <p>Loading...</p>}
-                    </div>
-                    <div className="current-values mb-3">
-                        <h4>Optuna Config</h4>
-                        {optunaConfig ? renderJson(optunaConfig) : <p>Loading...</p>}
-                    </div>
-                </div>
             </div>
         </div>
     );
