@@ -15,7 +15,7 @@ public class PrometheusService(
 {
     private AppSettings AppSettings => appSettings;
     private HttpClient Client => new();
-    private const string Rate = "1m";
+    private const string Rate = "5m";
     protected ILogger Logger => logger;
 
     public virtual async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start, DateTime end,
@@ -31,7 +31,7 @@ public class PrometheusService(
             { "network", "container_network_receive_bytes_total" }
         }[queryType];
         var queryString =
-            $"sum(rate({target}{{container=\"{deployment}\"}}[{Rate}])) / sum(machine_cpu_cores) * 100";
+            $"avg(rate({target}{{container=\"{deployment}\"}}[{Rate}])) / avg(machine_cpu_cores) * 100";
         Logger.LogDebug($"PromQL: {queryString}");
 
         var query =

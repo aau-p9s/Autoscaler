@@ -31,6 +31,11 @@ const ServicesGrid = () => {
         };
         fetchServices();
     }, []);
+    
+    async function discoverDeployments() {
+        await fetch("/services/start")
+        window.location.reload()
+    }
 
     if (loading) return <div className="container mt-4"><p>Loading...</p></div>;
     if (error) return <div className="container mt-4"><p className="text-danger">Error: {error}</p></div>;
@@ -39,6 +44,7 @@ const ServicesGrid = () => {
         <div>
             <div className="nav-bar">
                 <h2>Service Control Panel</h2>
+                <button onClick={discoverDeployments} className="btn btn-primary">Discover Deployments</button>
             </div>
             <div className="row">
                 {/* Column for services with autoscalingEnables = true */}

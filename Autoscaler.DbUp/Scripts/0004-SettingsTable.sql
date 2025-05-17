@@ -9,9 +9,7 @@ CREATE TABLE IF NOT EXISTS Settings
     MinReplicas      integer NOT NULL,
     MaxReplicas      integer NOT NULL,
     ScalePeriod      integer NOT NULL,
-    TrainInterval    integer NOT NULL,
-    ModelHyperParams jsonb,
-    OptunaConfig     jsonb
+    TrainInterval    integer NOT NULL
 );
 
 COMMIT;

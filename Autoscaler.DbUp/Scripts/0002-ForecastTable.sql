@@ -3,7 +3,7 @@ START TRANSACTION;
 CREATE TABLE IF NOT EXISTS Forecasts
 (
     Id              UUID      NOT NULL PRIMARY KEY,
-    ServiceId       UUID      NOT NULL,
+    ServiceId       UUID      NOT NULL UNIQUE,
     CreatedAt       timestamp NOT NULL,
     ModelId         UUID      NOT NULL,
     Forecast        jsonb     NOT NULL,

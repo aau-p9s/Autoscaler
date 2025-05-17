@@ -28,7 +28,7 @@ public class Runner(
     IModelRepository modelsRepository)
 {
     private List<DeploymentEntity> _deployments = new();
-    private static List<Monitor> Monitors => new();
+    private static Dictionary<DeploymentEntity, Monitor> Monitors => new();
     private CancellationTokenSource CancellationTokenSource => new();
 
     public async Task MainLoop()
@@ -49,8 +49,10 @@ public class Runner(
         
         foreach (var deployment in _deployments)
         {
+            if (Monitors.ContainsKey(deployment))
+                continue;
             var monitor = new Monitor(deployment, CancellationTokenSource.Token, logger, forecaster, prometheus, kubernetes, historicRepository, forecastRepository, settingsRepository);
-            Monitors.Add(monitor);
+            Monitors.Add(deployment, monitor);
             monitor.Start();
             logger.LogInformation($"Started monitoring thread for {deployment.Service.Name}");
         }
@@ -102,9 +104,7 @@ public class Runner(
             ScaleDown = 20,
             MinReplicas = 1,
             MaxReplicas = 10,
-            TrainInterval = 600000,
-            ModelHyperParams = "",
-            OptunaConfig = ""
+            TrainInterval = 600000
         });
         await modelsRepository.InsertModelsForServiceAsync(id);
     }

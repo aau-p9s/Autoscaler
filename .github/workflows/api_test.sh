@@ -48,9 +48,7 @@ assert "$(cat $TEST_DIR/settings.json)" '{
                                            "minReplicas": 1,
                                            "maxReplicas": 10,
                                            "scalePeriod": 10,
-                                           "trainInterval": 30,
-                                           "modelHyperParams": "{\"epochs\": 50, \"batch_size\": 32, \"learning_rate\": 0.01}",
-                                           "optunaConfig": "{\"n_trials\": 100, \"direction\": \"maximize\"}"
+                                           "trainInterval": 30
                                          }'
 
 echo test upsert service

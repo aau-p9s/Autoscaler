@@ -27,24 +27,13 @@ public class SettingsRepository : ISettingsRepository
 
     public async Task<bool> UpsertSettingsAsync(SettingsEntity settings)
     {
-        string modelHyperParams =
-            string.IsNullOrWhiteSpace(settings.ModelHyperParams) ? null : settings.ModelHyperParams;
-        string optunaConfig = string.IsNullOrWhiteSpace(settings.OptunaConfig) ? null : settings.OptunaConfig;
 
         var query = $@"
         INSERT INTO {TableName} (
-            Id, ServiceId, ScaleUp, ScaleDown, MinReplicas, MaxReplicas, ScalePeriod, TrainInterval, ModelHyperParams, OptunaConfig
+            Id, ServiceId, ScaleUp, ScaleDown, MinReplicas, MaxReplicas, ScalePeriod, TrainInterval
         ) 
         VALUES (
-            @Id, @ServiceId, @ScaleUp, @ScaleDown, @MinReplicas, @MaxReplicas, @ScalePeriod, @TrainInterval,
-            COALESCE(
-                (SELECT ModelHyperParams FROM {TableName} WHERE ServiceId = @ServiceId),
-                CASE WHEN @ModelHyperParams IS NULL THEN NULL ELSE @ModelHyperParams::jsonb END
-            ),
-            COALESCE(
-                (SELECT OptunaConfig FROM {TableName} WHERE ServiceId = @ServiceId),
-                CASE WHEN @OptunaConfig IS NULL THEN NULL ELSE @OptunaConfig::jsonb END
-            )
+            @Id, @ServiceId, @ScaleUp, @ScaleDown, @MinReplicas, @MaxReplicas, @ScalePeriod, @TrainInterval
         )
         ON CONFLICT (ServiceId) DO UPDATE SET
             ScaleUp = @ScaleUp,
@@ -52,9 +41,7 @@ public class SettingsRepository : ISettingsRepository
             MinReplicas = @MinReplicas,
             MaxReplicas = @MaxReplicas,
             ScalePeriod = @ScalePeriod,
-            TrainInterval = @TrainInterval,
-            ModelHyperParams = COALESCE(EXCLUDED.ModelHyperParams, {TableName}.ModelHyperParams),
-            OptunaConfig = COALESCE(EXCLUDED.OptunaConfig, {TableName}.OptunaConfig);";
+            TrainInterval = @TrainInterval";
 
         var result = await Connection.ExecuteAsync(query, new
         {
@@ -66,8 +53,6 @@ public class SettingsRepository : ISettingsRepository
             MaxReplicas = settings.MaxReplicas,
             ScalePeriod = settings.ScalePeriod,
             TrainInterval = settings.TrainInterval,
-            ModelHyperParams = modelHyperParams,
-            OptunaConfig = optunaConfig
         });
 
         return result > 0;

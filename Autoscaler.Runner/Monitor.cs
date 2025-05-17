@@ -72,10 +72,10 @@ public class Monitor(
                     var forecast = JObject.Parse(forecastEntity.Forecast);
                     var replicas = await kubernetes.GetReplicas(deployment.Service.Name);
                     var actualCpu = await GetCpuUsage(historicRepository);
-                    var timestamps = forecast["timestamp"]?.ToObject<List<string>>() ??
+                    var timestamps = forecast["index"]?.ToObject<List<string>>() ??
                                      throw new ArgumentNullException(nameof(forecast),
                                          "Failed to get timestamps from forecast");
-                    var cpuValues = forecast["value"]?.ToObject<List<List<double>>>() ??
+                    var cpuValues = forecast["data"]?.ToObject<List<List<double>>>() ??
                                     throw new ArgumentNullException(nameof(forecast),
                                         "Failed to get value forecast");
 
@@ -88,26 +88,20 @@ public class Monitor(
                     var nextTime = DateTime.Now.Add(forecastHorizon)
                         .ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture);
                     logger.LogInformation(nextTime);
-                    var forecastIndex = timestamps.FindIndex(timestamp => timestamp.Contains(nextTime));
+                    var formattedTimestamps = timestamps.Select(item => DateTime.Parse(item).ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture)).ToList();
+                    var forecastIndex = formattedTimestamps.FindIndex(timestamp => timestamp.Contains(nextTime));
 
                     if (forecastIndex < 0 || forecastIndex >= cpuValues.Count)
                     {
                         await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod);
+                    }
+                    if (forecastIndex < 0)
+                    {
                         continue;
                     }
 
                     var nextForecast = cpuValues[forecastIndex][0];
-                    var zScore = GetZScore(nextForecast, actualCpu);
-
-                    if (Math.Abs(zScore) > 3)
-                    {
-                        logger.LogInformation("Forecast error exceeds threshold, retraining model.");
-                        await forecaster.Retrain(deployment.Service.Id, deployment.Settings.ScalePeriod);
-                        clock.Restart();
-                        continue;
-                    }
-
-                    logger.LogDebug("Not retraining model, continuing");
+                    var (meanError, stdError) = GetError(nextForecast*100, actualCpu);
 
                     if (timestamps.Count == 0 || cpuValues.Count == 0)
                     {
@@ -116,7 +110,15 @@ public class Monitor(
                     }
 
                     // Kubernetes HPA scaling logic.
-                    await SetReplicas(nextForecast, replicas);
+                    if (meanError > 20)
+                    {
+                        logger.LogWarning("Warning, forecast is too far off real cpu usage, falling back to real usage");
+                        await SetReplicas(actualCpu, replicas);
+                    }
+                    else
+                    {
+                        await SetReplicas(nextForecast * 100, replicas);
+                    }
 
                     // Calculate delay based on processing time.
                     var processingTime = (DateTime.Now - startTime).TotalMilliseconds;
@@ -188,16 +190,17 @@ public class Monitor(
         }
     }
 
-    private double GetZScore(double nextForecast, double actualCpu)
+    private Tuple<double, double> GetError(double nextForecast, double actualCpu)
     {
         var forecastError = Math.Abs(nextForecast - actualCpu);
         logger.LogInformation($"Actual CPU: {actualCpu}, Forecast: {nextForecast}, Error: {forecastError}");
 
-        if (!ForecastErrorHistory.ContainsKey(deployment.Service.Id))
+        if (!ForecastErrorHistory.TryGetValue(deployment.Service.Id, out var value))
         {
-            ForecastErrorHistory[deployment.Service.Id] = new List<double>();
+            value = new();
+            ForecastErrorHistory[deployment.Service.Id] = new();
         }
-        var errorHistory = ForecastErrorHistory[deployment.Service.Id];
+        var errorHistory = value;
         errorHistory.Add(forecastError);
 
         // Maintain a rolling window (e.g., last 100 error measurements)
@@ -210,18 +213,19 @@ public class Monitor(
         var stdError = Math.Sqrt(errorHistory.Average(e => Math.Pow(e - meanError, 2)));
 
         // Compute the z-score for the current forecast error.
-        var zScore = stdError == 0 ? 0 : (forecastError - meanError) / stdError;
-        logger.LogInformation($"Mean error: {meanError:F2}, Std: {stdError:F2}, z-score: {zScore:F2}");
+        logger.LogInformation($"Mean error: {meanError:F2}, Std: {stdError:F2}");
 
-        return zScore;
+        return new (meanError, stdError);
     }
 
     private async Task SetReplicas(double nextForecast, int currentReplicas)
     { 
         logger.LogDebug("Setting replica count");
         int desiredReplicas;
+        logger.LogDebug($"Next forecast value: {nextForecast} scaleup: {deployment.Settings.ScaleUp}");
         if (nextForecast > deployment.Settings.ScaleUp)
         {
+            logger.LogDebug("Scaling up...");
             desiredReplicas =
                 (int)Math.Ceiling(currentReplicas * (nextForecast / deployment.Settings.ScaleUp));
             if (desiredReplicas > deployment.Settings.MaxReplicas)
@@ -231,6 +235,7 @@ public class Monitor(
         }
         else if (nextForecast < deployment.Settings.ScaleDown)
         {
+            logger.LogDebug("Scaling down...");
             desiredReplicas =
                 (int)Math.Ceiling(currentReplicas * (nextForecast / deployment.Settings.ScaleDown));
             if (desiredReplicas < deployment.Settings.MinReplicas)
