@@ -42,7 +42,7 @@ const ServicePage = (name) => {
     const [modelSettingsError, setModelSettingsError] = useState(null);
     const fetchCurrentScaleValues = async () => {
         try {
-            const res = await fetch(`/${params.id}/settings`, { method: 'GET' });
+            const res = await fetch(`/services/${params.id}/settings`, { method: 'GET' });
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`);
             }
