@@ -38,6 +38,14 @@ public class Monitor(
             clock.Start();
             while (!cancellationToken.IsCancellationRequested)
             {
+                var data = await prometheus.QueryRange(
+                    deployment.Service.Id,
+                    deployment.Service.Name,
+                    DateTime.Now.AddHours(-12),
+                    DateTime.Now,
+                    deployment.Settings.ScalePeriod);
+                await historicRepository.UpsertHistoricDataAsync(data);
+                
                 if (!deployment.Service.AutoscalingEnabled)
                 {
                     logger.LogDebug("Autoscaling is disabled, waiting...");
@@ -71,7 +79,6 @@ public class Monitor(
 
                     var forecast = JObject.Parse(forecastEntity.Forecast);
                     var replicas = await kubernetes.GetReplicas(deployment.Service.Name);
-                    var actualCpu = await GetCpuUsage(historicRepository);
                     var timestamps = forecast["index"]?.ToObject<List<string>>() ??
                                      throw new ArgumentNullException(nameof(forecast),
                                          "Failed to get timestamps from forecast");
@@ -101,24 +108,14 @@ public class Monitor(
                     }
 
                     var nextForecast = cpuValues[forecastIndex][0];
-                    var (meanError, stdError) = GetError(nextForecast*100, actualCpu);
 
                     if (timestamps.Count == 0 || cpuValues.Count == 0)
                     {
                         logger.LogError("Forecast data format is invalid");
                         continue;
                     }
-
-                    // Kubernetes HPA scaling logic.
-                    if (meanError > 20)
-                    {
-                        logger.LogWarning("Warning, forecast is too far off real cpu usage, falling back to real usage");
-                        await SetReplicas(actualCpu, replicas);
-                    }
-                    else
-                    {
-                        await SetReplicas(nextForecast * 100, replicas);
-                    }
+                    
+                    await SetReplicas(nextForecast * 100, replicas);
 
                     // Calculate delay based on processing time.
                     var processingTime = (DateTime.Now - startTime).TotalMilliseconds;
@@ -190,34 +187,6 @@ public class Monitor(
         }
     }
 
-    private Tuple<double, double> GetError(double nextForecast, double actualCpu)
-    {
-        var forecastError = Math.Abs(nextForecast - actualCpu);
-        logger.LogInformation($"Actual CPU: {actualCpu}, Forecast: {nextForecast}, Error: {forecastError}");
-
-        if (!ForecastErrorHistory.TryGetValue(deployment.Service.Id, out var value))
-        {
-            value = new();
-            ForecastErrorHistory[deployment.Service.Id] = new();
-        }
-        var errorHistory = value;
-        errorHistory.Add(forecastError);
-
-        // Maintain a rolling window (e.g., last 100 error measurements)
-        if (errorHistory.Count > 100)
-        {
-            errorHistory.RemoveAt(0);
-        }
-
-        var meanError = errorHistory.Average();
-        var stdError = Math.Sqrt(errorHistory.Average(e => Math.Pow(e - meanError, 2)));
-
-        // Compute the z-score for the current forecast error.
-        logger.LogInformation($"Mean error: {meanError:F2}, Std: {stdError:F2}");
-
-        return new (meanError, stdError);
-    }
-
     private async Task SetReplicas(double nextForecast, int currentReplicas)
     { 
         logger.LogDebug("Setting replica count");
@@ -262,21 +231,5 @@ public class Monitor(
         await kubernetes.Update(
             $"/apis/apps/v1/namespaces/default/deployments/{deployment.Service.Name}/scale",
             jsonObject);
-    }
-
-    private async Task<double> GetCpuUsage(IHistoricRepository repository)
-    {
-        var data = await prometheus.QueryRange(
-            deployment.Service.Id,
-            deployment.Service.Name,
-            DateTime.Now.AddHours(-12),
-            DateTime.Now,
-            deployment.Settings.ScalePeriod);
-        await repository.UpsertHistoricDataAsync(data);
-        
-        var historic = JObject.Parse(data.HistoricData);
-        var newestHistorical = historic["data"]?["result"]?[0]?["values"]?.Last ?? throw new ArgumentNullException(nameof(historic), "Error, historic data is null, failed to get newest historical");
-
-        return (double?)newestHistorical[1] ?? throw new ArgumentNullException(nameof(newestHistorical), "Error, newest historical is null");
     }
 }
