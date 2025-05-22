@@ -68,8 +68,8 @@ const ServicePage = (name) => {
             scaleDown: parseFloat(scaleDownPercentage),
             minReplicas: parseInt(minReplicas, 10),
             maxReplicas: parseInt(maxReplicas, 10),
-            scalePeriod: parseInt(interval, 10),
-            trainInterval: parseInt(trainInterval, 10),
+            scalePeriod: parseInt(interval, 10) * 60000,
+            trainInterval: parseInt(trainInterval, 10) * 3600000,
             modelHyperParams: typeof modelHyperParams === 'object' ? JSON.stringify(modelHyperParams) : modelHyperParams,
             optunaConfig: typeof optunaConfig === 'object' ? JSON.stringify(optunaConfig) : optunaConfig,
         };
@@ -383,7 +383,7 @@ const ServicePage = (name) => {
                 </Link>
             </div>
 
-            <div style={{ height: "100vh", width: "100vw" }} className="row">
+            <div style={{ height: "120vh", width: "120vw" }} className="row">
                 {/* Left Sidebar - CPU Scaling */}
                 <div className="col-md-2 sidebar">
                     <h3>Scale Settings</h3>
@@ -447,23 +447,27 @@ const ServicePage = (name) => {
                             />
                         </div>
                         <div className="form-group mb-2">
-                            <label>Interval (ms)</label>
+                            <label>Interval (min 1 minute)</label>
                             <input
                                 type="number"
                                 className="form-control"
                                 value={interval}
                                 onChange={(e) => setInterval(e.target.value)}
                                 required
+                                min={1}
+                                step={1}
                             />
                         </div>
                         <div className="form-group mb-2">
-                            <label>Train Interval (ms)</label>
+                            <label>Train Interval (min 1 hour)</label>
                             <input
                                 type="number"
                                 className="form-control"
                                 value={trainInterval}
                                 onChange={(e) => setTrainInterval(e.target.value)}
                                 required
+                                min={1}
+                                step={1}
                             />
                         </div>
                         <button type="submit" className="submit-button">Submit</button>
