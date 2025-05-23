@@ -1,12 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35707.178 d17.12
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoscaler.Api", "Autoscaler.Api\Autoscaler.Api.csproj", "{3C20A336-B7FE-4BCF-A5B1-566C0AA36454}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Autoscaler.DbUp", "Autoscaler.DbUp\Autoscaler.DbUp.csproj", "{4996B481-D7F9-4A25-A1A4-9218BEAF6CC3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7558}") = "Autoscaler.Persistence", "Autoscaler.Persistence\Autoscaler.Persistence.csproj", "{046F8421-CE79-452A-AF1C-1E1A74DA12B2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoscaler.Persistence", "Autoscaler.Persistence\Autoscaler.Persistence.csproj", "{046F8421-CE79-452A-AF1C-1E1A74DA12B2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7557}") = "Autoscaler.Runner", "Autoscaler.Runner\Autoscaler.Runner.csproj", "{046F8421-CE79-452A-AF1C-1E1A74DA12B1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoscaler.Runner", "Autoscaler.Runner\Autoscaler.Runner.csproj", "{046F8421-CE79-452A-AF1C-1E1A74DA12B1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Autoscaler.Tests", "Autoscaler.Tests\Autoscaler.Tests.csproj", "{24DBDE5A-20E4-47EB-9D21-84ABDA1E2EB5}"
 EndProject
@@ -22,13 +25,22 @@ Global
 		{3C20A336-B7FE-4BCF-A5B1-566C0AA36454}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4996B481-D7F9-4A25-A1A4-9218BEAF6CC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4996B481-D7F9-4A25-A1A4-9218BEAF6CC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4996B481-D7F9-4A25-A1A4-9218BEAF6CC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4996B481-D7F9-4A25-A1A4-9218BEAF6CC3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{046F8421-CE79-452A-AF1C-1E1A74DA12B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{046F8421-CE79-452A-AF1C-1E1A74DA12B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{046F8421-CE79-452A-AF1C-1E1A74DA12B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{046F8421-CE79-452A-AF1C-1E1A74DA12B2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{046F8421-CE79-452A-AF1C-1E1A74DA12B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-								{046F8421-CE79-452A-AF1C-1E1A74DA12B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{046F8421-CE79-452A-AF1C-1E1A74DA12B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{046F8421-CE79-452A-AF1C-1E1A74DA12B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{046F8421-CE79-452A-AF1C-1E1A74DA12B1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{24DBDE5A-20E4-47EB-9D21-84ABDA1E2EB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{24DBDE5A-20E4-47EB-9D21-84ABDA1E2EB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24DBDE5A-20E4-47EB-9D21-84ABDA1E2EB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24DBDE5A-20E4-47EB-9D21-84ABDA1E2EB5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
