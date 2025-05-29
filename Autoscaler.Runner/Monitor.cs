@@ -36,6 +36,7 @@ public class Monitor(
         {
             var clock = new Stopwatch();
             clock.Start();
+            var counter = 0;
             while (!cancellationToken.IsCancellationRequested)
             {
                 var data = await prometheus.QueryRange(
@@ -55,10 +56,11 @@ public class Monitor(
                 await UpdateSettings();
 
                 // Retrain periodically based on TrainInterval.
-                if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval)
+                if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval || counter == 0)
                 {
                     await forecaster.Retrain(deployment.Service.Id, deployment.Settings.ScalePeriod);
                     clock.Restart();
+                    counter++;
                 }
 
                 var startTime = DateTime.Now;
