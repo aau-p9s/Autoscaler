@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,11 +54,11 @@ public class ForecasterService(
 
     private async Task Wait(string url)
     {
-        var status = "True";
-        while (status == "True")
+        var status = HttpStatusCode.Accepted;
+        while (status != HttpStatusCode.OK)
         {
             var res = await Client.GetAsync(url);
-            status = await res.Content.ReadAsStringAsync();
+            status = res.StatusCode;
             Thread.Sleep(1000);
         }
     }
