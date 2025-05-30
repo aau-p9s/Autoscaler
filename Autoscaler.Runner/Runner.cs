@@ -99,12 +99,12 @@ public class Runner(
         {
             Id = Guid.NewGuid(),
             ServiceId = id,
-            ScalePeriod = 60000,
+            ScalePeriod = 3600000,
             ScaleUp = 80,
             ScaleDown = 20,
             MinReplicas = 1,
             MaxReplicas = 10,
-            TrainInterval = 600000
+            TrainInterval = 3600000
         });
         await modelsRepository.InsertModelsForServiceAsync(id);
     }

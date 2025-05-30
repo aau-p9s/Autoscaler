@@ -58,7 +58,7 @@ public class Monitor(
                 // Retrain periodically based on TrainInterval.
                 if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval || counter == 0)
                 {
-                    await forecaster.Retrain(deployment.Service.Id, deployment.Settings.ScalePeriod);
+                    await forecaster.Retrain(deployment.Service.Id, deployment.Settings.ScalePeriod / 60000);
                     clock.Restart();
                     counter++;
                 }
@@ -120,10 +120,10 @@ public class Monitor(
                     await SetReplicas(nextForecast * 100, replicas);
 
                     // Calculate delay based on processing time.
-                    var processingTime = (DateTime.Now - startTime).TotalMilliseconds;
-                    var delay = Math.Max(0, deployment.Settings.ScalePeriod - processingTime);
+                    var processingTime = (DateTime.Now - startTime);
+                    var delay = DateTime.Now.Add(forecastHorizon) - processingTime;
                     logger.LogInformation($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
-                    await Task.Delay((int)delay, cancellationToken);
+                    await Task.Delay(delay.Millisecond, cancellationToken);
                 }
                 catch (Exception ex)
                 {
