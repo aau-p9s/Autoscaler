@@ -19,7 +19,8 @@ public class ForecasterService(
 
     public virtual async Task<bool> Forecast(Guid serviceId, int forecastHorizon)
     {
-        var res = await Client.GetAsync($"{AppSettings.Autoscaler.Apis.Forecaster}/predict/{serviceId}/{forecastHorizon}");
+        var url = $"{AppSettings.Autoscaler.Apis.Forecaster}/predict/{serviceId}/{forecastHorizon}";
+        var res = await Client.PostAsync(url, new StringContent(""));
         Logger.LogDebug($"Forecaster forecast response: {await res.Content.ReadAsStringAsync()}");
 
         if (!res.IsSuccessStatusCode)
@@ -28,19 +29,36 @@ public class ForecasterService(
             return false;
         }
 
+        await Wait(url);
+
         return true;
     }
 
     public virtual async  Task<bool> Retrain(Guid serviceId, int forecastHorizon)
     {
-        var res = await Client.PostAsync($"{AppSettings.Autoscaler.Apis.Forecaster}/train/{serviceId}/{forecastHorizon}", new StringContent(""));
+        var url = $"{AppSettings.Autoscaler.Apis.Forecaster}/train/{serviceId}/{forecastHorizon}";
+        var res = await Client.PostAsync(url, new StringContent(""));
 
         if (!res.IsSuccessStatusCode)
         {
             Logger.LogError("Failed to retrain the model");
             return false;
         }
-
+        
+        // wait for finishing
+        await Wait(url);
+        
         return true;
+    }
+
+    private async Task Wait(string url)
+    {
+        var status = "True";
+        while (status == "True")
+        {
+            var res = await Client.GetAsync(url);
+            status = await res.Content.ReadAsStringAsync();
+            Thread.Sleep(1000);
+        }
     }
 }
