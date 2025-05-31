@@ -5,11 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autoscaler.Config;
 using Autoscaler.Persistence.ForecastRepository;
+using Autoscaler.Persistence.SettingsRepository;
 using Microsoft.Extensions.Logging;
 
 namespace Autoscaler.Runner.Services;
 
-public class MockForecasterService(AppSettings appSettings, ILogger logger, IForecastRepository forecastRepository) : ForecasterService(appSettings, logger)
+public class MockForecasterService(AppSettings appSettings, ILogger logger, IForecastRepository forecastRepository, ISettingsRepository settingsRepository) : ForecasterService(appSettings, logger, settingsRepository)
 {
     private IForecastRepository ForecastRepository => forecastRepository;
     private bool UseForecasterInDevelopmentMode => AppSettings.Autoscaler.UseForecasterInDevelopmentMode;
