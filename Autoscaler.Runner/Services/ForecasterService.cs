@@ -43,7 +43,7 @@ public class ForecasterService(
     public virtual async  Task<bool> Retrain(Guid serviceId, int forecastHorizon)
     {
         var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster}/train/{serviceId}";
-        var res = await Client.PostAsync($"{urlPrefix}", new StringContent(""));
+        var res = await Client.PostAsync($"{urlPrefix}/{forecastHorizon}", new StringContent(""));
 
         if (!res.IsSuccessStatusCode)
         {
