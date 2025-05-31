@@ -60,6 +60,8 @@ public class Monitor(
 
                     var forecastEntity =
                         await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
+                    // we get the data from prometheus now to make sure there is historical data in the database BEFORE a forecast might be requested
+                    var actualCpu = await GetCpuUsage(historicRepository);
                     if (forecastEntity == null)
                     {
                         await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod);
@@ -71,7 +73,6 @@ public class Monitor(
 
                     var forecast = JObject.Parse(forecastEntity.Forecast);
                     var replicas = await kubernetes.GetReplicas(deployment.Service.Name);
-                    var actualCpu = await GetCpuUsage(historicRepository);
                     var timestamps = forecast["index"]?.ToObject<List<string>>() ??
                                      throw new ArgumentNullException(nameof(forecast),
                                          "Failed to get timestamps from forecast");
