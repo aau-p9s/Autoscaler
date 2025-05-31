@@ -70,6 +70,8 @@ public class Monitor(
 
                     var forecastEntity =
                         await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
+                    // we get the data from prometheus now to make sure there is historical data in the database BEFORE a forecast might be requested
+                    var actualCpu = await GetCpuUsage(historicRepository);
                     if (forecastEntity == null)
                     {
                         await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod);
