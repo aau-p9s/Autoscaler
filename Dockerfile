@@ -18,7 +18,8 @@ COPY Autoscaler.Runner .
 RUN dotnet restore
 RUN dotnet build
 
-WORKDIR /App/
+
+WORKDIR /App/Autoscaler.Api
 COPY Autoscaler.Api .
 RUN dotnet restore
 RUN dotnet publish -c Release -o /out
@@ -35,6 +36,8 @@ RUN apt-get update && apt-get install -y curl && \
 
 # Copy application files
 COPY --from=build-env /out .
+
+COPY Autoscaler.Api/BaselineModels ./BaselineModels
 
 EXPOSE 8080
 
