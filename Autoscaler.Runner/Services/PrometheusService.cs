@@ -36,7 +36,7 @@ public class PrometheusService(
         Logger.LogDebug($"PromQL: {queryString}");
 
         var query =
-            $"query={EncodeQuery(queryString)}&start={Utils.ToRFC3339(start)}&end={Utils.ToRFC3339(end)}&step={period / 1000}s";
+            $"query={EncodeQuery(queryString)}&start={Utils.ToRFC3339(start)}&end={Utils.ToRFC3339(end)}&step={(period / 1000) / 60}s";
         HttpResponseMessage response;
         try
         {
