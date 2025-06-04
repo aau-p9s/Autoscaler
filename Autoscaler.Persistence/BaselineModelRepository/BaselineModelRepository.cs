@@ -1,6 +1,7 @@
 using System;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Autoscaler.Persistence.Connection;
 using Dapper;
@@ -32,34 +33,35 @@ namespace Autoscaler.Persistence.BaselineModelRepository
             var conn = Connection;
             conn.Open();
             using var tx = conn.BeginTransaction();
-            
             foreach (var folder in Directory.GetDirectories(modelsRootPath))
             {
                 var modelName = Path.GetFileName(folder);
-                var pthPath   = Path.Combine(folder, $"{modelName}.pth");
 
-                if (!File.Exists(pthPath))
+                string pthPath = Directory.EnumerateFiles(folder, "*.pth", SearchOption.TopDirectoryOnly)
+                    .FirstOrDefault(f => !f.EndsWith(".pth.ckpt", StringComparison.OrdinalIgnoreCase));
+                if (pthPath == null)
                     continue;
 
                 var binBytes = await File.ReadAllBytesAsync(pthPath);
-                
+
+                string ckptPath = Directory.EnumerateFiles(folder, "*.pth.ckpt", SearchOption.TopDirectoryOnly)
+                    .FirstOrDefault();
                 byte[] ckptBytes = null;
-                var ckptPath = Path.Combine(folder, $"{modelName}.pth.ckpt");
-                if (File.Exists(ckptPath))
+                if (ckptPath != null)
                     ckptBytes = await File.ReadAllBytesAsync(ckptPath);
 
                 var param = new
                 {
-                    Id         = Guid.NewGuid(),
-                    Name       = modelName,
-                    Bin        = binBytes,
-                    Ckpt       = (object)ckptBytes ?? DBNull.Value,
-                    TrainedAt  = DateTime.UtcNow
+                    Id        = Guid.NewGuid(),
+                    Name      = modelName,
+                    Bin       = binBytes,
+                    Ckpt      = (object)ckptBytes ?? DBNull.Value,
+                    TrainedAt = DateTime.UtcNow
                 };
 
                 await conn.ExecuteAsync(sql, param, tx);
             }
-
+            
             tx.Commit();
         }
     }

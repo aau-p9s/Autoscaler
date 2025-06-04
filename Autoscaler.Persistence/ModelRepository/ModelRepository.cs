@@ -37,7 +37,7 @@ public class ModelRepository : IModelRepository
         var conn = Connection;
         conn.Open();
         using var tx = conn.BeginTransaction();
-        
+
         foreach (var model in models)
         {
             var param = new
@@ -45,7 +45,7 @@ public class ModelRepository : IModelRepository
                 Id         = Guid.NewGuid(),
                 ServiceId  = serviceId,
                 Name       = model.Name,
-                Bin        = model.Model,
+                Bin        = model.Bin,
                 Ckpt       = (object)model.Ckpt ?? DBNull.Value,
                 TrainedAt  = DateTime.UtcNow
             };
