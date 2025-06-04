@@ -25,15 +25,15 @@ public class ModelRepository : IModelRepository
             new { ServiceId = serviceId });
         return models;
     }
-    
+
     public async Task<bool> InsertModelsForServiceAsync(Guid serviceId)
     {
         var sql = $"INSERT INTO {TableName} (Id, ServiceId, Name, Bin, Ckpt, TrainedAt) " +
                   "VALUES (@Id, @ServiceId, @Name, @Bin, @Ckpt, @TrainedAt)";
-        
+
         var models = await Connection.QueryAsync<ModelEntity>($"SELECT * FROM {BaselineTablename}",
             new { ServiceId = serviceId });
-        
+
         var conn = Connection;
         conn.Open();
         using var tx = conn.BeginTransaction();
@@ -42,17 +42,17 @@ public class ModelRepository : IModelRepository
         {
             var param = new
             {
-                Id         = Guid.NewGuid(),
-                ServiceId  = serviceId,
-                Name       = model.Name,
-                Bin        = model.Bin,
-                Ckpt       = (object)model.Ckpt ?? DBNull.Value,
-                TrainedAt  = DateTime.UtcNow
+                Id = Guid.NewGuid(),
+                ServiceId = serviceId,
+                Name = model.Name,
+                Bin = model.Bin,
+                Ckpt = (object)model.Ckpt ?? DBNull.Value,
+                TrainedAt = DateTime.UtcNow
             };
 
             await conn.ExecuteAsync(sql, param, tx);
         }
-        
+
         tx.Commit();
         return true;
     }

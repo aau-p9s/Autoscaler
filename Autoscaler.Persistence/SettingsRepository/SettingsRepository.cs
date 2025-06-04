@@ -2,10 +2,9 @@ using System;
 using System.Data;
 using System.Threading.Tasks;
 using Autoscaler.Persistence.Connection;
-using Autoscaler.Persistence.SettingsRepository;
 using Dapper;
 
-namespace Autoscaler.Persistence.ScaleSettingsRepository;
+namespace Autoscaler.Persistence.SettingsRepository;
 
 public class SettingsRepository : ISettingsRepository
 {
@@ -27,7 +26,6 @@ public class SettingsRepository : ISettingsRepository
 
     public async Task<bool> UpsertSettingsAsync(SettingsEntity settings)
     {
-
         var query = $@"
         INSERT INTO {TableName} (
             Id, ServiceId, ScaleUp, ScaleDown, MinReplicas, MaxReplicas, ScalePeriod, TrainInterval

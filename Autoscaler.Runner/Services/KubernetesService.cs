@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Autoscaler.Config;
 using Microsoft.Extensions.Logging;
@@ -12,18 +11,20 @@ using Newtonsoft.Json.Linq;
 
 namespace Autoscaler.Runner.Services
 {
-    public class KubernetesService (
+    public class KubernetesService(
         AppSettings appSettings,
         ILogger logger)
     {
         private HttpClient Client => new(new HttpClientHandler()
         {
             ClientCertificateOptions = ClientCertificateOption.Manual,
-            ServerCertificateCustomValidationCallback = (_,_,_,_) => true
-        }); 
+            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+        });
+
         private Tuple<string, string> AuthHeader => new("Authorization", $"Bearer {
             new StreamReader("/var/run/secrets/kubernetes.io/serviceaccount/token").ReadToEnd()
         }");
+
         protected ILogger Logger => logger;
         protected AppSettings AppSettings => appSettings;
 
@@ -43,18 +44,18 @@ namespace Autoscaler.Runner.Services
                 request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
                 var response = await Client.SendAsync(request);
                 var responseString = await response.Content.ReadAsStringAsync();
-                
+
                 Logger.LogDebug($"Kubernetes response raw: {responseString}");
             }
             catch (HttpRequestException e)
-            { 
+            {
                 Logger.LogError("Kubernetes seems to be down");
                 Utils.HandleException(e, Logger);
             }
         }
 
         public virtual async Task<JObject?> Get(string endpoint)
-        { 
+        {
             Logger.LogDebug($"Kubernetes endpoint: {endpoint}");
 
             var request = new HttpRequestMessage
@@ -67,7 +68,7 @@ namespace Autoscaler.Runner.Services
             var response = await Client.SendAsync(request);
 
             var responseString = await response.Content.ReadAsStringAsync();
-            
+
             Logger.LogDebug($"Kubernetes response raw: {responseString}");
 
             return JObject.Parse(responseString);

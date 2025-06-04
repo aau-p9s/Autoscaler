@@ -46,13 +46,14 @@ public class Monitor(
                     DateTime.Now,
                     deployment.Settings.ScalePeriod);
                 await historicRepository.UpsertHistoricDataAsync(data);
-                
+
                 if (!deployment.Service.AutoscalingEnabled)
                 {
                     logger.LogDebug("Autoscaling is disabled, waiting...");
                     Thread.Sleep(deployment.Settings.ScalePeriod);
                     continue;
                 }
+
                 await UpdateSettings();
 
                 // Retrain periodically based on TrainInterval.
@@ -74,9 +75,11 @@ public class Monitor(
                     {
                         await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod);
                         forecastEntity =
-                            await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id) ?? throw new ArgumentNullException(nameof(ForecastRepository), "Error, there's probably no forecasts in the database");
+                            await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id) ??
+                            throw new ArgumentNullException(nameof(ForecastRepository),
+                                "Error, there's probably no forecasts in the database");
                     }
-                    
+
                     logger.LogDebug(forecastEntity.Forecast);
 
                     var forecast = JObject.Parse(forecastEntity.Forecast);
@@ -97,13 +100,15 @@ public class Monitor(
                     var nextTime = DateTime.Now.Add(forecastHorizon)
                         .ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture);
                     logger.LogInformation(nextTime);
-                    var formattedTimestamps = timestamps.Select(item => DateTime.Parse(item).ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture)).ToList();
+                    var formattedTimestamps = timestamps.Select(item =>
+                        DateTime.Parse(item).ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture)).ToList();
                     var forecastIndex = formattedTimestamps.FindIndex(timestamp => timestamp.Contains(nextTime));
 
                     if (forecastIndex < 0 || forecastIndex >= cpuValues.Count)
                     {
                         await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod);
                     }
+
                     if (forecastIndex < 0)
                     {
                         continue;
@@ -116,7 +121,7 @@ public class Monitor(
                         logger.LogError("Forecast data format is invalid");
                         continue;
                     }
-                    
+
                     await SetReplicas(nextForecast * 100, replicas);
 
                     // Calculate delay based on processing time.
@@ -190,7 +195,7 @@ public class Monitor(
     }
 
     private async Task SetReplicas(double nextForecast, int currentReplicas)
-    { 
+    {
         logger.LogDebug("Setting replica count");
         int desiredReplicas;
         logger.LogDebug($"Next forecast value: {nextForecast} scaleup: {deployment.Settings.ScaleUp}");
@@ -218,9 +223,9 @@ public class Monitor(
         {
             desiredReplicas = currentReplicas;
         }
-        
+
         logger.LogInformation($"Updating {deployment.Service.Name} to {desiredReplicas} replicas");
-        
+
         // Create the JSON object for scaling.
         var jsonObject = new
         {
@@ -229,7 +234,7 @@ public class Monitor(
                 replicas = desiredReplicas
             }
         };
-        
+
         await kubernetes.Update(
             $"/apis/apps/v1/namespaces/default/deployments/{deployment.Service.Name}/scale",
             jsonObject);

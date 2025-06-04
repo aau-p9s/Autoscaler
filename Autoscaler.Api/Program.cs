@@ -4,7 +4,6 @@ using Autoscaler.Persistence.Extensions;
 using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.HistoricRepository;
 using Autoscaler.Persistence.ModelRepository;
-using Autoscaler.Persistence.ScaleSettingsRepository;
 using Autoscaler.Persistence.ServicesRepository;
 using Autoscaler.Persistence.SettingsRepository;
 using Autoscaler.Runner;
@@ -16,7 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
 
-var appSettings = builder.Configuration.Get<AppSettings>() ?? throw new ArgumentNullException(nameof(builder), "What? appsettings is null??");
+var appSettings = builder.Configuration.Get<AppSettings>() ??
+                  throw new ArgumentNullException(nameof(builder), "What? appsettings is null??");
 
 
 Console.WriteLine("Settings set by env vars:");
@@ -97,6 +97,7 @@ using (var scope = app.Services.CreateScope())
     var repo = scope.ServiceProvider.GetRequiredService<IBaselineModelRepository>();
     await repo.InsertAllBaselineModels("./BaselineModels");
 }
+
 // Start runner
 if (appSettings.Autoscaler.StartRunner)
 {

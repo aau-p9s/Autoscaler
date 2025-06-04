@@ -38,7 +38,8 @@ public class Apis
     public required string Forecaster { get; set; }
 }
 
-public class Pgsql {
+public class Pgsql
+{
     public required string Addr { get; set; }
     public required int Port { get; set; }
     public required string Database { get; set; }

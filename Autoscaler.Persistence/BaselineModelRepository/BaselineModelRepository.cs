@@ -25,11 +25,11 @@ namespace Autoscaler.Persistence.BaselineModelRepository
             var existingModels = await Connection.QueryAsync<Guid>($"SELECT Id FROM {TableName}");
             if (existingModels.AsList().Count > 0)
                 return;
-            
+
             string sql =
                 $"INSERT INTO {TableName} (Id, Name, Bin, Ckpt, TrainedAt) " +
                 "VALUES (@Id, @Name, @Bin, @Ckpt, @TrainedAt)";
-            
+
             var conn = Connection;
             conn.Open();
             using var tx = conn.BeginTransaction();
@@ -52,16 +52,16 @@ namespace Autoscaler.Persistence.BaselineModelRepository
 
                 var param = new
                 {
-                    Id        = Guid.NewGuid(),
-                    Name      = modelName,
-                    Bin       = binBytes,
-                    Ckpt      = (object)ckptBytes ?? DBNull.Value,
+                    Id = Guid.NewGuid(),
+                    Name = modelName,
+                    Bin = binBytes,
+                    Ckpt = (object)ckptBytes ?? DBNull.Value,
                     TrainedAt = DateTime.UtcNow
                 };
 
                 await conn.ExecuteAsync(sql, param, tx);
             }
-            
+
             tx.Commit();
         }
     }

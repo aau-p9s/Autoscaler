@@ -9,7 +9,8 @@ namespace Autoscaler.Runner.Services;
 
 public class MockPrometheusService(AppSettings appSettings, ILogger logger) : PrometheusService(appSettings, logger)
 {
-    public override async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start, DateTime end, int period)
+    public override async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start,
+        DateTime end, int period)
     {
         Logger.LogInformation("Running Mock Prometheus QueryRange");
         var promTrace = await File.ReadAllTextAsync("./DevelopmentData/prometheus_trace.json");

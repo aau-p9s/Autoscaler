@@ -17,7 +17,7 @@ public static class ServiceCollectionExtension
 
         // Add repositories
         services.AddScoped<IModelRepository, ModelRepository.ModelRepository>();
-        services.AddScoped<ISettingsRepository, ScaleSettingsRepository.SettingsRepository>();
+        services.AddScoped<ISettingsRepository, SettingsRepository.SettingsRepository>();
         services.AddScoped<IForecastRepository, ForecastRepository.ForecastRepository>();
         services.AddScoped<IHistoricRepository, HistoricRepository.HistoricRepository>();
         services.AddScoped<IServicesRepository, ServicesRepository.ServicesRepository>();

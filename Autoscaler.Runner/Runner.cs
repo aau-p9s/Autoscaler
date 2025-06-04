@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Autoscaler.Config;
 using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.HistoricRepository;
 using Autoscaler.Persistence.ModelRepository;
@@ -34,7 +32,7 @@ public class Runner(
     public async Task MainLoop()
     {
         var services = await servicesRepository.GetAllServicesAsync();
-        
+
         foreach (var service in services)
         {
             var settings = await settingsRepository.GetSettingsForServiceAsync(service.Id);
@@ -46,12 +44,13 @@ public class Runner(
         {
             await AddService(deployment);
         }
-        
+
         foreach (var deployment in _deployments)
         {
             if (Monitors.ContainsKey(deployment))
                 continue;
-            var monitor = new Monitor(deployment, CancellationTokenSource.Token, logger, forecaster, prometheus, kubernetes, historicRepository, forecastRepository, settingsRepository);
+            var monitor = new Monitor(deployment, CancellationTokenSource.Token, logger, forecaster, prometheus,
+                kubernetes, historicRepository, forecastRepository, settingsRepository);
             Monitors.Add(deployment, monitor);
             monitor.Start();
             logger.LogInformation($"Started monitoring thread for {deployment.Service.Name}");
@@ -74,15 +73,20 @@ public class Runner(
             "prometheus-server"
         };
         var deployments = new List<string>();
-        var response = await kubernetes.Get("/apis/apps/v1/deployments") ?? throw new ArgumentNullException(nameof(kubernetes), "Kubernetes response is null");
-        var items = response["items"] ?? throw new ArgumentNullException(nameof(response), "Response from kubernetes was null");
-        
+        var response = await kubernetes.Get("/apis/apps/v1/deployments") ??
+                       throw new ArgumentNullException(nameof(kubernetes), "Kubernetes response is null");
+        var items = response["items"] ??
+                    throw new ArgumentNullException(nameof(response), "Response from kubernetes was null");
+
         foreach (var item in items)
         {
-            var metadata = item["metadata"] ?? throw new ArgumentNullException(nameof(item), "Item did not have metadata");
-            var name = metadata["name"] ?? throw new ArgumentNullException(nameof(metadata), "Metadata did not have a name");
+            var metadata = item["metadata"] ??
+                           throw new ArgumentNullException(nameof(item), "Item did not have metadata");
+            var name = metadata["name"] ??
+                       throw new ArgumentNullException(nameof(metadata), "Metadata did not have a name");
             deployments.Add(name.ToString());
         }
+
         return deployments.Where(deployment => !exclusions.Contains(deployment)).ToList();
     }
 
