@@ -42,7 +42,7 @@ public class Monitor(
                 var data = await prometheus.QueryRange(
                     deployment.Service.Id,
                     deployment.Service.Name,
-                    DateTime.Now.AddHours(-12),
+                    DateTime.Now.AddHours(-1),
                     DateTime.Now,
                     deployment.Settings.ScalePeriod);
                 await historicRepository.UpsertHistoricDataAsync(data);
