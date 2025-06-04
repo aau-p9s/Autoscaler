@@ -95,7 +95,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var repo = scope.ServiceProvider.GetRequiredService<IBaselineModelRepository>();
-    await repo.InsertAllBaselineModels("./BaselineModels");
+    await repo.InsertAllBaselineModels("./Autoscaler.Api/BaselineModels");
 }
 
 // Start runner
