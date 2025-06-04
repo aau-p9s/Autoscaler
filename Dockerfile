@@ -18,8 +18,7 @@ COPY Autoscaler.Runner .
 RUN dotnet restore
 RUN dotnet build
 
-
-WORKDIR /App/Autoscaler.Api
+WORKDIR /App/
 COPY Autoscaler.Api .
 RUN dotnet restore
 RUN dotnet publish -c Release -o /out
