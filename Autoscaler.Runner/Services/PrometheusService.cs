@@ -18,7 +18,8 @@ public class PrometheusService(
     private const string Rate = "5m";
     protected ILogger Logger => logger;
 
-    public virtual async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start, DateTime end,
+    public virtual async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start,
+        DateTime end,
         int period)
     {
         var queryType = "cpu";

@@ -13,7 +13,7 @@ public class MockKubernetesService(AppSettings appSettings, ILogger logger) : Ku
     {
         Logger.LogWarning("Using mock Kubernetes data...");
     }
-    
+
     public override async Task<JObject?> Get(string endpoint)
     {
         Logger.LogWarning($"Running Mock Kubernetes GET Request: {endpoint}");

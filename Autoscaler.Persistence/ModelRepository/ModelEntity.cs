@@ -7,7 +7,7 @@ public class ModelEntity
     public Guid Id { get; set; }
     public Guid ServiceId { get; set; }
     public string Name { get; set; }
-    public byte[] Model { get; set; }
+    public byte[] Bin { get; set; }
     public byte[] Ckpt { get; set; }
     public DateTime TrainedAt { get; set; }
 
@@ -16,12 +16,12 @@ public class ModelEntity
     {
     }
 
-    public ModelEntity(Guid id, Guid serviceId, string name, byte[] model, byte[] ckpt, DateTime trainedAt)
+    public ModelEntity(Guid id, Guid serviceId, string name, byte[] bin, byte[] ckpt, DateTime trainedAt)
     {
         Id = id;
         ServiceId = serviceId;
         Name = name;
-        Model = model;
+        Bin = bin;
         Ckpt = ckpt;
         TrainedAt = trainedAt;
     }

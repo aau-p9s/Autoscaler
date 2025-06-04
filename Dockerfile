@@ -37,6 +37,8 @@ RUN apt-get update && apt-get install -y curl && \
 # Copy application files
 COPY --from=build-env /out .
 
+COPY Autoscaler.Api/BaselineModels ./BaselineModels
+
 EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "Autoscaler.Api.dll"]

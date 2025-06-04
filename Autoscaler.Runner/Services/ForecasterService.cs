@@ -1,12 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Autoscaler.Config;
-using Autoscaler.Persistence.ForecastRepository;
-using Autoscaler.Persistence.ScaleSettingsRepository;
 using Autoscaler.Persistence.SettingsRepository;
 using Microsoft.Extensions.Logging;
 
@@ -40,7 +37,7 @@ public class ForecasterService(
         return true;
     }
 
-    public virtual async  Task<bool> Retrain(Guid serviceId, int forecastHorizon)
+    public virtual async Task<bool> Retrain(Guid serviceId, int forecastHorizon)
     {
         var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster}/train/{serviceId}";
         var res = await Client.PostAsync($"{urlPrefix}/{forecastHorizon}", new StringContent(""));
@@ -50,11 +47,11 @@ public class ForecasterService(
             Logger.LogError("Failed to retrain the model");
             return false;
         }
-        
+
         // wait for finishing
         var settings = await settingsRepository.GetSettingsForServiceAsync(serviceId);
         await Wait(urlPrefix, TimeSpan.FromMilliseconds(settings.TrainInterval));
-        
+
         return true;
     }
 
@@ -71,6 +68,7 @@ public class ForecasterService(
                 await Client.GetAsync($"{urlPrefix}/kill");
                 break;
             }
+
             var res = await Client.GetAsync($"{urlPrefix}/123");
             status = res.StatusCode;
             Thread.Sleep(1000);
