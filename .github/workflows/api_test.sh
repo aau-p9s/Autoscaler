@@ -24,7 +24,7 @@ assert() {
     pass "assertion passed"
 }
 
-sleep 200
+sleep 20
 
 echo test get services
 echo "GET $TARGET/services"
