@@ -73,7 +73,7 @@ public class Monitor(
                         await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
                     if (forecastEntity == null)
                     {
-                        await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod);
+                        await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod / 60000);
                         forecastEntity =
                             await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id) ??
                             throw new ArgumentNullException(nameof(ForecastRepository),
@@ -106,7 +106,7 @@ public class Monitor(
 
                     if (forecastIndex < 0 || forecastIndex >= cpuValues.Count)
                     {
-                        await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod);
+                        await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod / 60000);
                     }
 
                     if (forecastIndex < 0)
