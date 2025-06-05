@@ -52,8 +52,8 @@ const ServicePage = (name) => {
             setScaleDownPercentage(data.scaleDown || '');
             setMinReplicas(data.minReplicas || '');
             setMaxReplicas(data.maxReplicas || '');
-            setInterval(data.scalePeriod || '');
-            setTrainInterval(data.trainInterval || '');
+            setInterval(data.scalePeriod / 60000 || '');
+            setTrainInterval(data.trainInterval / 60000 / 60 || '');
             setOptunaConfig(data.optunaConfig || {});
             setModelHyperParams(data.modelHyperParams || {});
         } catch (err) {
