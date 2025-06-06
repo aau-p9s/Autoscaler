@@ -125,10 +125,10 @@ public class Monitor(
                     await SetReplicas(nextForecast * 100, replicas);
 
                     // Calculate delay based on processing time.
-                    var processingTime = (DateTime.Now - startTime);
-                    var delay = DateTime.Now.Add(forecastHorizon) - processingTime;
-                    logger.LogInformation($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
-                    await Task.Delay(delay.Millisecond, cancellationToken);
+                    var processingTime = DateTime.Now - startTime;
+                    var delay = forecastHorizon.Subtract(processingTime);
+                    logger.LogInformation($"Thread {Thread.CurrentThread.Name} sleeping for {delay.TotalMilliseconds}ms");
+                    await Task.Delay(delay, cancellationToken);
                 }
                 catch (Exception ex)
                 {
