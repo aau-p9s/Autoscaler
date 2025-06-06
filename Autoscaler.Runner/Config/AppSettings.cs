@@ -25,22 +25,31 @@ public class Autoscaler
     public required int Port { get; set; }
     public required string Host { get; set; }
     public required Apis Apis { get; set; }
-    public required bool UseForecasterInDevelopmentMode { get; set; }
-    public required bool DevelopmentMode { get; set; }
-    public required bool StartRunner { get; set; }
-    public required Pgsql Pgsql { get; set; }
+    public required RunnerType Runner { get; set; }
+    public required DatabaseType Database { get; set; }
+}
+
+public class RunnerType
+{
+    public required bool Start { get; set; }
 }
 
 public class Apis
 {
-    public required string Kubernetes { get; set; }
-    public required string Prometheus { get; set; }
-    public required string Forecaster { get; set; }
+    public required Api Kubernetes { get; set; }
+    public required Api Prometheus { get; set; }
+    public required Api Forecaster { get; set; }
 }
 
-public class Pgsql
+public class Api
 {
-    public required string Addr { get; set; }
+    public required string Url { get; set; }
+    public required bool Mock { get; set; }
+}
+
+public class DatabaseType
+{
+    public required string Hostname { get; set; }
     public required int Port { get; set; }
     public required string Database { get; set; }
     public required string User { get; set; }

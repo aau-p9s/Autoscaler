@@ -19,13 +19,16 @@ public class SettingsRepository : ISettingsRepository
 
     public async Task<SettingsEntity> GetSettingsForServiceAsync(Guid serviceId)
     {
+        Connection.Open();
         var settings = await Connection.QueryFirstOrDefaultAsync<SettingsEntity>(
             $"SELECT * FROM {TableName} WHERE (ServiceId::uuid) = @ServiceId", new { ServiceId = serviceId });
+        Connection.Close();
         return settings;
     }
 
     public async Task<bool> UpsertSettingsAsync(SettingsEntity settings)
     {
+        Connection.Open();
         var query = $@"
         INSERT INTO {TableName} (
             Id, ServiceId, ScaleUp, ScaleDown, MinReplicas, MaxReplicas, ScalePeriod, TrainInterval
@@ -52,7 +55,7 @@ public class SettingsRepository : ISettingsRepository
             ScalePeriod = settings.ScalePeriod,
             TrainInterval = settings.TrainInterval,
         });
-
+        Connection.Close();
         return result > 0;
     }
 }

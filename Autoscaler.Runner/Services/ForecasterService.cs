@@ -12,17 +12,18 @@ namespace Autoscaler.Runner.Services;
 public class ForecasterService(
     AppSettings appSettings,
     ILogger logger,
-    ISettingsRepository settingsRepository)
+    ISettingsRepository settingsRepository,
+    Utils utils)
 {
     protected AppSettings AppSettings => appSettings;
     private HttpClient Client => new();
     private ISettingsRepository SettingsRepository => settingsRepository;
     protected ILogger Logger => logger;
 
-    public virtual async Task<bool> Forecast(Guid serviceId, int forecastHorizon)
+    public virtual async Task<bool> Forecast(Guid serviceId, TimeSpan forecastHorizon)
     {
-        var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster}/predict/{serviceId}";
-        var res = await Client.PostAsync($"{urlPrefix}/{forecastHorizon}", new StringContent(""));
+        var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster.Url}/predict/{serviceId}";
+        var res = await Client.PostAsync($"{urlPrefix}/{forecastHorizon.TotalSeconds}", new StringContent(""));
         Logger.LogDebug($"Forecaster forecast response: {await res.Content.ReadAsStringAsync()}");
 
         if (!res.IsSuccessStatusCode)
@@ -31,16 +32,16 @@ public class ForecasterService(
             return false;
         }
 
-        var settings = await settingsRepository.GetSettingsForServiceAsync(serviceId);
+        var settings = await SettingsRepository.GetSettingsForServiceAsync(serviceId);
         await Wait(urlPrefix, TimeSpan.FromMilliseconds(settings.TrainInterval));
 
         return true;
     }
 
-    public virtual async Task<bool> Retrain(Guid serviceId, int forecastHorizon)
+    public virtual async Task<bool> Retrain(Guid serviceId, TimeSpan forecastHorizon)
     {
-        var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster}/train/{serviceId}";
-        var res = await Client.PostAsync($"{urlPrefix}/{forecastHorizon}", new StringContent(""));
+        var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster.Url}/train/{serviceId}";
+        var res = await Client.PostAsync($"{urlPrefix}/{forecastHorizon.TotalSeconds}", new StringContent(""));
 
         if (!res.IsSuccessStatusCode)
         {
@@ -49,7 +50,7 @@ public class ForecasterService(
         }
 
         // wait for finishing
-        var settings = await settingsRepository.GetSettingsForServiceAsync(serviceId);
+        var settings = await SettingsRepository.GetSettingsForServiceAsync(serviceId);
         await Wait(urlPrefix, TimeSpan.FromMilliseconds(settings.TrainInterval));
 
         return true;
@@ -57,11 +58,11 @@ public class ForecasterService(
 
     private async Task Wait(string urlPrefix, TimeSpan trainInterval)
     {
-        var startTime = DateTime.Now;
+        var startTime = utils.Now();
         var status = HttpStatusCode.Accepted;
         while (status != HttpStatusCode.OK)
         {
-            var elapsed = DateTime.Now - startTime;
+            var elapsed = utils.Now() - startTime;
             // Kill trainer or predicter if it takes too long
             if (elapsed > trainInterval)
             {
@@ -71,7 +72,7 @@ public class ForecasterService(
 
             var res = await Client.GetAsync($"{urlPrefix}/123");
             status = res.StatusCode;
-            Thread.Sleep(1000);
+            Thread.Sleep(10000);
         }
     }
 }

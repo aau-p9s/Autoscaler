@@ -7,13 +7,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Autoscaler.Runner.Services;
 
-public class MockPrometheusService(AppSettings appSettings, ILogger logger) : PrometheusService(appSettings, logger)
+public class MockPrometheusService(AppSettings appSettings, ILogger logger, Utils utils) : PrometheusService(appSettings, logger, utils)
 {
     public override async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start,
-        DateTime end, int period)
+        DateTime end, TimeSpan period)
     {
         Logger.LogInformation("Running Mock Prometheus QueryRange");
         var promTrace = await File.ReadAllTextAsync("./DevelopmentData/prometheus_trace.json");
-        return new HistoricEntity(Guid.NewGuid(), serviceId, DateTime.Now, promTrace);
+        return new HistoricEntity(Guid.NewGuid(), serviceId, utils.Now(), promTrace);
     }
 }

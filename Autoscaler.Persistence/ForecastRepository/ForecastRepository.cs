@@ -20,21 +20,26 @@ public class ForecastRepository : IForecastRepository
 
     public async Task<ForecastEntity> GetForecastsByServiceIdAsync(Guid serviceId)
     {
+        Connection.Open();
         var forecasts = await Connection.QueryFirstOrDefaultAsync<ForecastEntity>(
             $"SELECT * FROM {TableName} WHERE ServiceId = @ServiceId", new { ServiceId = serviceId });
+        Connection.Close();
         return forecasts;
     }
 
     public async Task<ForecastEntity> GetForecastByIdAsync(Guid id)
     {
+        Connection.Open();
         var forecast =
             await Connection.QueryFirstOrDefaultAsync<ForecastEntity>($"SELECT * FROM {TableName} WHERE Id = @Id",
                 new { Id = id });
+        Connection.Close();
         return forecast;
     }
 
     public async Task<bool> UpdateForecastAsync(ForecastEntity forecast)
     {
+        Connection.Open();
         var query =
             $"UPDATE {TableName} SET Forecast = CAST(@Forecast AS jsonb), HasManualChange = @HasManualChange WHERE Id = @Id";
 
@@ -46,12 +51,14 @@ public class ForecastRepository : IForecastRepository
         };
 
         var result = await Connection.ExecuteAsync(query, parameters);
+        Connection.Close();
         return result > 0;
     }
 
     //ONLY USE FOR DEVMODE
     public async Task<bool> InsertForecast(ForecastEntity forecast)
     {
+        Connection.Open();
         var query =
             $"INSERT INTO {TableName} (Id, ServiceId, CreatedAt, ModelId, Forecast, HasManualChange) VALUES (@Id, @ServiceId, @CreatedAt, @ModelId, CAST(@Forecast AS jsonb), @HasManualChange)";
 
@@ -66,6 +73,7 @@ public class ForecastRepository : IForecastRepository
         };
 
         var result = await Connection.ExecuteAsync(query, parameters);
+        Connection.Close();
         return result > 0;
     }
 }
