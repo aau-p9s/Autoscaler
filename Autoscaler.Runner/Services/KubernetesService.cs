@@ -36,7 +36,7 @@ namespace Autoscaler.Runner.Services
                 var request = new HttpRequestMessage
                 {
                     Method = HttpMethod.Patch,
-                    RequestUri = new Uri(AppSettings.Autoscaler.Apis.Kubernetes + endpoint),
+                    RequestUri = new Uri(AppSettings.Autoscaler.Apis.Kubernetes.Url + endpoint),
                     Content = new StringContent(JsonConvert.SerializeObject(body),
                         new MediaTypeHeaderValue("application/merge-patch+json"))
                 };
@@ -61,7 +61,7 @@ namespace Autoscaler.Runner.Services
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(AppSettings.Autoscaler.Apis.Kubernetes + endpoint)
+                RequestUri = new Uri(AppSettings.Autoscaler.Apis.Kubernetes.Url + endpoint)
             };
             request.Headers.Add(AuthHeader.Item1, AuthHeader.Item2);
 

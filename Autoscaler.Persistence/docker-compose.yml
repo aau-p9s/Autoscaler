@@ -13,11 +13,15 @@ services:
         ports:
             - "5432:5432"
     autoscaler:
-        image: ghcr.io/aau-p9s/autoscaler:latest
+        image: ghcr.io/aau-p9s/autoscaler:test
         restart: always
         environment:
-            AUTOSCALER__PGSQL__ADDR: db
-            AUTOSCALER__STARTRUNNER: false
+            Autoscaler__Database__Hostname: 10.225.171.54
+            Autoscaler__Runner__Start: true
+            Autoscaler__Apis__Forecaster__Url: http://10.225.171.54:8080
+            Autoscaler__Apis__Forecaster__Mock: false
+            Autoscaler__Apis__Kubernetes__Mock: true
+            Autoscaler__Apis__Prometheus__Mock: true
         
         ports:
-            - "8080:8080"
+            - "8081:8081"

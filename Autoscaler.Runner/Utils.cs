@@ -1,4 +1,5 @@
 using System;
+using Autoscaler.Config;
 using Microsoft.Extensions.Logging;
 
 namespace Autoscaler.Runner;

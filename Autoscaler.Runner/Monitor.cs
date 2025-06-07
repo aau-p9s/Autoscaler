@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Autoscaler.Config;
 using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.HistoricRepository;
 using Autoscaler.Persistence.SettingsRepository;
@@ -24,10 +25,10 @@ public class Monitor(
     KubernetesService kubernetes,
     IHistoricRepository historicRepository,
     IForecastRepository forecastRepository,
-    ISettingsRepository settingsRepository)
+    ISettingsRepository settingsRepository,
+    AppSettings appSettings)
 {
     private Thread Thread => new(async () => await Run());
-    private static Dictionary<Guid, List<double>> ForecastErrorHistory => new();
 
     private async Task Run()
     {
@@ -39,27 +40,30 @@ public class Monitor(
             var counter = 0;
             while (!cancellationToken.IsCancellationRequested)
             {
-                var data = await prometheus.QueryRange(
-                    deployment.Service.Id,
-                    deployment.Service.Name,
-                    DateTime.Now.AddHours(-1),
-                    DateTime.Now,
-                    deployment.Settings.ScalePeriod);
-                await historicRepository.UpsertHistoricDataAsync(data);
-
                 if (!deployment.Service.AutoscalingEnabled)
                 {
                     logger.LogDebug("Autoscaling is disabled, waiting...");
-                    Thread.Sleep(deployment.Settings.ScalePeriod);
+                    await Task.Delay(deployment.Settings.ScalePeriod);
                     continue;
                 }
+                
+                var forecastHorizon =
+                    await kubernetes.GetPodStartupTimePercentileAsync(deployment.Service.Name);
+                
+                var data = await prometheus.QueryRange(
+                    deployment.Service.Id,
+                    deployment.Service.Name,
+                    DateTime.Now.Subtract(TimeSpan.FromMilliseconds(deployment.Settings.TrainInterval)),
+                    DateTime.Now, 
+                    forecastHorizon);
+                await historicRepository.UpsertHistoricDataAsync(data);
 
                 await UpdateSettings();
 
                 // Retrain periodically based on TrainInterval.
                 if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval || counter == 0)
                 {
-                    await forecaster.Retrain(deployment.Service.Id, deployment.Settings.ScalePeriod / 60000);
+                    await forecaster.Retrain(deployment.Service.Id, forecastHorizon);
                     clock.Restart();
                     counter++;
                 }
@@ -73,7 +77,7 @@ public class Monitor(
                         await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
                     if (forecastEntity == null)
                     {
-                        await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod / 60000);
+                        await forecaster.Forecast(deployment.Service.Id, forecastHorizon);
                         forecastEntity =
                             await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id) ??
                             throw new ArgumentNullException(nameof(ForecastRepository),
@@ -91,8 +95,6 @@ public class Monitor(
                                     throw new ArgumentNullException(nameof(forecast),
                                         "Failed to get value forecast");
 
-                    var forecastHorizon =
-                        await kubernetes.GetPodStartupTimePercentileAsync(deployment.Service.Name);
                     logger.LogInformation(
                         $"Forecast horizon for {deployment.Service.Name}: {forecastHorizon.TotalSeconds} seconds");
 
@@ -106,7 +108,7 @@ public class Monitor(
 
                     if (forecastIndex < 0 || forecastIndex >= cpuValues.Count)
                     {
-                        await forecaster.Forecast(deployment.Service.Id, deployment.Settings.ScalePeriod / 60000);
+                        await forecaster.Forecast(deployment.Service.Id, forecastHorizon);
                     }
 
                     if (forecastIndex < 0)
@@ -125,10 +127,10 @@ public class Monitor(
                     await SetReplicas(nextForecast * 100, replicas);
 
                     // Calculate delay based on processing time.
-                    var processingTime = (DateTime.Now - startTime);
-                    var delay = DateTime.Now.Add(forecastHorizon) - processingTime;
-                    logger.LogInformation($"Thread {Thread.CurrentThread.Name} sleeping for {delay}ms");
-                    await Task.Delay(delay.Millisecond, cancellationToken);
+                    var processingTime = DateTime.Now - startTime;
+                    var delay = forecastHorizon.Subtract(processingTime);
+                    logger.LogInformation($"Thread {Thread.CurrentThread.Name} sleeping for {delay.TotalMilliseconds}ms");
+                    await Task.Delay(delay, cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -239,4 +241,5 @@ public class Monitor(
             $"/apis/apps/v1/namespaces/default/deployments/{deployment.Service.Name}/scale",
             jsonObject);
     }
+
 }

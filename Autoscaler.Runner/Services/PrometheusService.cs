@@ -20,7 +20,7 @@ public class PrometheusService(
 
     public virtual async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start,
         DateTime end,
-        int period)
+        TimeSpan horizon)
     {
         var queryType = "cpu";
 
@@ -36,11 +36,11 @@ public class PrometheusService(
         Logger.LogDebug($"PromQL: {queryString}");
 
         var query =
-            $"query={EncodeQuery(queryString)}&start={Utils.ToRFC3339(start)}&end={Utils.ToRFC3339(end)}&step={period / 60000}s";
+            $"query={EncodeQuery(queryString)}&start={Utils.ToRFC3339(start)}&end={Utils.ToRFC3339(end)}&step={horizon.TotalSeconds}s";
         HttpResponseMessage response;
         try
         {
-            response = await Client.GetAsync($"{AppSettings.Autoscaler.Apis.Prometheus}/api/v1/query_range?{query}");
+            response = await Client.GetAsync($"{AppSettings.Autoscaler.Apis.Prometheus.Url}/api/v1/query_range?{query}");
         }
         catch (Exception e)
         {

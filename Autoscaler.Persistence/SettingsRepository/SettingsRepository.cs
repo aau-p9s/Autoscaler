@@ -52,7 +52,6 @@ public class SettingsRepository : ISettingsRepository
             ScalePeriod = settings.ScalePeriod,
             TrainInterval = settings.TrainInterval,
         });
-
         return result > 0;
     }
 }
