@@ -21,21 +21,34 @@ var appSettings = builder.Configuration.Get<AppSettings>() ??
 
 Console.WriteLine("Settings set by env vars:");
 Console.WriteLine($@"
-    AUTOSCALER.PORT:            {appSettings.Autoscaler.Port}
-    AUTOSCALER.HOST:            {appSettings.Autoscaler.Host}
-    AUTOSCALER.PGSQL.ADDR:      {appSettings.Autoscaler.Pgsql.Addr}
-    AUTOSCALER.PGSQL.PORT:      {appSettings.Autoscaler.Pgsql.Port}
-    AUTOSCALER.PGSQL.DATABASE:  {appSettings.Autoscaler.Pgsql.Database}
-    AUTOSCALER.PGSQL.USER:      {appSettings.Autoscaler.Pgsql.User}
-    AUTOSCALER.APIS.FORECASTER: {appSettings.Autoscaler.Apis.Forecaster}
-    AUTOSCALER.APIS.KUBERNETES: {appSettings.Autoscaler.Apis.Kubernetes}
-    AUTOSCALER.APIS.PROMETHEUS: {appSettings.Autoscaler.Apis.Prometheus}
+    Port:               {appSettings.Autoscaler.Port}
+    Host:               {appSettings.Autoscaler.Host}
+    Database hostname:  {appSettings.Autoscaler.Database.Hostname}
+    Database port:      {appSettings.Autoscaler.Database.Port}
+    Database name:      {appSettings.Autoscaler.Database.Database}
+    Database user:      {appSettings.Autoscaler.Database.User}
+    Forecaster url:     {appSettings.Autoscaler.Apis.Forecaster.Url}
+    Kubernetes url:     {appSettings.Autoscaler.Apis.Kubernetes.Url}
+    Prometheus url:     {appSettings.Autoscaler.Apis.Prometheus.Url}
+    Forecaster mock:    {appSettings.Autoscaler.Apis.Forecaster.Mock}
+    Kubernetes mock:    {appSettings.Autoscaler.Apis.Kubernetes.Mock}
+    Prometheus mock:    {appSettings.Autoscaler.Apis.Prometheus.Mock}
 ");
 
 // Configure Postgres
-builder.Services.ConfigurePersistencePostGreSqlConnection(
-    $"Server={appSettings.Autoscaler.Pgsql.Addr};Port={appSettings.Autoscaler.Pgsql.Port};Database={appSettings.Autoscaler.Pgsql.Database};Uid={appSettings.Autoscaler.Pgsql.User};Password={appSettings.Autoscaler.Pgsql.Password}");
-
+var databaseConnectionString = $"Server={
+    appSettings.Autoscaler.Database.Hostname
+};Port={
+    appSettings.Autoscaler.Database.Port
+};Database={
+    appSettings.Autoscaler.Database.Database
+};Uid={
+    appSettings.Autoscaler.Database.User
+};Password={
+    appSettings.Autoscaler.Database.Password
+}";
+builder.Services.ConfigurePersistencePostGreSqlConnection(databaseConnectionString);
+        
 // Configure Logger
 Enum.TryParse(appSettings.Logging.LogLevel.Autoscaler, out LogLevel logLevel);
 var factory = LoggerFactory.Create(builder1 => builder1.SetMinimumLevel(logLevel).AddConsole());
@@ -44,28 +57,32 @@ var logger = factory.CreateLogger("Autoscaler");
 // Configure Project Services
 builder.Services.AddSingleton(appSettings);
 builder.Services.AddSingleton(logger);
-if (appSettings.Autoscaler.DevelopmentMode)
+
+var mapping = new List<Tuple<Type, Type, bool>>()
 {
-    // These have to be scoped for mock data
-    builder.Services.AddScoped<KubernetesService, MockKubernetesService>();
-    builder.Services.AddScoped<PrometheusService, MockPrometheusService>();
-    builder.Services.AddScoped<ForecasterService, MockForecasterService>();
-}
-else
+    new (typeof(MockKubernetesService), typeof(KubernetesService), appSettings.Autoscaler.Apis.Kubernetes.Mock),
+    new (typeof(MockPrometheusService), typeof(PrometheusService), appSettings.Autoscaler.Apis.Prometheus.Mock),
+    new (typeof(MockForecasterService), typeof(ForecasterService), appSettings.Autoscaler.Apis.Forecaster.Mock)
+};
+foreach (var (mockType, baseType, isMock) in mapping)
 {
-    builder.Services.AddSingleton<KubernetesService>();
-    builder.Services.AddSingleton<PrometheusService>();
-    builder.Services.AddSingleton<ForecasterService>();
+    if (isMock)
+    {
+        builder.Services.AddScoped(baseType, mockType);
+    }
+    else
+    {
+        builder.Services.AddSingleton(baseType);
+    }
 }
 
-builder.Services.AddScoped<IServicesRepository, ServicesRepository>();
-builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
-builder.Services.AddScoped<IForecastRepository, ForecastRepository>();
-builder.Services.AddScoped<IHistoricRepository, HistoricRepository>();
-builder.Services.AddScoped<IModelRepository, ModelRepository>();
+builder.Services.AddSingleton<IServicesRepository, ServicesRepository>();
+builder.Services.AddSingleton<ISettingsRepository, SettingsRepository>();
+builder.Services.AddSingleton<IForecastRepository, ForecastRepository>();
+builder.Services.AddSingleton<IHistoricRepository, HistoricRepository>();
+builder.Services.AddSingleton<IModelRepository, ModelRepository>();
+builder.Services.AddSingleton<IBaselineModelRepository, BaselineModelRepository>();
 builder.Services.AddScoped<Runner>();
-builder.Services.AddScoped<IBaselineModelRepository, BaselineModelRepository>();
-
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -99,7 +116,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Start runner
-if (appSettings.Autoscaler.StartRunner)
+if (appSettings.Autoscaler.Runner.Start)
 {
     var runner = app.Services.CreateScope().ServiceProvider.GetService<Runner>() ?? throw new NullReferenceException();
     await runner.MainLoop();

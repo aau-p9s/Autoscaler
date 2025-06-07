@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Autoscaler.Config;
 using Autoscaler.Persistence.ForecastRepository;
 using Autoscaler.Persistence.HistoricRepository;
 using Autoscaler.Persistence.ModelRepository;
@@ -23,7 +24,8 @@ public class Runner(
     ISettingsRepository settingsRepository,
     IForecastRepository forecastRepository,
     IHistoricRepository historicRepository,
-    IModelRepository modelsRepository)
+    IModelRepository modelsRepository,
+    AppSettings appSettings)
 {
     private List<DeploymentEntity> _deployments = new();
     private static Dictionary<DeploymentEntity, Monitor> Monitors => new();
@@ -50,7 +52,7 @@ public class Runner(
             if (Monitors.ContainsKey(deployment))
                 continue;
             var monitor = new Monitor(deployment, CancellationTokenSource.Token, logger, forecaster, prometheus,
-                kubernetes, historicRepository, forecastRepository, settingsRepository);
+                kubernetes, historicRepository, forecastRepository, settingsRepository, appSettings);
             Monitors.Add(deployment, monitor);
             monitor.Start();
             logger.LogInformation($"Started monitoring thread for {deployment.Service.Name}");

@@ -45,8 +45,7 @@ public class HistoricRepository : IHistoricRepository
                 HistoricData = CAST(@HistoricData AS jsonb), 
                 CreatedAt = @CreatedAt",
             parameters);
-
-
+        
         return result > 0;
     }
 }
