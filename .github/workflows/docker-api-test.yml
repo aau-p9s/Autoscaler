@@ -20,7 +20,7 @@ jobs:
       - name: checkout repo
         uses: actions/checkout@v4.1.1
       - name: build docker image
-        run: docker build . -t ghcr.io/aau-p9s/autoscaler:latest
+        run: docker build . -t ghcr.io/aau-p9s/autoscaler:test
       - name: run docker compose
         run: docker compose -f Autoscaler.Persistence/docker-compose.yml up -d 
       - name: Setup Dotnet
