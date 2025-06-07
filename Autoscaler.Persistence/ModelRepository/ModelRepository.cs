@@ -34,6 +34,7 @@ public class ModelRepository : IModelRepository
         var models = await Connection.QueryAsync<ModelEntity>($"SELECT * FROM {BaselineTablename}",
             new { ServiceId = serviceId });
 
+        Connection.Open();
         using var tx = Connection.BeginTransaction();
 
         foreach (var model in models)
