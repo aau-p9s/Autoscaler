@@ -36,19 +36,19 @@ Console.WriteLine($@"
 ");
 
 // Configure Postgres
-builder.Services.ConfigurePersistencePostGreSqlConnection(
-    $"Server={
-        appSettings.Autoscaler.Database.Hostname
-    };Port={
-        appSettings.Autoscaler.Database.Port
-    };Database={
-        appSettings.Autoscaler.Database.Database
-    };Uid={
-        appSettings.Autoscaler.Database.User
-    };Password={
-        appSettings.Autoscaler.Database.Password
-    }");
-
+var databaseConnectionString = $"Server={
+    appSettings.Autoscaler.Database.Hostname
+};Port={
+    appSettings.Autoscaler.Database.Port
+};Database={
+    appSettings.Autoscaler.Database.Database
+};Uid={
+    appSettings.Autoscaler.Database.User
+};Password={
+    appSettings.Autoscaler.Database.Password
+}";
+builder.Services.ConfigurePersistencePostGreSqlConnection(databaseConnectionString);
+        
 // Configure Logger
 Enum.TryParse(appSettings.Logging.LogLevel.Autoscaler, out LogLevel logLevel);
 var factory = LoggerFactory.Create(builder1 => builder1.SetMinimumLevel(logLevel).AddConsole());

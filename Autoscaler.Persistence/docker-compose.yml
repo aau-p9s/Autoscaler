@@ -21,6 +21,10 @@ services:
             Autoscaler__Apis__Forecaster__Mock: true
             Autoscaler__Apis__Kubernetes__Mock: true
             Autoscaler__Apis__Prometheus__Mock: true
+            Autoscaler__Port: 8081
         
         ports:
             - "8081:8081"
+
+        depends_on:
+            -   db
