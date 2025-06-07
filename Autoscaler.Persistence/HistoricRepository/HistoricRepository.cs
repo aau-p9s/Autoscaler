@@ -19,16 +19,13 @@ public class HistoricRepository : IHistoricRepository
 
     public async Task<HistoricEntity> GetHistoricDataByServiceIdAsync(Guid serviceId)
     {
-        Connection.Open();
         var historicData = await Connection.QueryFirstOrDefaultAsync<HistoricEntity>(
             $"SELECT * FROM {TableName} WHERE ServiceId = @ServiceId", new { ServiceId = serviceId });
-        Connection.Close();
         return historicData;
     }
 
     public async Task<bool> UpsertHistoricDataAsync(HistoricEntity historicEntity)
     {
-        Connection.Open();
         var parameters = new
         {
             Id = historicEntity.Id,
@@ -49,7 +46,6 @@ public class HistoricRepository : IHistoricRepository
                 CreatedAt = @CreatedAt",
             parameters);
         
-        Connection.Close();
         return result > 0;
     }
 }

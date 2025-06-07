@@ -21,10 +21,8 @@ public class ModelRepository : IModelRepository
 
     public async Task<IEnumerable<ModelEntity>> GetModelsForServiceAsync(Guid serviceId)
     {
-        Connection.Open();
         var models = await Connection.QueryAsync<ModelEntity>($"SELECT * FROM {TableName} WHERE ServiceId = @ServiceId",
             new { ServiceId = serviceId });
-        Connection.Close();
         return models;
     }
 
@@ -36,7 +34,6 @@ public class ModelRepository : IModelRepository
         var models = await Connection.QueryAsync<ModelEntity>($"SELECT * FROM {BaselineTablename}",
             new { ServiceId = serviceId });
 
-        Connection.Open();
         using var tx = Connection.BeginTransaction();
 
         foreach (var model in models)
@@ -55,7 +52,6 @@ public class ModelRepository : IModelRepository
         }
 
         tx.Commit();
-        Connection.Close();
         return true;
     }
 }

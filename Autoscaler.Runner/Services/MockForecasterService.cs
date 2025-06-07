@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace Autoscaler.Runner.Services;
 
 public class MockForecasterService(AppSettings appSettings, ILogger logger, IForecastRepository forecastRepository,
-    ISettingsRepository settingsRepository, Utils utils) : ForecasterService(appSettings, logger, settingsRepository, utils)
+    ISettingsRepository settingsRepository) : ForecasterService(appSettings, logger, settingsRepository)
 {
     private IForecastRepository ForecastRepository => forecastRepository;
 
@@ -22,7 +22,7 @@ public class MockForecasterService(AppSettings appSettings, ILogger logger, IFor
         var forecast = await File.ReadAllTextAsync(
             "./DevelopmentData/forecast.json");
         await ForecastRepository.InsertForecast(new ForecastEntity(Guid.NewGuid(), serviceId,
-            utils.Now(), Guid.NewGuid(), forecast, false));
+            DateTime.Now, Guid.NewGuid(), forecast, false));
 
         return true;
     }

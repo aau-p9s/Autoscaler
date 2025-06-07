@@ -13,8 +13,7 @@ namespace Autoscaler.Runner.Services
 {
     public class KubernetesService(
         AppSettings appSettings,
-        ILogger logger,
-        Utils utils)
+        ILogger logger)
     {
         private HttpClient Client => new(new HttpClientHandler()
         {
@@ -51,7 +50,7 @@ namespace Autoscaler.Runner.Services
             catch (HttpRequestException e)
             {
                 Logger.LogError("Kubernetes seems to be down");
-                utils.HandleException(e, Logger);
+                Utils.HandleException(e, Logger);
             }
         }
 

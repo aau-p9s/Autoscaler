@@ -83,8 +83,6 @@ builder.Services.AddSingleton<IHistoricRepository, HistoricRepository>();
 builder.Services.AddSingleton<IModelRepository, ModelRepository>();
 builder.Services.AddSingleton<IBaselineModelRepository, BaselineModelRepository>();
 builder.Services.AddScoped<Runner>();
-builder.Services.AddSingleton<Utils>();
-
 
 // Add services to the container.
 builder.Services.AddControllers();

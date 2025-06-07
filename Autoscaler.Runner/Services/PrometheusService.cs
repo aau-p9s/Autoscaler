@@ -11,8 +11,7 @@ namespace Autoscaler.Runner.Services;
 
 public class PrometheusService(
     AppSettings appSettings,
-    ILogger logger,
-    Utils utils)
+    ILogger logger)
 {
     private AppSettings AppSettings => appSettings;
     private HttpClient Client => new();
@@ -37,7 +36,7 @@ public class PrometheusService(
         Logger.LogDebug($"PromQL: {queryString}");
 
         var query =
-            $"query={EncodeQuery(queryString)}&start={utils.ToRFC3339(start)}&end={utils.ToRFC3339(end)}&step={horizon.TotalSeconds}s";
+            $"query={EncodeQuery(queryString)}&start={Utils.ToRFC3339(start)}&end={Utils.ToRFC3339(end)}&step={horizon.TotalSeconds}s";
         HttpResponseMessage response;
         try
         {
@@ -46,14 +45,14 @@ public class PrometheusService(
         catch (Exception e)
         {
             Logger.LogError("Prometheus seems to be down");
-            utils.HandleException(e, Logger);
+            Utils.HandleException(e, Logger);
             return new HistoricEntity();
         }
 
         var jsonString = await response.Content.ReadAsStringAsync();
         Logger.LogDebug($"Prometheus response: {jsonString}");
 
-        return new HistoricEntity(Guid.NewGuid(), serviceId, utils.Now(), jsonString);
+        return new HistoricEntity(Guid.NewGuid(), serviceId, DateTime.Now, jsonString);
     }
 
     private static string EncodeQuery(string target)

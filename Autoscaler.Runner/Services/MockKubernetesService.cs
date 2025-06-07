@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Autoscaler.Runner.Services;
 
-public class MockKubernetesService(AppSettings appSettings, ILogger logger, Utils utils) : KubernetesService(appSettings, logger, utils)
+public class MockKubernetesService(AppSettings appSettings, ILogger logger) : KubernetesService(appSettings, logger)
 {
     public override async Task Update(string endpoint, object body)
     {
@@ -40,7 +40,7 @@ public class MockKubernetesService(AppSettings appSettings, ILogger logger, Util
         }
         catch (ArgumentNullException e)
         {
-            utils.HandleException(e, Logger);
+            Utils.HandleException(e, Logger);
             return 0;
         }
     }

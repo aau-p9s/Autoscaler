@@ -1,7 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Autoscaler.Config;
 using Autoscaler.Persistence.SettingsRepository;
@@ -12,8 +12,7 @@ namespace Autoscaler.Runner.Services;
 public class ForecasterService(
     AppSettings appSettings,
     ILogger logger,
-    ISettingsRepository settingsRepository,
-    Utils utils)
+    ISettingsRepository settingsRepository)
 {
     protected AppSettings AppSettings => appSettings;
     private HttpClient Client => new();
@@ -58,21 +57,22 @@ public class ForecasterService(
 
     private async Task Wait(string urlPrefix, TimeSpan trainInterval)
     {
-        var startTime = utils.Now();
+        var clock = new Stopwatch();
+        clock.Start();
         var status = HttpStatusCode.Accepted;
         while (status != HttpStatusCode.OK)
         {
-            var elapsed = utils.Now() - startTime;
+            // Let the trainer or predicter start
+            await Task.Delay(10000);
             // Kill trainer or predicter if it takes too long
-            if (elapsed > trainInterval)
+            if (clock.Elapsed > trainInterval)
             {
                 await Client.GetAsync($"{urlPrefix}/kill");
                 break;
             }
 
-            var res = await Client.GetAsync($"{urlPrefix}/123");
+            var res = await Client.GetAsync($"{urlPrefix}");
             status = res.StatusCode;
-            Thread.Sleep(10000);
         }
     }
 }

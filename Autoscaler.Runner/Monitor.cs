@@ -26,8 +26,7 @@ public class Monitor(
     IHistoricRepository historicRepository,
     IForecastRepository forecastRepository,
     ISettingsRepository settingsRepository,
-    AppSettings appSettings,
-    Utils utils)
+    AppSettings appSettings)
 {
     private Thread Thread => new(async () => await Run());
 
@@ -41,24 +40,23 @@ public class Monitor(
             var counter = 0;
             while (!cancellationToken.IsCancellationRequested)
             {
-
+                if (!deployment.Service.AutoscalingEnabled)
+                {
+                    logger.LogDebug("Autoscaling is disabled, waiting...");
+                    await Task.Delay(deployment.Settings.ScalePeriod);
+                    continue;
+                }
+                
                 var forecastHorizon =
                     await kubernetes.GetPodStartupTimePercentileAsync(deployment.Service.Name);
                 
                 var data = await prometheus.QueryRange(
                     deployment.Service.Id,
                     deployment.Service.Name,
-                    utils.Now().AddHours(-1),
-                    utils.Now(),
+                    DateTime.Now.Subtract(TimeSpan.FromMilliseconds(deployment.Settings.TrainInterval)),
+                    DateTime.Now, 
                     forecastHorizon);
                 await historicRepository.UpsertHistoricDataAsync(data);
-
-                if (!deployment.Service.AutoscalingEnabled)
-                {
-                    logger.LogDebug("Autoscaling is disabled, waiting...");
-                    Thread.Sleep(deployment.Settings.ScalePeriod);
-                    continue;
-                }
 
                 await UpdateSettings();
 
@@ -70,7 +68,7 @@ public class Monitor(
                     counter++;
                 }
 
-                var startTime = utils.Now();
+                var startTime = DateTime.Now;
                 try
                 {
                     logger.LogInformation($"Checking deployment {deployment.Service.Name}");
@@ -101,7 +99,7 @@ public class Monitor(
                         $"Forecast horizon for {deployment.Service.Name}: {forecastHorizon.TotalSeconds} seconds");
 
                     // Instead of a fixed 1 minute, use the forecast horizon from pod startup time
-                    var nextTime = utils.Now().Add(forecastHorizon)
+                    var nextTime = DateTime.Now.Add(forecastHorizon)
                         .ToString("MM/dd/yyyy HH:mm", CultureInfo.InvariantCulture);
                     logger.LogInformation(nextTime);
                     var formattedTimestamps = timestamps.Select(item =>
@@ -129,7 +127,7 @@ public class Monitor(
                     await SetReplicas(nextForecast * 100, replicas);
 
                     // Calculate delay based on processing time.
-                    var processingTime = utils.Now() - startTime;
+                    var processingTime = DateTime.Now - startTime;
                     var delay = forecastHorizon.Subtract(processingTime);
                     logger.LogInformation($"Thread {Thread.CurrentThread.Name} sleeping for {delay.TotalMilliseconds}ms");
                     await Task.Delay(delay, cancellationToken);
