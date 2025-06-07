@@ -7,11 +7,11 @@ on:
     branches: [ main ]
 
 env:
-  AUTOSCALER__PGSQL__ADDR: localhost
-  AUTOSCALER__PGSQL__PASSWORD: password
-  AUTOSCALER__PGSQL__USER: root
-  AUTOSCALER__HOST: 0.0.0.0
-  AUTOSCALER__PORT: 8080
+  Autoscaler__Database__Hostname: localhost
+  Autoscaler__Database__Password: password
+  Autoscaler__Database__User: root
+  Autoscaler__Host: 0.0.0.0
+  Autoscaler__Port: 8081
 
 jobs:
   test:
@@ -30,6 +30,6 @@ jobs:
       - name: migrate db
         run: dotnet run --project Autoscaler.DbUp
       - name: test API
-        run: bash .github/workflows/api_test.sh "$AUTOSCALER__HOST:$AUTOSCALER__PORT"
+        run: bash .github/workflows/api_test.sh "$Autoscaler__Host:$Autoscaler__Port"
       - name: reverse API test (check if test fails due to changes)
-        run: (! bash .github/workflows/api_test.sh "$AUTOSCALER__HOST:$AUTOSCALER__PORT")
+        run: (! bash .github/workflows/api_test.sh "$Autoscaler__Host:$Autoscaler__Port")
