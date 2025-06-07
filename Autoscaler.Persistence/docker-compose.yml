@@ -16,10 +16,9 @@ services:
         image: ghcr.io/aau-p9s/autoscaler:test
         restart: always
         environment:
-            Autoscaler__Database__Hostname: 10.225.171.54
-            Autoscaler__Runner__Start: true
-            Autoscaler__Apis__Forecaster__Url: http://10.225.171.54:8080
-            Autoscaler__Apis__Forecaster__Mock: false
+            Autoscaler__Database__Hostname: db
+            Autoscaler__Runner__Start: false
+            Autoscaler__Apis__Forecaster__Mock: true
             Autoscaler__Apis__Kubernetes__Mock: true
             Autoscaler__Apis__Prometheus__Mock: true
         
