@@ -23,7 +23,7 @@ public class PrometheusService(
         TimeSpan horizon)
     {
         var queryString =
-            $"sum(rate(container_cpu_usage_seconds_total{{container=\"{deployment}\"}}[{Rate}])) * 100";
+            $"avg(rate(container_cpu_usage_seconds_total{{container=\"{deployment}\"}}[{Rate}])) * 100";
         Logger.LogDebug($"PromQL: {queryString}");
 
         var query =
