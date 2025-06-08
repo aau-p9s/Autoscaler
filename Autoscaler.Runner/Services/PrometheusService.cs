@@ -22,17 +22,8 @@ public class PrometheusService(
         DateTime end,
         TimeSpan horizon)
     {
-        var queryType = "cpu";
-
-
-        var target = new Dictionary<string, string>()
-        {
-            { "cpu", "container_cpu_usage_seconds_total" },
-            { "memory", "container_memory_usage_bytes" },
-            { "network", "container_network_receive_bytes_total" }
-        }[queryType];
         var queryString =
-            $"avg(rate({target}{{container=\"{deployment}\"}}[{Rate}])) / avg(machine_cpu_cores) * 100";
+            $"sum(rate(container_cpu_usage_seconds_total{{container=\"{deployment}\"}}[{Rate}])) * 100";
         Logger.LogDebug($"PromQL: {queryString}");
 
         var query =

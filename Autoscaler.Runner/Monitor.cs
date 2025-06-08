@@ -124,7 +124,7 @@ public class Monitor(
                         continue;
                     }
 
-                    await SetReplicas(nextForecast * 100, replicas);
+                    await SetReplicas(nextForecast, replicas);
 
                     // Calculate delay based on processing time.
                     var processingTime = DateTime.Now - startTime;
