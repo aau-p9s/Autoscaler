@@ -64,6 +64,7 @@ public class Monitor(
                 if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval || counter == 0)
                 {
                     await forecaster.Retrain(deployment.Service.Id, forecastHorizon);
+                    await forecaster.Forecast(deployment.Service.Id, forecastHorizon);
                     clock.Restart();
                     counter++;
                 }
