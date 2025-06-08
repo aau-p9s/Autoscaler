@@ -64,6 +64,8 @@ public class Monitor(
                 if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval || counter == 0)
                 {
                     await forecaster.Retrain(deployment.Service.Id, forecastHorizon);
+                    // Regardless of the existence of a forecast currently, we would ALWAYS want a new forecast every time we've trained
+                    // This means that splitting these two functions is redundant when TrainInterval and ScalePeriod is equal
                     await forecaster.Forecast(deployment.Service.Id, forecastHorizon);
                     clock.Restart();
                     counter++;
