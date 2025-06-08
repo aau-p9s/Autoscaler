@@ -207,8 +207,9 @@ public class Monitor(
         if (nextForecast > deployment.Settings.ScaleUp)
         {
             logger.LogDebug("Scaling up...");
+            var meanForecast = nextForecast / currentReplicas;
             desiredReplicas =
-                (int)Math.Ceiling(currentReplicas * (nextForecast / deployment.Settings.ScaleUp));
+                (int)Math.Ceiling(currentReplicas * (meanForecast / deployment.Settings.ScaleUp));
             if (desiredReplicas > deployment.Settings.MaxReplicas)
             {
                 desiredReplicas = deployment.Settings.MaxReplicas;
