@@ -63,7 +63,8 @@ public class MockPrometheusService(AppSettings appSettings, ILogger logger) : Pr
             double unixTimestamp = new DateTimeOffset(currentTime).ToUnixTimeSeconds();
 
             // 1 full sine wave every 30 points
-            var angle = (2 * Math.PI * i) / 30;
+            var secondsSinceStart = i * horizon.TotalSeconds;
+            var angle = (2 * Math.PI * secondsSinceStart) / 86400.0; // 86400 = 1 day...
             var value = baseline + amplitude * Math.Sin(angle);
 
             values.Add([unixTimestamp, value.ToString("F12")]);
