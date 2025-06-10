@@ -22,8 +22,6 @@ public class PrometheusService(
 
     private async Task<string> QueryRange(string query, DateTime start, DateTime end, TimeSpan horizon)
     {
-        var baseUrl = $"{AppSettings.Autoscaler.Apis.Prometheus.Url}/api/v1/query_range";
-
         Logger.LogDebug($"PromQL: {query}");
 
         HttpResponseMessage response;
@@ -31,7 +29,7 @@ public class PrometheusService(
         {
             response = await Client.GetAsync($"{
                 AppSettings.Autoscaler.Apis.Prometheus.Url
-            }/api/v1/query_range?{
+            }/api/v1/query_range?query={
                 Encode(query)
             }&start={
                 Encode(Utils.ToRFC3339(start))
