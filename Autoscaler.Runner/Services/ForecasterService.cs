@@ -40,7 +40,7 @@ public class ForecasterService(
 
     public virtual async Task<bool> Retrain(DeploymentEntity deployment, TimeSpan forecastHorizon)
     {
-        var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster.Url}/train/{deployment}";
+        var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster.Url}/train/{deployment.Service.Id}";
         var res = await Client.PostAsync($"{urlPrefix}/{forecastHorizon.TotalSeconds}", new StringContent(""));
 
         if (!res.IsSuccessStatusCode)
