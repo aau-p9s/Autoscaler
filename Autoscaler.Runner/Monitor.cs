@@ -53,7 +53,7 @@ public class Monitor(
                 var now = DateTime.Now;
                 var data = await prometheus.SumCpuUsage(
                     deployment,
-                    now.Subtract(TimeSpan.FromMilliseconds(deployment.Settings.TrainInterval)),
+                    now.Subtract(TimeSpan.FromMilliseconds(deployment.Settings.TrainInterval)).Subtract(TimeSpan.FromSeconds(1)),
                     now, 
                     forecastHorizon);
                 await historicRepository.UpsertHistoricDataAsync(data);
