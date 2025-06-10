@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Autoscaler.Config;
 using Autoscaler.Persistence.HistoricRepository;
+using Autoscaler.Runner.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace Autoscaler.Runner.Services;
@@ -48,7 +49,7 @@ public class MockPrometheusService(AppSettings appSettings, ILogger logger) : Pr
         WriteIndented = true
     };
     
-    public async override Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start, DateTime end, TimeSpan horizon)
+    public async override Task<HistoricEntity> SumCpuUsage(DeploymentEntity deployment, DateTime start, DateTime end, TimeSpan horizon)
     {
         const double amplitude = 2.5;
         const double baseline = 20.0;
@@ -72,8 +73,8 @@ public class MockPrometheusService(AppSettings appSettings, ILogger logger) : Pr
         {
             Metric = new Dictionary<string, string>
             {
-                { "service_id", serviceId.ToString() },
-                { "deployment", deployment }
+                { "service_id", deployment.Service.Id.ToString() },
+                { "deployment", deployment.Service.Name }
             },
             Values = values
         };
@@ -89,7 +90,11 @@ public class MockPrometheusService(AppSettings appSettings, ILogger logger) : Pr
         };
 
 
-        return new HistoricEntity(Guid.NewGuid(), serviceId, DateTime.Now, JsonSerializer.Serialize(response, Options));
-    } 
+        return new HistoricEntity(Guid.NewGuid(), deployment.Service.Id, DateTime.Now, JsonSerializer.Serialize(response, Options));
+    }
  
+    public override Task<HistoricEntity> AvgCpuUsage(DeploymentEntity deployment, DateTime start, DateTime end, TimeSpan horizon)
+    {
+        return SumCpuUsage(deployment, start, end, horizon);
+    }
 }

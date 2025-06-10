@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Autoscaler.Config;
+using Autoscaler.Runner.Entities;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -28,7 +30,7 @@ namespace Autoscaler.Runner.Services
         protected ILogger Logger => logger;
         protected AppSettings AppSettings => appSettings;
 
-        public virtual async Task Update(string endpoint, object body)
+        private async Task Update(string endpoint, object body)
         {
             Logger.LogDebug($"Kubernetes endpoint: {endpoint}");
             try
@@ -54,7 +56,23 @@ namespace Autoscaler.Runner.Services
             }
         }
 
-        public virtual async Task<JObject?> Get(string endpoint)
+        
+        public virtual async Task SetReplicas(DeploymentEntity deployment, int replicas)
+        {
+            // Create the JSON object for scaling.
+            var jsonObject = new
+            {
+                spec = new
+                {
+                    replicas
+                }
+            };
+            await Update(
+                $"/apis/apps/v1/namespaces/default/deployments/{deployment.Service.Name}/scale",
+                jsonObject);
+        }
+
+        private async Task<JObject?> Get(string endpoint)
         {
             Logger.LogDebug($"Kubernetes endpoint: {endpoint}");
 
@@ -74,9 +92,9 @@ namespace Autoscaler.Runner.Services
             return JObject.Parse(responseString);
         }
 
-        public virtual async Task<int> GetReplicas(string deploymentName)
+        public virtual async Task<int> GetReplicas(DeploymentEntity deployment)
         {
-            var json = await Get($"/apis/apps/v1/namespaces/default/deployments/{deploymentName}/scale");
+            var json = await Get($"/apis/apps/v1/namespaces/default/deployments/{deployment.Service.Name}/scale");
             Logger.LogDebug($"Json response: {json}");
             if (json == null)
                 return 0;
@@ -89,18 +107,18 @@ namespace Autoscaler.Runner.Services
             return (int)replicas;
         }
 
-        protected virtual async Task<JObject?> GetPodsAsync(string serviceName)
+        protected virtual async Task<JObject?> GetPodsAsync(DeploymentEntity deployment)
         {
             // Assuming pods are labeled with "app" equal to the service name.
-            string encodedServiceName = Uri.EscapeDataString(serviceName);
+            string encodedServiceName = Uri.EscapeDataString(deployment.Service.Name);
             var endpoint = $"/api/v1/namespaces/default/pods?labelSelector=app%3D{encodedServiceName}";
             return await Get(endpoint);
         }
 
-        public async Task<TimeSpan> GetPodStartupTimePercentileAsync(string serviceName, double percentile = 90)
+        public async Task<TimeSpan> GetPodStartupTimePercentileAsync(DeploymentEntity deployment, double percentile = 90)
         {
             // Retrieve pod data.
-            JObject? podsJson = await GetPodsAsync(serviceName);
+            JObject? podsJson = await GetPodsAsync(deployment);
             Logger.LogDebug($"pods json: {podsJson}");
             if (podsJson == null)
             {
@@ -180,5 +198,40 @@ namespace Autoscaler.Runner.Services
             double weight = rank - lowerIndex;
             return sortedValues[lowerIndex] * (1 - weight) + sortedValues[upperIndex] * weight;
         }
+        
+        
+        public virtual async Task<List<string>> GetDeployments()
+        {
+            var exclusions = new List<string>()
+            {
+                "forecaster",
+                "postgres",
+                "coredns",
+                "local-path-provisioner",
+                "metrics-server",
+                "traefik",
+                "grafana",
+                "prometheus-kube-state-metrics",
+                "prometheus-prometheus-pushgateway",
+                "prometheus-server"
+            };
+            var deployments = new List<string>();
+            var response = await Get("/apis/apps/v1/deployments") ??
+                           throw new ArgumentNullException("", "Kubernetes response is null");
+            var items = response["items"] ??
+                        throw new ArgumentNullException(nameof(response), "Response from kubernetes was null");
+
+            foreach (var item in items)
+            {
+                var metadata = item["metadata"] ??
+                               throw new ArgumentNullException(nameof(item), "Item did not have metadata");
+                var name = metadata["name"] ??
+                           throw new ArgumentNullException(nameof(metadata), "Metadata did not have a name");
+                deployments.Add(name.ToString());
+            }
+
+            return deployments.Where(deployment => !exclusions.Contains(deployment)).ToList();
+        }
     }
+    
 }

@@ -11,5 +11,5 @@ public interface IForecastRepository
     public Task<bool> UpdateForecastAsync(ForecastEntity forecast);
 
     //ONLY USE FOR DEVMODE
-    public Task<bool> InsertForecast(ForecastEntity forecast);
+    public Task<bool> UpsertForecast(ForecastEntity forecast);
 }

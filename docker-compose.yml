@@ -13,18 +13,21 @@ services:
         ports:
             - "5432:5432"
     autoscaler:
-        image: ghcr.io/aau-p9s/autoscaler:test
+        build:
+            context: .
+            no_cache: false
+            
         restart: always
         environment:
             Autoscaler__Database__Hostname: db
-            Autoscaler__Runner__Start: false
+            Autoscaler__Runner__Start: true
             Autoscaler__Apis__Forecaster__Mock: true
             Autoscaler__Apis__Kubernetes__Mock: true
             Autoscaler__Apis__Prometheus__Mock: true
             Autoscaler__Port: 8081
+            Logging__LogLevel__Autoscaler: debug
+        depends_on:
+            -   db
         
         ports:
             - "8081:8081"
-
-        depends_on:
-            -   db

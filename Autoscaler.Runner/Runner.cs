@@ -41,7 +41,7 @@ public class Runner(
             _deployments.Add(new(service, settings));
         }
 
-        var deployments = await GetDeployments();
+        var deployments = await kubernetes.GetDeployments();
         foreach (var deployment in deployments.Where(deployment => _deployments.All(d => d.Service.Name != deployment)))
         {
             await AddService(deployment);
@@ -59,38 +59,6 @@ public class Runner(
         }
     }
 
-    private async Task<List<string>> GetDeployments()
-    {
-        var exclusions = new List<string>()
-        {
-            "forecaster",
-            "postgres",
-            "coredns",
-            "local-path-provisioner",
-            "metrics-server",
-            "traefik",
-            "grafana",
-            "prometheus-kube-state-metrics",
-            "prometheus-prometheus-pushgateway",
-            "prometheus-server"
-        };
-        var deployments = new List<string>();
-        var response = await kubernetes.Get("/apis/apps/v1/deployments") ??
-                       throw new ArgumentNullException(nameof(kubernetes), "Kubernetes response is null");
-        var items = response["items"] ??
-                    throw new ArgumentNullException(nameof(response), "Response from kubernetes was null");
-
-        foreach (var item in items)
-        {
-            var metadata = item["metadata"] ??
-                           throw new ArgumentNullException(nameof(item), "Item did not have metadata");
-            var name = metadata["name"] ??
-                       throw new ArgumentNullException(nameof(metadata), "Metadata did not have a name");
-            deployments.Add(name.ToString());
-        }
-
-        return deployments.Where(deployment => !exclusions.Contains(deployment)).ToList();
-    }
 
     private async Task AddService(string service)
     {

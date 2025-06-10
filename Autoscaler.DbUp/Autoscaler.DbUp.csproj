@@ -28,7 +28,6 @@
         <EmbeddedResource Include="Scripts\0005-ServicesTable.sql"/>
         <None Remove="Scripts\0006-SeedData.sql" />
         <None Remove="Scripts\0007-SeedData.sql" />
-        <EmbeddedResource Include="Scripts\0007-SeedData.sql" />
         <None Remove="Scripts\0006-BaselineModelTable.sql" />
         <EmbeddedResource Include="Scripts\0006-BaselineModelTable.sql" />
     </ItemGroup>

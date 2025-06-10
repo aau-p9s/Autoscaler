@@ -138,9 +138,9 @@ const ServicePage = (name) => {
             setForecast(json);
             const forecastData = JSON.parse(json.forecast);
             console.log("Forecast Data:", forecastData);
-            if (forecastData && forecastData.timestamp.length > 0) {
-                const labels = forecastData.timestamp;
-                const data = forecastData.value.flat();
+            if (forecastData && forecastData.index.length > 0) {
+                const labels = forecastData.index;
+                const data = forecastData.data.flat();
                 labels.sort((a, b) => new Date(a) - new Date(b));
                 const newChartData = {
                     labels,
@@ -203,8 +203,8 @@ const ServicePage = (name) => {
         try {
             const forecastPayload = JSON.stringify({
                 columns: ["cpu"],
-                timestamp: chartData.labels,
-                value: chartData.datasets[0].data.map(val => [val])
+                index: chartData.labels,
+                data: chartData.datasets[0].data.map(val => [val])
             });
             const payload = {
                 id: forecast.id,

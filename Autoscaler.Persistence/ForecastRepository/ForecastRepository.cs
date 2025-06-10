@@ -50,10 +50,16 @@ public class ForecastRepository : IForecastRepository
     }
 
     //ONLY USE FOR DEVMODE
-    public async Task<bool> InsertForecast(ForecastEntity forecast)
+    public async Task<bool> UpsertForecast(ForecastEntity forecast)
     {
-        var query =
-            $"INSERT INTO {TableName} (Id, ServiceId, CreatedAt, ModelId, Forecast, HasManualChange) VALUES (@Id, @ServiceId, @CreatedAt, @ModelId, CAST(@Forecast AS jsonb), @HasManualChange)";
+        var query = $@"
+                INSERT INTO {TableName} 
+                    (Id, ServiceId, CreatedAt, ModelId, Forecast, HasManualChange) 
+                VALUES 
+                    (@Id, @ServiceId, @CreatedAt, @ModelId, CAST(@Forecast AS jsonb), @HasManualChange) 
+                ON CONFLICT (ServiceId) DO UPDATE SET 
+                    Forecast = CAST(@Forecast AS jsonb), CreatedAt = @CreatedAt, ModelId = @ModelId, HasManualChange = @HasManualChange
+            ";
 
         var parameters = new
         {
@@ -68,4 +74,5 @@ public class ForecastRepository : IForecastRepository
         var result = await Connection.ExecuteAsync(query, parameters);
         return result > 0;
     }
+
 }
