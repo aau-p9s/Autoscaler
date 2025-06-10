@@ -37,7 +37,7 @@ public class PrometheusService(
                 Encode(Utils.ToRFC3339(end))
             }&step={
                 horizon.TotalSeconds
-            }");
+            }s");
         }
         catch (Exception e)
         {

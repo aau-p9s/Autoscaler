@@ -49,11 +49,12 @@ public class Monitor(
                 
                 var forecastHorizon =
                     await kubernetes.GetPodStartupTimePercentileAsync(deployment);
-                
+
+                var now = DateTime.Now;
                 var data = await prometheus.SumCpuUsage(
                     deployment,
-                    DateTime.Now.Subtract(TimeSpan.FromMilliseconds(deployment.Settings.TrainInterval)),
-                    DateTime.Now, 
+                    now.Subtract(TimeSpan.FromMilliseconds(deployment.Settings.TrainInterval)),
+                    now, 
                     forecastHorizon);
                 await historicRepository.UpsertHistoricDataAsync(data);
 
