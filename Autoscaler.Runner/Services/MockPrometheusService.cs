@@ -52,7 +52,6 @@ public class MockPrometheusService(AppSettings appSettings, ILogger logger) : Pr
     public async override Task<HistoricEntity> SumCpuUsage(DeploymentEntity deployment, DateTime start, DateTime end, TimeSpan horizon)
     {
         const double amplitude = 2.5;
-        const double baseline = 20.0;
 
         var values = new List<List<object>>();
         var totalPoints = (int)((end - start).TotalSeconds / horizon.TotalSeconds);
@@ -65,7 +64,7 @@ public class MockPrometheusService(AppSettings appSettings, ILogger logger) : Pr
             // 1 full sine wave every 30 points
             var secondsSinceStart = i * horizon.TotalSeconds;
             var angle = (2 * Math.PI * secondsSinceStart) / 86400.0; // 86400 = 1 day...
-            var value = baseline + amplitude * Math.Sin(angle);
+            var value = (amplitude / 2.0) * (1 + Math.Sin(angle));
 
             values.Add([unixTimestamp, value.ToString("F12")]);
         }
