@@ -56,8 +56,9 @@ public class PrometheusService(
         TimeSpan horizon)
     {
         Type = "sum";
+        // 200 is cpu utilization for 1/2 cpu's
         var query =
-            $"sum(rate(container_cpu_usage_seconds_total{{container=\"{deployment.Service.Name}\"}}[{Rate}])) * 100";
+            $"sum(rate(container_cpu_usage_seconds_total{{container=\"{deployment.Service.Name}\"}}[{Rate}])) * 200";
         var raw = await QueryRange(query, start, end, horizon);
         return new HistoricEntity(Guid.NewGuid(), deployment.Service.Id, DateTime.Now, raw);
     }
@@ -67,7 +68,7 @@ public class PrometheusService(
     {
         Type = "avg";
         var query =
-            $"avg(rate(container_cpu_usage_seconds_total{{container=\"{deployment.Service.Name}\"}}[{Rate}])) * 100";
+            $"avg(rate(container_cpu_usage_seconds_total{{container=\"{deployment.Service.Name}\"}}[{Rate}])) * 200";
         var raw = await QueryRange(query, start, end, horizon);
         return new HistoricEntity(Guid.NewGuid(), deployment.Service.Id, DateTime.Now, raw);
     }
