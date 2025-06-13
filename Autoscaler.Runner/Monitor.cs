@@ -48,13 +48,13 @@ public class Monitor(
                 }
                 
                 var forecastHorizon =
-                    await kubernetes.GetPodStartupTimePercentileAsync(deployment.Service.Name);
-                
-                var data = await prometheus.QueryRange(
-                    deployment.Service.Id,
-                    deployment.Service.Name,
-                    DateTime.Now.Subtract(TimeSpan.FromMilliseconds(deployment.Settings.TrainInterval)),
-                    DateTime.Now, 
+                    await kubernetes.GetPodStartupTimePercentileAsync(deployment);
+
+                var now = DateTime.Now;
+                var data = await prometheus.SumCpuUsage(
+                    deployment,
+                    now.Subtract(TimeSpan.FromMilliseconds(deployment.Settings.TrainInterval)).Subtract(TimeSpan.FromMinutes(2)),
+                    now, 
                     forecastHorizon);
                 await historicRepository.UpsertHistoricDataAsync(data);
 
@@ -63,7 +63,10 @@ public class Monitor(
                 // Retrain periodically based on TrainInterval.
                 if (clock.ElapsedMilliseconds >= deployment.Settings.TrainInterval || counter == 0)
                 {
-                    await forecaster.Retrain(deployment.Service.Id, forecastHorizon);
+                    await forecaster.Retrain(deployment, forecastHorizon);
+                    // Regardless of the existence of a forecast currently, we would ALWAYS want a new forecast every time we've trained
+                    // This means that splitting these two functions is redundant when TrainInterval and ScalePeriod is equal
+                    await forecaster.Forecast(deployment, forecastHorizon);
                     clock.Restart();
                     counter++;
                 }
@@ -77,7 +80,7 @@ public class Monitor(
                         await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id);
                     if (forecastEntity == null)
                     {
-                        await forecaster.Forecast(deployment.Service.Id, forecastHorizon);
+                        await forecaster.Forecast(deployment, forecastHorizon);
                         forecastEntity =
                             await forecastRepository.GetForecastsByServiceIdAsync(deployment.Service.Id) ??
                             throw new ArgumentNullException(nameof(ForecastRepository),
@@ -87,7 +90,7 @@ public class Monitor(
                     logger.LogDebug(forecastEntity.Forecast);
 
                     var forecast = JObject.Parse(forecastEntity.Forecast);
-                    var replicas = await kubernetes.GetReplicas(deployment.Service.Name);
+                    var replicas = await kubernetes.GetReplicas(deployment);
                     var timestamps = forecast["index"]?.ToObject<List<string>>() ??
                                      throw new ArgumentNullException(nameof(forecast),
                                          "Failed to get timestamps from forecast");
@@ -108,7 +111,7 @@ public class Monitor(
 
                     if (forecastIndex < 0 || forecastIndex >= cpuValues.Count)
                     {
-                        await forecaster.Forecast(deployment.Service.Id, forecastHorizon);
+                        await forecaster.Forecast(deployment, forecastHorizon);
                     }
 
                     if (forecastIndex < 0)
@@ -123,8 +126,8 @@ public class Monitor(
                         logger.LogError("Forecast data format is invalid");
                         continue;
                     }
-
-                    await SetReplicas(nextForecast * 100, replicas);
+                    logger.LogInformation($"Next forecasted value: {nextForecast}");
+                    await SetReplicas(nextForecast, replicas);
 
                     // Calculate delay based on processing time.
                     var processingTime = DateTime.Now - startTime;
@@ -198,26 +201,28 @@ public class Monitor(
 
     private async Task SetReplicas(double nextForecast, int currentReplicas)
     {
+        var avgForecast = nextForecast / currentReplicas;
         logger.LogDebug("Setting replica count");
         int desiredReplicas;
-        logger.LogDebug($"Next forecast value: {nextForecast} scaleup: {deployment.Settings.ScaleUp}");
+        logger.LogDebug($"Next forecast value: {avgForecast} for {currentReplicas} replicas");
+        logger.LogDebug($"Scaleup: {deployment.Settings.ScaleUp} scaledown: {deployment.Settings.ScaleDown}");
         if (nextForecast > deployment.Settings.ScaleUp)
         {
             logger.LogDebug("Scaling up...");
-            desiredReplicas =
-                (int)Math.Ceiling(currentReplicas * (nextForecast / deployment.Settings.ScaleUp));
+            desiredReplicas = CalculateReplicas(nextForecast, currentReplicas, deployment.Settings.ScaleUp);
             if (desiredReplicas > deployment.Settings.MaxReplicas)
             {
+                logger.LogWarning($"Tried to scale up to {desiredReplicas}");
                 desiredReplicas = deployment.Settings.MaxReplicas;
             }
         }
         else if (nextForecast < deployment.Settings.ScaleDown)
         {
             logger.LogDebug("Scaling down...");
-            desiredReplicas =
-                (int)Math.Ceiling(currentReplicas * (nextForecast / deployment.Settings.ScaleDown));
+            desiredReplicas = CalculateReplicas(avgForecast, currentReplicas, deployment.Settings.ScaleDown);
             if (desiredReplicas < deployment.Settings.MinReplicas)
             {
+                logger.LogWarning($"Tried to scale down to {desiredReplicas}");
                 desiredReplicas = deployment.Settings.MinReplicas;
             }
         }
@@ -228,18 +233,13 @@ public class Monitor(
 
         logger.LogInformation($"Updating {deployment.Service.Name} to {desiredReplicas} replicas");
 
-        // Create the JSON object for scaling.
-        var jsonObject = new
-        {
-            spec = new
-            {
-                replicas = desiredReplicas
-            }
-        };
+        kubernetes.SetReplicas(deployment, desiredReplicas);
+    }
 
-        await kubernetes.Update(
-            $"/apis/apps/v1/namespaces/default/deployments/{deployment.Service.Name}/scale",
-            jsonObject);
+    private int CalculateReplicas(double metric, int current, int threshold)
+    {
+        var avgMetric = prometheus.Type == "avg" ? metric : metric / current;
+        return (int)Math.Ceiling(current * (avgMetric / threshold));
     }
 
 }

@@ -46,7 +46,7 @@ var databaseConnectionString = $"Server={
     appSettings.Autoscaler.Database.User
 };Password={
     appSettings.Autoscaler.Database.Password
-}";
+}"; 
 builder.Services.ConfigurePersistencePostGreSqlConnection(databaseConnectionString);
         
 // Configure Logger

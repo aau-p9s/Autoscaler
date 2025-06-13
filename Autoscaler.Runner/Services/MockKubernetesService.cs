@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Autoscaler.Config;
+using Autoscaler.Runner.Entities;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
@@ -9,46 +11,60 @@ namespace Autoscaler.Runner.Services;
 
 public class MockKubernetesService(AppSettings appSettings, ILogger logger) : KubernetesService(appSettings, logger)
 {
-    public override async Task Update(string endpoint, object body)
+    private int replicas = 1;
+
+    public override Task SetReplicas(DeploymentEntity deployment, int replicas)
     {
-        Logger.LogWarning("Using mock Kubernetes data...");
+        this.replicas = replicas;
+        return Task.CompletedTask;
     }
 
-    public override async Task<JObject?> Get(string endpoint)
+    public override async Task<int> GetReplicas(DeploymentEntity deployment)
     {
-        Logger.LogWarning($"Running Mock Kubernetes GET Request: {endpoint}");
-        var kubeRes =
-            await File.ReadAllTextAsync(
-                $"./DevelopmentData/kubernetes_GET{endpoint.Replace("/", "_")}.json");
-        return JObject.Parse(kubeRes);
+        Logger.LogWarning($"Running Mock Kubernetes GET Replicas: {deployment.Service.Name}");
+        return replicas;
     }
 
-    public override async Task<int> GetReplicas(string deploymentName)
+    protected override async Task<JObject?> GetPodsAsync(DeploymentEntity deployment)
     {
-        Logger.LogWarning($"Running Mock Kubernetes GET Replicas: {deploymentName}");
-        var kubeRes =
-            await File.ReadAllTextAsync(
-                $"./DevelopmentData/kubectl_GET__apis_apps_v1_namespaces_default_deployments_workload-api-deployment_scale.json");
-        try
+        var items = new JArray();
+        for (var i = 0; i < replicas; i++)
         {
-            var dummyJson = JObject.Parse(kubeRes);
-            var dummySpec = dummyJson["spec"] ??
-                            throw new ArgumentNullException(nameof(dummyJson), "Error, mock data is invalid");
-            var dummyReplicas = dummySpec["replicas"] ??
-                                throw new ArgumentNullException(nameof(dummySpec), "Error, mock data spec is invalid");
-            return (int)dummyReplicas;
+            items.Add(new JObject()
+            {
+                ["metadata"] = new JObject()
+                {
+                    ["creationTimestamp"] = DateTime.Now.ToString("yyy-MM-ddTHH:mm:ss.fffZ")
+                },
+                ["status"] = new JObject()
+                {
+                    ["conditions"] = new JArray()
+                    {
+                        new JObject()
+                        {
+                            ["type"] = "Ready",
+                            ["status"] = "True",
+                            ["lastTransitionTime"] = (DateTime.Now + TimeSpan.FromSeconds(10)).ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                        }
+                    }
+                }
+            });
         }
-        catch (ArgumentNullException e)
+
+        var obj = new JObject()
         {
-            Utils.HandleException(e, Logger);
-            return 0;
-        }
+            ["items"] = items
+        };
+        return obj;
     }
 
-    protected override async Task<JObject?> GetPodsAsync(string serviceName)
+    public override async Task<List<string>> GetDeployments()
     {
-        Logger.LogWarning("Running Mock Kubernetes GET pods");
-        var podsJson = await File.ReadAllTextAsync("./DevelopmentData/containers.json");
-        return JObject.Parse(podsJson);
+        var result = new List<string>()
+        {
+            "workload-0-api",
+            "workload-1-api"
+        };
+        return result;
     }
 }

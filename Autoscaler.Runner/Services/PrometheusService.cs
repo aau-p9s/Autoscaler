@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Web;
 using Autoscaler.Config;
 using Autoscaler.Persistence.HistoricRepository;
+using Autoscaler.Runner.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace Autoscaler.Runner.Services;
@@ -16,46 +17,63 @@ public class PrometheusService(
     private AppSettings AppSettings => appSettings;
     private HttpClient Client => new();
     private const string Rate = "5m";
+    public string Type = "sum";
     protected ILogger Logger => logger;
 
-    public virtual async Task<HistoricEntity> QueryRange(Guid serviceId, string deployment, DateTime start,
-        DateTime end,
-        TimeSpan horizon)
+    private async Task<string> QueryRange(string query, DateTime start, DateTime end, TimeSpan horizon)
     {
-        var queryType = "cpu";
+        Logger.LogDebug($"PromQL: {query}");
 
-
-        var target = new Dictionary<string, string>()
-        {
-            { "cpu", "container_cpu_usage_seconds_total" },
-            { "memory", "container_memory_usage_bytes" },
-            { "network", "container_network_receive_bytes_total" }
-        }[queryType];
-        var queryString =
-            $"avg(rate({target}{{container=\"{deployment}\"}}[{Rate}])) / avg(machine_cpu_cores) * 100";
-        Logger.LogDebug($"PromQL: {queryString}");
-
-        var query =
-            $"query={EncodeQuery(queryString)}&start={Utils.ToRFC3339(start)}&end={Utils.ToRFC3339(end)}&step={horizon.TotalSeconds}s";
         HttpResponseMessage response;
         try
         {
-            response = await Client.GetAsync($"{AppSettings.Autoscaler.Apis.Prometheus.Url}/api/v1/query_range?{query}");
+            response = await Client.GetAsync($"{
+                AppSettings.Autoscaler.Apis.Prometheus.Url
+            }/api/v1/query_range?query={
+                Encode(query)
+            }&start={
+                Encode(Utils.ToRFC3339(start))
+            }&end={
+                Encode(Utils.ToRFC3339(end))
+            }&step={
+                horizon.TotalSeconds
+            }s");
         }
         catch (Exception e)
         {
             Logger.LogError("Prometheus seems to be down");
             Utils.HandleException(e, Logger);
-            return new HistoricEntity();
+            return "";
         }
 
         var jsonString = await response.Content.ReadAsStringAsync();
         Logger.LogDebug($"Prometheus response: {jsonString}");
 
-        return new HistoricEntity(Guid.NewGuid(), serviceId, DateTime.Now, jsonString);
+        return jsonString;
     }
 
-    private static string EncodeQuery(string target)
+    public virtual async Task<HistoricEntity> SumCpuUsage(DeploymentEntity deployment, DateTime start, DateTime end,
+        TimeSpan horizon)
+    {
+        Type = "sum";
+        // 200 is cpu utilization for 1/2 cpu's
+        var query =
+            $"sum(rate(container_cpu_usage_seconds_total{{container=\"{deployment.Service.Name}\"}}[{Rate}])) * 200";
+        var raw = await QueryRange(query, start, end, horizon);
+        return new HistoricEntity(Guid.NewGuid(), deployment.Service.Id, DateTime.Now, raw);
+    }
+
+    public virtual async Task<HistoricEntity> AvgCpuUsage(DeploymentEntity deployment, DateTime start, DateTime end,
+        TimeSpan horizon)
+    {
+        Type = "avg";
+        var query =
+            $"avg(rate(container_cpu_usage_seconds_total{{container=\"{deployment.Service.Name}\"}}[{Rate}])) * 200";
+        var raw = await QueryRange(query, start, end, horizon);
+        return new HistoricEntity(Guid.NewGuid(), deployment.Service.Id, DateTime.Now, raw);
+    }
+
+    private static string Encode(string target)
     {
         return HttpUtility.UrlEncode(target);
     }

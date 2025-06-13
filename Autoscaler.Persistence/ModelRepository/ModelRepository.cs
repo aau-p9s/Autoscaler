@@ -34,8 +34,9 @@ public class ModelRepository : IModelRepository
         var models = await Connection.QueryAsync<ModelEntity>($"SELECT * FROM {BaselineTablename}",
             new { ServiceId = serviceId });
 
-        Connection.Open();
-        using var tx = Connection.BeginTransaction();
+        var conn = Connection;
+        conn.Open();
+        using var tx = conn.BeginTransaction();
 
         foreach (var model in models)
         {
@@ -49,7 +50,7 @@ public class ModelRepository : IModelRepository
                 TrainedAt = DateTime.UtcNow
             };
 
-            await Connection.ExecuteAsync(sql, param, tx);
+            await conn.ExecuteAsync(sql, param, tx);
         }
 
         tx.Commit();

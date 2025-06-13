@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Autoscaler.Config;
 using Autoscaler.Persistence.SettingsRepository;
+using Autoscaler.Runner.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace Autoscaler.Runner.Services;
@@ -19,9 +20,9 @@ public class ForecasterService(
     private ISettingsRepository SettingsRepository => settingsRepository;
     protected ILogger Logger => logger;
 
-    public virtual async Task<bool> Forecast(Guid serviceId, TimeSpan forecastHorizon)
+    public virtual async Task<bool> Forecast(DeploymentEntity deployment, TimeSpan forecastHorizon)
     {
-        var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster.Url}/predict/{serviceId}";
+        var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster.Url}/predict/{deployment.Service.Id}";
         var res = await Client.PostAsync($"{urlPrefix}/{forecastHorizon.TotalSeconds}", new StringContent(""));
         Logger.LogDebug($"Forecaster forecast response: {await res.Content.ReadAsStringAsync()}");
 
@@ -31,15 +32,15 @@ public class ForecasterService(
             return false;
         }
 
-        var settings = await SettingsRepository.GetSettingsForServiceAsync(serviceId);
+        var settings = await SettingsRepository.GetSettingsForServiceAsync(deployment.Service.Id);
         await Wait(urlPrefix, TimeSpan.FromMilliseconds(settings.TrainInterval));
 
         return true;
     }
 
-    public virtual async Task<bool> Retrain(Guid serviceId, TimeSpan forecastHorizon)
+    public virtual async Task<bool> Retrain(DeploymentEntity deployment, TimeSpan forecastHorizon)
     {
-        var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster.Url}/train/{serviceId}";
+        var urlPrefix = $"{AppSettings.Autoscaler.Apis.Forecaster.Url}/train/{deployment.Service.Id}";
         var res = await Client.PostAsync($"{urlPrefix}/{forecastHorizon.TotalSeconds}", new StringContent(""));
 
         if (!res.IsSuccessStatusCode)
@@ -49,7 +50,7 @@ public class ForecasterService(
         }
 
         // wait for finishing
-        var settings = await SettingsRepository.GetSettingsForServiceAsync(serviceId);
+        var settings = await SettingsRepository.GetSettingsForServiceAsync(deployment.Service.Id);
         await Wait(urlPrefix, TimeSpan.FromMilliseconds(settings.TrainInterval));
 
         return true;
